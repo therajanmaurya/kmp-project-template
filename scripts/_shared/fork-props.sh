@@ -15,13 +15,14 @@
 #
 # PARSING SEMANTICS (the reason a shared reader is worth more than a shared regex):
 #   · head -1          — first match wins, so a duplicated key yields ONE value, not a concatenation.
-#   · inline `#` strip — `key=value   # note` reads as `value`. gradle/fork.properties.template is
-#                        comment-annotated, and `setup-project.sh` COPIES it to fork.properties on a
-#                        fresh setup, so a comment-bearing bridge is a reachable state.
+#   · inline `#` strip — `key=value   # note` reads as `value`. NOTE: the shipped .template carries
+#                        226 FULL-LINE comments but no inline ones, so this is a LATENT guard, not a
+#                        live fix — it covers a hand-authored or future bridge, not today's.
 #   · trailing-space strip.
-# The ad-hoc idiom still used by the iOS/keystore scripts (`grep … | cut -d= -f2- | tr -d '\n\r'`)
-# does none of these. It happens to agree today because the current bridge has no duplicate keys and
-# no inline comments — agreement by luck, not by contract.
+# The ad-hoc idiom this replaced (`grep … | cut -d= -f2- | tr -d '\n\r'`) does none of these. On a
+# bridge with an inline comment it yields `ABCD123456   # PLACEHOLDER — …` as an Apple Team ID; on a
+# duplicated key it concatenates (`Acme LtdAcme Holdings Ltd`) into a keystore DN. Both are latent
+# today — agreement by luck, not by contract, which is why the parse lives in one place.
 #
 # Usage:
 #   source "$(git rev-parse --show-toplevel)/scripts/_shared/fork-props.sh"

@@ -26,6 +26,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# The ONE bash reader of gradle/fork.properties (scripts/_shared/fork-props.sh). Replaces an
+# inline `grep | cut -d= | tr` that had neither head -1 nor inline-`#` stripping. Latent, not
+# live: today's bridge has neither, but an inline comment would have made this Team ID
+# `ABCD123456   # PLACEHOLDER — …` and a duplicated key would have concatenated values.
+# shellcheck source=../_shared/fork-props.sh
+. "$PROJECT_ROOT/scripts/_shared/fork-props.sh"
+
 # Print functions
 print_success() {
     echo -e "${GREEN}✓ $1${NC}"
@@ -454,7 +461,8 @@ print_info "If this is the first time, Match will create new certificates"
 echo
 
 # Load configuration from the new sources
-TEAM_ID=$(grep -E "^apple\.team\.id=" gradle/fork.properties 2>/dev/null | cut -d= -f2- | tr -d '\n\r')
+FORK_PROPERTIES="$PROJECT_ROOT/gradle/fork.properties"
+TEAM_ID="$(fp_get apple.team.id)"
 export MATCH_PASSWORD
 
 # Install Fastlane

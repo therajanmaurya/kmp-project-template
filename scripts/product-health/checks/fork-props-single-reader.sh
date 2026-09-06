@@ -45,14 +45,8 @@ is_allowed() {
     */deployment/Appfile|*/fastlane/Appfile) return 0 ;;
     # The Ruby reader + its manifest.
     */deployment/_shared/project_config.rb|*/deployment/_shared/config.rb) return 0 ;;
-    # LEGACY, owed — the iOS/keystore signing scripts still use the ad-hoc
-    # `grep … | cut -d= -f2- | tr -d '\n\r'` idiom. It agrees with fp_get today only because the
-    # current bridge happens to have no duplicate keys and no inline comments; it would diverge on
-    # either. NOT migrated because these are credential/signing paths that cannot be executed in
-    # review (Apple certs, keytool, security, fastlane match) — rewriting them unverified is a worse
-    # risk than the divergence they carry. Migrate when someone can run a real signing pass.
-    */scripts/ios/setup_apn_key.sh|*/scripts/ios/verify_apn_setup.sh) return 0 ;;
-    */scripts/ios/setup_ios_complete.sh|*/deployment/_shared/scripts/keystore-manager.sh) return 0 ;;
+    # (The four iOS/keystore signing scripts were migrated to fp_get on 2026-09-06 and are
+    # deliberately NOT exempt any more — they are held to the same rule as everything else.)
     *) return 1 ;;
   esac
 }

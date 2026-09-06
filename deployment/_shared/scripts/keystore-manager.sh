@@ -5,6 +5,12 @@
 
 set -e  # Exit on any error
 
+# The ONE bash reader of gradle/fork.properties. Self-locating because this script is invoked both
+# from the repo root and from deployment/, so a relative source path is not safe.
+# shellcheck source=../../../scripts/_shared/fork-props.sh
+_KM_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+. "$_KM_REPO_ROOT/scripts/_shared/fork-props.sh"
+
 # Colors for better readability
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -398,7 +404,7 @@ parse_shared_keys_env() {
     fi
 
     # Extract non-secret identity from fork.properties
-    local NOTARIZATION_TEAM_ID=$(grep -E "^apple\.team\.id=" "$FORK_PROPS" 2>/dev/null | cut -d= -f2- | tr -d '\n\r')
+    local NOTARIZATION_TEAM_ID=$(_read_fork_prop "$FORK_PROPS" apple.team.id)
 
     # Extract secret values from per-value files
     local APPSTORE_KEY_ID=$(cat "secrets/live/apple/appstore/key_id" 2>/dev/null | tr -d '\n\r')
@@ -1347,7 +1353,11 @@ update_gradle_config() {
 _read_fork_prop() {
     local props_file="$1"
     local key="$2"
-    grep "^${key}=" "$props_file" 2>/dev/null | cut -d= -f2- | tr -d '\n\r'
+    # Delegates to the ONE bash reader (scripts/_shared/fork-props.sh). The previous inline
+    # `grep | cut -d= | tr` had neither head -1 nor inline-`#` stripping, so a duplicated key or an
+    # inline comment would have fed a malformed value into a keystore DN. Latent rather than live —
+    # today's bridge has neither. Signature is unchanged, so callers are untouched.
+    FORK_PROPERTIES="$props_file" fp_get "$key"
 }
 
 # Read a secret from a per-value file under secrets/live/android/keystores/.
