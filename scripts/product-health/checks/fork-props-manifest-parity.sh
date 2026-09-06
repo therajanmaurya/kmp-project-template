@@ -18,7 +18,8 @@
 # plugin's hardcoded template defaults for the API base URLs and demo credentials. Nothing detected
 # it, because each writer was internally consistent.
 #
-# FAILS on: a key in one manifest and not the other · a key both map to DIFFERENT app-profile paths.
+# FAILS on: a key in one manifest and not the other · a key both map to DIFFERENT app-profile paths
+#          · a NON-app-profile key (see NOT_APP_PROFILE below) that someone mapped anyway.
 # exit 0 PASS / 1 FAIL.
 set -uo pipefail
 : "${HEALTH_ROOT:?fork-props-manifest-parity: HEALTH_ROOT not set (run via product-health.sh)}"
@@ -55,6 +56,36 @@ rb = rb_src[/MAP\s*=\s*\{(.*?)\n  \}/m, 1].to_s
 if kt.empty? || rb.empty?
   puts "❌ manifest extraction returned nothing (kotlin=#{kt.size}, ruby=#{rb.size})"
   puts "     the declaration shape changed — update this check's regex rather than letting it pass vacuously"
+  exit 1
+end
+
+# Keys that reach gradle/fork.properties but are DELIBERATELY not app-profile-sourced. They are
+# absent from both manifests ON PURPOSE, and asserting that here stops the next reader of this file
+# from "fixing" the asymmetry by inventing an app-profile home for a value that does not have one.
+#
+#   project.name     SoT is gradle/libs.versions.toml#projectName (TRACKED). syncForkConfig mirrors
+#                    it into the bridge as a convenience; nothing depends on that mirror —
+#                    settings.gradle.kts:94 reads fork.project.name from gradle.properties (also
+#                    tracked), and project_config.rb:91 defaults to "kmp-project-template".
+#   apple.tf.groups  SoT is the TESTFLIGHT_GROUPS env var, a deploy-time input. project_config.rb:104
+#                    checks ENV FIRST and only falls back to the bridge, so a bridge without it
+#                    changes nothing whenever CI sets the env var.
+#
+# Mapping either into app-profile would give derive.rb a second resolution order (catalog/env on top
+# of app-profile) — the exact two-opinions failure the single-reader work removed.
+NOT_APP_PROFILE = {
+  "project.name"    => "gradle/libs.versions.toml#projectName (tracked); mirrored by syncForkConfig",
+  "apple.tf.groups" => "TESTFLIGHT_GROUPS env (deploy-time input); ENV wins in project_config.rb:104",
+}
+mismapped = NOT_APP_PROFILE.keys.select { |k| kt.key?(k) || rb.key?(k) }
+unless mismapped.empty?
+  puts "❌ #{mismapped.size} key(s) declared NON-app-profile are mapped anyway:"
+  mismapped.each do |k|
+    where = [("APP_PROFILE_MAP" if kt.key?(k)), ("AppProfile::MAP" if rb.key?(k))].compact.join(" + ")
+    puts "     #{k.ljust(20)} mapped in #{where}"
+    puts "     #{' '.ljust(20)} real SoT: #{NOT_APP_PROFILE[k]}"
+  end
+  puts "     → These have no app-profile home. Mapping one gives derive.rb a second resolution order."
   exit 1
 end
 
