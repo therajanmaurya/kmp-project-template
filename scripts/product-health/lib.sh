@@ -6,21 +6,16 @@
 # fp_get() so there is exactly one parser and one SoT — a check never re-implements the
 # read. Sourced by project-health.sh and each checks/*.sh; never executed directly.
 
-# health_resolve_sot <repo_root> — echo the path to the project SoT, or return 1.
-# Honors a caller-provided $FORK_PROPERTIES (lets a test point at a fixture).
-health_resolve_sot() {
-  local root="$1"
-  if [ -n "${FORK_PROPERTIES:-}" ] && [ -f "$FORK_PROPERTIES" ]; then echo "$FORK_PROPERTIES"; return 0; fi
-  if [ -f "$root/gradle/fork.properties" ]; then echo "$root/gradle/fork.properties"; return 0; fi
-  if [ -f "$root/gradle/fork.properties.template" ]; then echo "$root/gradle/fork.properties.template"; return 0; fi
-  return 1
-}
+# fp_file + fp_get now live in scripts/_shared/fork-props.sh — the ONE bash reader, promoted out of
+# this harness so every bash caller shares the same parsing semantics rather than re-deriving them.
+# This file keeps the rule it always stated; it just no longer owns the only copy of it.
+# shellcheck source=../_shared/fork-props.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/../_shared" && pwd)/fork-props.sh"
 
-# fp_get <key> — read one key from $FORK_PROPERTIES, trimming inline `# comment` + whitespace.
-fp_get() {
-  [ -f "${FORK_PROPERTIES:-}" ] || return 1
-  grep -E "^$1=" "$FORK_PROPERTIES" 2>/dev/null | head -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//; s/[[:space:]]*$//'
-}
+# health_resolve_sot <repo_root> — the harness-facing name for fp_file. Kept as a thin alias so the
+# 14 checks/*.sh that call it are untouched, and any caller-provided $FORK_PROPERTIES fixture path
+# still wins (that is what lets each canary point the checks at its own tree).
+health_resolve_sot() { fp_file "$1"; }
 
 # Colors — only when stdout is a tty.
 if [ -t 1 ]; then
