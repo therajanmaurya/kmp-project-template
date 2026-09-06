@@ -17,7 +17,7 @@ import org.koin.dsl.module
  * Koin module for the Cloud Todo feature — the MUTABLE store-archetype write-path demo.
  *
  * A single ViewModel over `CloudTodoRepository`, which is already bound by
- * `core/data`'s ProjectRepositoryModule (it wires the read Store, the MutableStore and the
+ * `core/data`'s DemoRepositoryModule (it wires the read Store, the MutableStore and the
  * MutationGateway). Nothing extra is needed here: the point of this feature is that a screen can
  * drive the whole write path through the repository contract alone.
  */

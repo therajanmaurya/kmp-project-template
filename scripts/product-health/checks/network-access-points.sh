@@ -7,7 +7,7 @@
 #
 #   AppAccessPoints.kt        the registry list          (NAP-1 ids · NAP-2 fields)
 #   AppUrlTypes.kt            the UrlType vocabulary     (NAP-3)
-#   GeneratedApiBindings.kt   the Koin bindings          (NAP-4)
+#   di/GeneratedApiBindings.kt the Koin bindings         (NAP-4)
 #   AppSupabaseAnonKeys.kt    the per-point anon keys    (NAP-5 rows · NAP-6 no committed key)
 #
 # WHY a gate and not just codegen: the generated files are COMMITTED (the build must work on a fresh
@@ -60,7 +60,7 @@ end
 ap_src    = read(File.join(net_dir, "config/AppAccessPoints.kt"))
 ut_src    = read(File.join(net_dir, "config/AppUrlTypes.kt"))
 keys_src  = read(File.join(net_dir, "config/AppSupabaseAnonKeys.kt"))
-bind_src  = read(File.join(net_dir, "demo/di/GeneratedApiBindings.kt"))
+bind_src  = read(File.join(net_dir, "di/GeneratedApiBindings.kt"))
 
 fail = false
 def bad(msg)

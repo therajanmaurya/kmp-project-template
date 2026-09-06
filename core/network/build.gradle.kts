@@ -14,7 +14,6 @@ plugins {
     alias(libs.plugins.kmp.library.convention)
     alias(libs.plugins.ktrofit)
     alias(libs.plugins.buildkonfig)
-    alias(libs.plugins.kmp.supabase.config)
     id("kotlinx-serialization")
     id("com.google.devtools.ksp")
 }
@@ -40,14 +39,6 @@ buildkonfig {
             System.getenv("FRED_API_KEY") ?: localProps.getProperty("FRED_API_KEY", ""),
         )
     }
-}
-
-// Supabase credentials are sourced dynamically from the gitignored `secrets/live/supabase/supabaseCredentialsFile.json`
-// (url + anonKey) via the shared SupabaseConfigConventionPlugin — the project's established secrets
-// mechanism — which generates `kpt.core.network.config.SupabaseCredentials`. When the file is absent
-// (the toolkit ships no Supabase project) it generates empty creds, so SupabaseConfigClient stays inert.
-supabaseConfig {
-    packageName = "kpt.core.network.config"
 }
 
 androidComponents {

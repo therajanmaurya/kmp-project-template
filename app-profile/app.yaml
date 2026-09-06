@@ -58,11 +58,16 @@ network:
       type: supabase
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
+      # demo:begin — AppConfigApi is the DEMO Supabase facade (deleted by remove-demo.sh). The access
+      # point itself is a template placeholder a fork rebrands, so only the binding is fenced: a
+      # cleaned fork keeps the endpoint and drops the api: line.
       api: kpt.core.network.demo.appconfig.api.AppConfigApi
+      # demo:end
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this and supplies the env var /
       # local.properties entry; without it the row generates "" and the client stays inert.
-    # demo showcase REST endpoints — every server the toolkit actually talks to. Each declares its
-    # `api:`, so its Koin binding is GENERATED into GeneratedApiBindings.kt; none is hand-wired.
+    # demo:begin — demo showcase endpoints. Each declares its `api:`, so its Koin binding is GENERATED
+    # into GeneratedApiBindings.kt; none is hand-wired. `scripts/remove-demo.sh` strips this fenced
+    # block, so a cleaned fork stops declaring endpoints whose API classes it just deleted.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
@@ -91,6 +96,7 @@ network:
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
       api: kpt.core.network.demo.economic.api.WorldBankApi
+    # demo:end
 
 org:
   name: Mifos Initiative

@@ -33,7 +33,7 @@ internal val appDatabaseNaming = DatabaseNaming(
  * module and its actuals carry ZERO driver/dispatcher/fallback boilerplate.
  *
  * INFRA-ONLY, owner: template (E1 / C3). The demo DAO providers + the ChargeTypeConverters install
- * relocated to the fork-owned [kpt.core.database.demo.di.ProjectDatabaseModule]; this aggregator carries
+ * relocated to the fork-owned [kpt.core.database.demo.di.DemoDatabaseModule]; this aggregator carries
  * ZERO `kpt.core.*.demo.*` imports so a template sync can blind-copy it without re-introducing demo
  * wiring a fork already stripped.
  */

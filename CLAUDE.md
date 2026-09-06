@@ -142,7 +142,14 @@ The app shell reads features + backbone + tabs + stores + network from registrie
 line per surface, never edits the shell:
 
 - **`FeatureRegistry`** (`cmp-navigation/.../registry/FeatureRegistry.kt`) — registers demo/fork
-  features into `AuthenticatedNavigation`.
+  features into `AuthenticatedNavigation`. Its `featureKoinModules` list has TWO regions: the fork's
+  per-layer `Project*Module` seams **outside** the `// demo:begin … // demo:end` fence (they survive
+  `--clean`), and the demo feature set + `Demo*Module` aggregators **inside** it (stripped).
+- **Per-layer fork DI seams** — `core/{data,database,network,store}/.../di/Project*Module.kt`. Empty
+  on the template; this is where a fork registers its own repositories, DAOs, stores and network
+  singles. They live outside `demo/` so `remove-demo.sh` leaves them standing; their demo
+  counterparts (`.../demo/di/Demo*Module.kt`) are deleted by the same strip. Enforced by
+  `scripts/product-health/checks/white-label-di-seams.sh` (WLS-1…WLS-4).
 - **`BackboneRegistry`** (`cmp-navigation/.../registry/BackboneRegistry.kt`) — home/profile/settings
   backbone graph.
 - **`TabRegistry`** (`cmp-navigation/.../registry/TabRegistry.kt`) — bottom-nav tab set.
