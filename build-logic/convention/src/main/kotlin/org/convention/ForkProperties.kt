@@ -39,9 +39,10 @@ import java.util.Properties
  * - Reads are cached per [Project] build — the file is parsed once, not once per call site.
  *
  * ## What this is NOT
- * It does not consult environment variables. `SyncForkConfigPlugin` owns the
- * app-profile → ENV → catalog resolution because it WRITES the bridge; a consumer reading the
- * already-derived file must not re-litigate that order, or the two disagree again.
+ * It does not consult environment variables. `SyncForkConfigPlugin` owns the full override chain —
+ * `ENV > app-profile > fork.properties > libs.versions.toml > ""` (SyncForkConfigPlugin.kt:91) —
+ * because it WRITES the derived surfaces. A consumer reading the already-derived bridge must not
+ * re-litigate that order, or the two disagree again.
  */
 object ForkProperties {
 
