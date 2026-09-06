@@ -11,12 +11,12 @@ package kpt.core.network.di
 
 import kpt.core.base.network.restApi
 import kpt.core.base.network.supabaseApi
-import kpt.core.network.demo.appconfig.api.AppConfigApi
-import kpt.core.network.demo.cloudtodo.api.createJsonPlaceholderApi
-import kpt.core.network.demo.crypto.api.createCoinGeckoApi
-import kpt.core.network.demo.currency.api.createFrankfurterApi
-import kpt.core.network.demo.economic.api.createFredApi
-import kpt.core.network.demo.economic.api.createWorldBankApi
+import kpt.core.network.coingecko.api.createCoinGeckoApi
+import kpt.core.network.frankfurter.api.createFrankfurterApi
+import kpt.core.network.fred.api.createFredApi
+import kpt.core.network.jsonplaceholder.api.createJsonPlaceholderApi
+import kpt.core.network.project.api.AppConfigApi
+import kpt.core.network.worldbank.api.createWorldBankApi
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -30,7 +30,7 @@ import org.koin.dsl.module
  * Pulled in by `NetworkModule` via `includes(GeneratedApiBindings)`.
  */
 val GeneratedApiBindings: Module = module {
-    supabaseApi("supabase_data") { AppConfigApi(it) }
+    supabaseApi("project") { AppConfigApi(it) }
     restApi("jsonplaceholder") { it.createJsonPlaceholderApi() }
     restApi("frankfurter") { it.createFrankfurterApi() }
     restApi("coingecko") { it.createCoinGeckoApi() }

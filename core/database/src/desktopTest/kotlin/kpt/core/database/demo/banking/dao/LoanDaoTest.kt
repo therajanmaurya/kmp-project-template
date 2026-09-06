@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.database.demo.banking.dao
+package kpt.core.database.banking.dao
 
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kpt.core.database.AppDatabase
-import kpt.core.database.demo.banking.entity.LoanEntity
+import kpt.core.database.banking.entity.LoanEntity
 import kpt.core.model.demo.banking.LoanKind
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

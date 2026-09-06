@@ -16,11 +16,11 @@ import kpt.core.base.store.mutation.BlockReason
 import kpt.core.base.store.mutation.MutationResult
 import kpt.core.data.demo.cloudtodo.impl.CloudTodoRepositoryImpl
 import kpt.core.data.infra.testMutationGateway
-import kpt.core.database.demo.cloudtodo.CloudTodoDao
-import kpt.core.database.demo.cloudtodo.CloudTodoEntity
+import kpt.core.database.cloudtodo.CloudTodoDao
+import kpt.core.database.cloudtodo.CloudTodoEntity
 import kpt.core.model.demo.cloudtodo.CloudTodo
-import kpt.core.network.demo.cloudtodo.api.JsonPlaceholderApi
-import kpt.core.network.demo.cloudtodo.dto.CloudTodoDto
+import kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
+import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
 import kpt.core.store.demo.cloudtodo.impl.CloudTodoKey
 import kpt.core.store.demo.cloudtodo.impl.provideCloudTodoReadStore
 import kpt.core.store.demo.cloudtodo.impl.provideCloudTodoStore

@@ -10,6 +10,7 @@
 #   di/GeneratedApiBindings.kt the Koin bindings         (NAP-4)
 #   AppSupabaseAnonKeys.kt    the per-point anon keys    (NAP-5 rows · NAP-6 no committed key)
 #   core/network/build.gradle.kts  the BuildKonfig fields (NAP-8 every referenced field is declared)
+#   core/network/<id>/             the per-endpoint package  (NAP-9 exists · NAP-10 supabase id=ref)
 #
 # WHY a gate and not just codegen: the generated files are COMMITTED (the build must work on a fresh
 # clone with no Gradle run), so nothing forces them to still match app.yaml. Whoever edits app.yaml
@@ -210,6 +211,38 @@ else
                "     → declare the key in app-profile (`anon_key_env:`/`api_key_env:` on the point, or " \
                "network.build_config_fields) and re-run `./gradlew syncForkConfig`")
   end
+end
+
+# ── NAP-9 — every access point owns a package; no package is orphaned ────────
+# Endpoint code lives in `kpt/core/network/<id>/` (id lowercased, non-alphanumerics dropped), NOT in
+# a domain package under `demo/` — the old layout tied endpoint code to the demo lifecycle and could
+# not express two endpoints in one domain (`demo/economic` held both fred and worldbank). The layout
+# is a projection of app-profile, so it is checked like one: declared => package exists, and a
+# package with no declaration is dead code the strip will never reap.
+pkg_root = File.join(net_dir)
+INFRA_PKGS = %w[config di]
+declared_pkgs = points.map { |p| p["id"].to_s.downcase.gsub(/[^a-z0-9]/, "") }.reject(&:empty?)
+if Dir.exist?(pkg_root)
+  on_disk = Dir.children(pkg_root).select { |d| File.directory?(File.join(pkg_root, d)) } - INFRA_PKGS
+  missing = declared_pkgs - on_disk
+  orphan  = on_disk - declared_pkgs
+  fail = bad("❌ NAP-9 declared access point(s) with no package: #{missing.join(', ')}\n" \
+             "     → run `./gradlew syncForkConfig` (it scaffolds <id>/api + <id>/dto)") if missing.any?
+  fail = bad("❌ NAP-9 package(s) with no declared access point: #{orphan.join(', ')}\n" \
+             "     → declare the endpoint in app-profile, or delete the package") if orphan.any?
+end
+
+# ── NAP-10 — a Supabase id IS its project ref ────────────────────────────────
+# `https://<ref>.supabase.co` — the ref is the project's identity, so the access point takes its
+# name (and therefore its package) from it. That keeps a fork with several Supabase projects
+# unambiguous, and makes the id derivable from the URL rather than a label someone picked.
+points.select { |p| p["type"].to_s.strip.downcase == "supabase" }.each do |p|
+  host = p["base_url"].to_s.sub(%r{\Ahttps?://}, "").split("/").first.to_s
+  next unless host.end_with?(".supabase.co")
+  ref = host.split(".").first.to_s
+  next if ref.empty? || p["id"].to_s == ref
+  fail = bad("❌ NAP-10 Supabase point '#{p['id']}' does not match its project ref '#{ref}' " \
+             "(#{host})\n     → rename the id (and its package) to '#{ref}'")
 end
 
 # ── NAP-7 — no hand-rolled wiring ────────────────────────────────────────────

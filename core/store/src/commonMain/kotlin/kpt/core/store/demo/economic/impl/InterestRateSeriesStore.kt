@@ -20,12 +20,12 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.database.demo.economic.InterestRateSeriesDao
-import kpt.core.database.demo.economic.InterestRateSeriesEntity
+import kpt.core.database.economic.InterestRateSeriesDao
+import kpt.core.database.economic.InterestRateSeriesEntity
 import kpt.core.model.demo.economic.InterestRateSeries
 import kpt.core.model.demo.economic.RateObservation
-import kpt.core.network.demo.economic.api.FredApi
-import kpt.core.network.demo.economic.config.FredApiConfig
+import kpt.core.network.fred.api.FredApi
+import kpt.core.network.fred.config.FredApiConfig
 import kpt.core.store.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth

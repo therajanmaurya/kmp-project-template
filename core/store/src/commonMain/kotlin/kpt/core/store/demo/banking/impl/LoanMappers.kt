@@ -9,7 +9,7 @@
  */
 package kpt.core.store.demo.banking.impl
 
-import kpt.core.database.demo.banking.entity.LoanEntity
+import kpt.core.database.banking.entity.LoanEntity
 import kpt.core.model.demo.banking.Loan
 
 /**

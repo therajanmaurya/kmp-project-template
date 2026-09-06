@@ -55,58 +55,72 @@ network:
   #
   # syncForkConfig regenerates AppAccessPoints.points, AppUrlTypes, AppSupabaseAnonKeys and
   # GeneratedApiBindings from this list. (B3, epic pure-white-label-store5-network)
+  # Every access point declares `owner:` — the ONE field that decides its lifecycle:
+  #
+  #   owner: fork      the CONSUMER's endpoint. Kept by the customizer, never touched by a sync.
+  #   owner: template  the template's own showcase. `scripts/remove-demo.sh` DELETES the entry AND
+  #                    its `kpt/core/network/<id>/` package, so "forking = starting clean" is a
+  #                    declared property of each endpoint rather than a positional comment fence the
+  #                    strip has to parse (such a fence could not express `project`, whose point
+  #                    sat outside it while its `api:` sat inside).
+  #
+  # `main`/`staging` are `fork`: they are placeholders for the CONSUMER's own backend, and
+  # `UrlType.MAIN` is the framework default in core-base/network — every fork needs one.
   access_points:
     - id: main
+      owner: fork
       type: rest
       base_url: https://api.example.com/
       loggable_host: api.example.com
     - id: staging
+      owner: fork
       type: rest
       base_url: https://staging.example.com/
       loggable_host: staging.example.com
-    - id: supabase_data
+    # ── template showcase — removed wholesale by the customizer ──────────────────────────────
+    # A fork declares its OWN Supabase point named for its project (id -> package), so this one is
+    # `template`: it goes with the showcase rather than being rebranded in place.
+    - id: project
+      owner: template
       type: supabase
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
-      # demo:begin — AppConfigApi is the DEMO Supabase facade (deleted by remove-demo.sh). The access
-      # point itself is a template placeholder a fork rebrands, so only the binding is fenced: a
-      # cleaned fork keeps the endpoint and drops the api: line.
-      api: kpt.core.network.demo.appconfig.api.AppConfigApi
-      # demo:end
-      # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this and supplies the env var /
-      # local.properties entry; without it the row generates "" and the client stays inert.
-    # demo:begin — demo showcase endpoints. Each declares its `api:`, so its Koin binding is GENERATED
-    # into GeneratedApiBindings.kt; none is hand-wired. `scripts/remove-demo.sh` strips this fenced
-    # block, so a cleaned fork stops declaring endpoints whose API classes it just deleted.
+      api: kpt.core.network.project.api.AppConfigApi
+      # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
+      # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
+      owner: template
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
-      api: kpt.core.network.demo.cloudtodo.api.JsonPlaceholderApi
+      api: kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
+      owner: template
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
-      api: kpt.core.network.demo.currency.api.FrankfurterApi
+      api: kpt.core.network.frankfurter.api.FrankfurterApi
     - id: coingecko                  # crypto market data
+      owner: template
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
-      api: kpt.core.network.demo.crypto.api.CoinGeckoApi
+      api: kpt.core.network.coingecko.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
+      owner: template
       type: rest
       base_url: https://api.stlouisfed.org/
       loggable_host: api.stlouisfed.org
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
-      api: kpt.core.network.demo.economic.api.FredApi
+      api: kpt.core.network.fred.api.FredApi
     - id: worldbank                  # World Bank macro indicators
+      owner: template
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
-      api: kpt.core.network.demo.economic.api.WorldBankApi
-    # demo:end
+      api: kpt.core.network.worldbank.api.WorldBankApi
 
 # ── Room database — the fork's OWN schema additions (white-label seam, E1/C7) ────────────────
 # Declare entities/DAOs/migrations HERE rather than hand-editing `core/database/**/AppDatabase.kt`:
@@ -135,29 +149,29 @@ database:
   entities:
     # demo:begin — the showcase's tables. remove-demo.sh strips this fence, so a cleaned fork
     # regenerates AppDatabase with only the framework `infra` entities.
-    - kpt.core.database.demo.currency.entity.ExchangeRatesEntity
-    - kpt.core.database.demo.crypto.entity.CoinMarketEntity
-    - kpt.core.database.demo.crypto.entity.CoinDetailEntity
-    - kpt.core.database.demo.currency.entity.RateHistoryEntity
-    - kpt.core.database.demo.watchlist.entity.WatchlistEntity
-    - kpt.core.database.demo.banking.entity.LoanEntity
-    - kpt.core.database.demo.banking.entity.BillReminderEntity
-    - kpt.core.database.demo.alerts.AlertEntity
-    - kpt.core.database.demo.economic.InterestRateSeriesEntity
-    - kpt.core.database.demo.cloudtodo.CloudTodoEntity
+    - kpt.core.database.currency.entity.ExchangeRatesEntity
+    - kpt.core.database.crypto.entity.CoinMarketEntity
+    - kpt.core.database.crypto.entity.CoinDetailEntity
+    - kpt.core.database.currency.entity.RateHistoryEntity
+    - kpt.core.database.watchlist.entity.WatchlistEntity
+    - kpt.core.database.banking.entity.LoanEntity
+    - kpt.core.database.banking.entity.BillReminderEntity
+    - kpt.core.database.alerts.AlertEntity
+    - kpt.core.database.economic.InterestRateSeriesEntity
+    - kpt.core.database.cloudtodo.CloudTodoEntity
     # demo:end
   daos:
     # demo:begin
-    - {name: exchangeRatesDao, type: kpt.core.database.demo.currency.dao.ExchangeRatesDao}
-    - {name: cloudTodoDao, type: kpt.core.database.demo.cloudtodo.CloudTodoDao}
-    - {name: coinMarketDao, type: kpt.core.database.demo.crypto.dao.CoinMarketDao}
-    - {name: coinDetailDao, type: kpt.core.database.demo.crypto.dao.CoinDetailDao}
-    - {name: rateHistoryDao, type: kpt.core.database.demo.currency.dao.RateHistoryDao}
-    - {name: watchlistDao, type: kpt.core.database.demo.watchlist.dao.WatchlistDao}
-    - {name: loanDao, type: kpt.core.database.demo.banking.dao.LoanDao}
-    - {name: billReminderDao, type: kpt.core.database.demo.banking.dao.BillReminderDao}
-    - {name: alertDao, type: kpt.core.database.demo.alerts.AlertDao}
-    - {name: interestRateSeriesDao, type: kpt.core.database.demo.economic.InterestRateSeriesDao}
+    - {name: exchangeRatesDao, type: kpt.core.database.currency.dao.ExchangeRatesDao}
+    - {name: cloudTodoDao, type: kpt.core.database.cloudtodo.CloudTodoDao}
+    - {name: coinMarketDao, type: kpt.core.database.crypto.dao.CoinMarketDao}
+    - {name: coinDetailDao, type: kpt.core.database.crypto.dao.CoinDetailDao}
+    - {name: rateHistoryDao, type: kpt.core.database.currency.dao.RateHistoryDao}
+    - {name: watchlistDao, type: kpt.core.database.watchlist.dao.WatchlistDao}
+    - {name: loanDao, type: kpt.core.database.banking.dao.LoanDao}
+    - {name: billReminderDao, type: kpt.core.database.banking.dao.BillReminderDao}
+    - {name: alertDao, type: kpt.core.database.alerts.AlertDao}
+    - {name: interestRateSeriesDao, type: kpt.core.database.economic.InterestRateSeriesDao}
     # demo:end
   auto_migrations:
     # demo:begin — the template's own schema history. A FRESH fork has no installed users to
@@ -169,16 +183,35 @@ database:
     - {from: 6, to: 7}     # uniqueKey column on drafts
     - {from: 7, to: 8}     # banking_loans + banking_bill_reminders
     # v9 was never shipped — v8→9 and v9→10 landed in one unreleased commit, collapsed to one hop.
-    - {from: 8, to: 10, spec: kpt.core.database.demo.MigrationSpec8to10}   # +alerts +interest_rate_series, drops samples
+    - {from: 8, to: 10, spec: kpt.core.database.migrations.MigrationSpec8to10}   # +alerts +interest_rate_series, drops samples
     - {from: 10, to: 11}   # cloud_todos
     - {from: 11, to: 12}   # framework_write_conflicts
     - {from: 12, to: 13}   # attemptCount on framework_submit_drafts
     # demo:end
+  # core/database's OWN packages — one per data domain it holds (`kpt/core/database/<id>/`).
+  # Declared PER MODULE, not in a shared registry: "core/database has an alerts entity" and
+  # "core/store has an alerts store" are different facts that are independently true, and the modules
+  # genuinely differ (exchange lives only in core/store; calc/emi have no table at all). A module
+  # stays self-describing, and improving one module does not edit a file that governs the others.
+  #
+  #   owner: fork      the consumer's own domain — kept by the customizer, never touched by a sync.
+  #   owner: template  the showcase's — `remove-demo.sh` deletes the package.
+  packages:
+    # demo:begin
+    - { id: alerts,     owner: template }
+    - { id: banking,    owner: template }
+    - { id: cloudtodo,  owner: template }
+    - { id: crypto,     owner: template }
+    - { id: currency,   owner: template }
+    - { id: economic,   owner: template }
+    - { id: watchlist,  owner: template }
+    - { id: migrations, owner: template }   # the template's own schema-history specs
+    # demo:end
   type_converters:
     # demo:begin
-    - kpt.core.database.demo.currency.converter.ChargeTypeConverters
-    - kpt.core.database.demo.crypto.converter.FintechTypeConverters
-    - kpt.core.database.demo.banking.converter.BankingTypeConverters
+    - kpt.core.database.currency.converter.ChargeTypeConverters
+    - kpt.core.database.crypto.converter.FintechTypeConverters
+    - kpt.core.database.banking.converter.BankingTypeConverters
     # demo:end
 
 org:

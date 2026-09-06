@@ -22,7 +22,7 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.BillReminderRepository
-import kpt.core.database.demo.banking.dao.BillReminderDao
+import kpt.core.database.banking.dao.BillReminderDao
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.store.demo.DemoCacheKeys
 import kpt.core.store.demo.banking.impl.provideBillReminderDetailStore

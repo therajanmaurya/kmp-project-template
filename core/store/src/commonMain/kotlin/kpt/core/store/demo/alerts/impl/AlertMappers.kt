@@ -9,7 +9,7 @@
  */
 package kpt.core.store.demo.alerts.impl
 
-import kpt.core.database.demo.alerts.AlertEntity
+import kpt.core.database.alerts.AlertEntity
 import kpt.core.model.demo.alerts.AlertDirection
 import kpt.core.model.demo.alerts.PriceAlert
 

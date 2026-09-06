@@ -19,12 +19,12 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.database.demo.currency.dao.RateHistoryDao
-import kpt.core.database.demo.currency.mapper.toDomain
-import kpt.core.database.demo.currency.mapper.toEntity
+import kpt.core.database.currency.dao.RateHistoryDao
+import kpt.core.database.currency.mapper.toDomain
+import kpt.core.database.currency.mapper.toEntity
 import kpt.core.model.demo.currency.RateHistory
 import kpt.core.model.demo.currency.RateHistoryKey
-import kpt.core.network.demo.currency.api.FrankfurterApi
+import kpt.core.network.frankfurter.api.FrankfurterApi
 import kpt.core.store.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth

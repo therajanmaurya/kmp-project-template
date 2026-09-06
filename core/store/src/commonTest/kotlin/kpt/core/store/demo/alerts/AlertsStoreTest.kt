@@ -12,8 +12,8 @@ package kpt.core.store.demo.alerts
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kpt.core.database.demo.alerts.AlertDao
-import kpt.core.database.demo.alerts.AlertEntity
+import kpt.core.database.alerts.AlertDao
+import kpt.core.database.alerts.AlertEntity
 import kpt.core.store.demo.alerts.impl.provideAlertsStore
 import kotlin.test.Test
 import kotlin.test.assertNotNull

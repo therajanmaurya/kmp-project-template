@@ -23,6 +23,21 @@ import org.koin.dsl.module
  * single { get<AppDatabase>().myDao }
  * ```
  */
+// demo:begin — marker type for the one-shot converter install below.
+private object ChargeTypeConvertersInstalled
+// demo:end
+
 val ProjectDatabaseModule = module {
+    // demo:begin — a one-shot converter install: ChargeTypeConverters needs a FieldEncryptor before
+    // Room touches an encrypted column. It is NOT derivable from a `daos:`/`entities:` declaration
+    // the way a DAO binding is, so it belongs in the fork seam rather than in generated code.
+    // `createdAtStart = true` runs it at graph construction; the marker object only keys the single.
+    single(createdAtStart = true) {
+        kpt.core.database.currency.converter.ChargeTypeConverters.install(
+            get<kpt.core.base.security.FieldEncryptor>(),
+        )
+        ChargeTypeConvertersInstalled
+    }
+    // demo:end
     // Intentionally empty on the template — a fork adds its own bindings here.
 }

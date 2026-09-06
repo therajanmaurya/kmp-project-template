@@ -28,7 +28,7 @@ import io.github.jan.supabase.postgrest.postgrest
  * ```kotlin
  * // Consumers do NOT construct this directly — SupabaseClientFactory builds one per declared
  * // SUPABASE access point, and `supabaseApi("<id>")` injects it into the fork's API type.
- * val configClient = supabaseClientFactory.requireClientFor("supabase_data")
+ * val configClient = supabaseClientFactory.requireClientFor("project")
  *
  * // Use the client for queries
  * if (configClient.isConfigured) {

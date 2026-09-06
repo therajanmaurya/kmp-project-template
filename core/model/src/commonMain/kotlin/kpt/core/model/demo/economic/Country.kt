@@ -18,7 +18,7 @@ package kpt.core.model.demo.economic
  * flag emoji — no phone metadata.
  *
  * @property code ISO 3166-1 alpha-2, e.g. `"US"`, `"IN"`, `"DE"`. Forwarded
- *   unchanged to [kpt.core.network.demo.economic.api.WorldBankApi.indicator].
+ *   unchanged to [kpt.core.network.worldbank.api.WorldBankApi.indicator].
  * @property name English short name, e.g. `"United States"`, `"India"`.
  * @property flagEmoji Unicode flag glyph composed from the regional-indicator
  *   pair for [code]. Falls back to a globe emoji for non-country regions if

@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.database.demo.banking.dao.BillReminderDao
-import kpt.core.database.demo.banking.entity.BillReminderEntity
+import kpt.core.database.banking.dao.BillReminderDao
+import kpt.core.database.banking.entity.BillReminderEntity
 import kpt.core.model.demo.banking.BillReminder
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.SourceOfTruth

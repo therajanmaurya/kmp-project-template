@@ -33,11 +33,16 @@ internal val appDatabaseNaming = DatabaseNaming(
  * module and its actuals carry ZERO driver/dispatcher/fallback boilerplate.
  *
  * INFRA-ONLY, owner: template (E1 / C3). The demo DAO providers + the ChargeTypeConverters install
- * relocated to the fork-owned [kpt.core.database.demo.di.DemoDatabaseModule]; this aggregator carries
+ * derived instead: every declared DAO's binding is GENERATED into [GeneratedDaoBindings]. This aggregator carries
  * ZERO `kpt.core.*.demo.*` imports so a template sync can blind-copy it without re-introducing demo
  * wiring a fork already stripped.
  */
 val DatabaseModule = module {
+    // Every declared DAO's Koin binding, GENERATED from app-profile#database.daos into the
+    // sibling [GeneratedDaoBindings] (same package — no import, so this file keeps its
+    // zero-domain-reference property and stays blind-copyable on a template sync).
+    includes(GeneratedDaoBindings)
+
     includes(platformModule)
     // infra (framework) — always kept
     single { get<AppDatabase>().bookkeeperDao }

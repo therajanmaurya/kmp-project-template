@@ -14,9 +14,7 @@ import androidx.navigation.NavGraphBuilder
 import kpt.core.base.ui.nav.popBackStackSafely
 import kpt.core.data.demo.di.DemoRepositoryModule
 import kpt.core.data.di.ProjectRepositoryModule
-import kpt.core.database.demo.di.DemoDatabaseModule
 import kpt.core.database.di.ProjectDatabaseModule
-import kpt.core.network.demo.di.DemoNetworkModule
 import kpt.core.network.di.ProjectNetworkModule
 import kpt.core.store.di.ProjectStoreModule
 import kpt.feature.addtowatchlist.di.AddToWatchlistModule
@@ -91,8 +89,6 @@ object FeatureRegistry {
         ProfileModule,
         // ── demo DI aggregators (were inline fenced blocks in the core aggregators) ──
         DemoRepositoryModule,
-        DemoNetworkModule,
-        DemoDatabaseModule,
         // demo:end
     )
 

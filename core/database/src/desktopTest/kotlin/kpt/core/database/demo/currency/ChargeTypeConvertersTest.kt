@@ -7,9 +7,9 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.database.demo.currency
+package kpt.core.database.currency
 
-import kpt.core.database.demo.currency.converter.ChargeTypeConverters
+import kpt.core.database.currency.converter.ChargeTypeConverters
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

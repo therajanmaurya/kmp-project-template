@@ -39,9 +39,8 @@ import kpt.core.data.demo.profile.ProfileRepository
 import kpt.core.data.demo.profile.impl.ProfileRepositoryImpl
 import kpt.core.data.demo.watchlist.WatchlistRepository
 import kpt.core.data.demo.watchlist.impl.WatchlistRepositoryImpl
-import kpt.core.database.AppDatabase
-import kpt.core.database.demo.cloudtodo.CloudTodoDao
-import kpt.core.database.demo.cloudtodo.toDomain
+import kpt.core.database.cloudtodo.CloudTodoDao
+import kpt.core.database.cloudtodo.toDomain
 import kpt.core.model.demo.alerts.PriceAlert
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.model.demo.banking.Loan
@@ -62,9 +61,14 @@ import org.mobilenativefoundation.store.store5.Bookkeeper
  * `demo/di` — a name that read like a fork seam while carrying demo content on a demo lifecycle, so
  * `--clean` deleted the fork's only place to wire this layer.
  */
+// DAO bindings deliberately absent: every `single { get<AppDatabase>().<name> }` is DERIVED from
+// `app-profile/app.yaml#database.daos` into `core/database`'s GeneratedDaoBindings, which
+// DatabaseModule includes. Four of them were hand-written HERE (watchlist/loan/billReminder/alert) —
+// a core/data module binding a core/database concern — and once the generator existed that became a
+// duplicate `single` for the same type, i.e. a Koin DefinitionOverrideException at graph
+// construction. Declare the DAO in app-profile; do not bind it by hand.
 val DemoRepositoryModule = module {
     // Personal watchlist — local-only persistence for the SubmitHandler showcase.
-    single { get<AppDatabase>().watchlistDao }
     single<WatchlistRepository> {
         WatchlistRepositoryImpl(
             watchlistStore = get(AppStoreRegistry.Watchlist),
@@ -76,8 +80,6 @@ val DemoRepositoryModule = module {
     // Banking domain — purely local Loan + Bill Reminder persistence.
     // No remote sync; the DraftSubmitHandler outboxes below give the UX
     // polish (saving badge, retry on failure) for a local commit "submit".
-    single { get<AppDatabase>().loanDao }
-    single { get<AppDatabase>().billReminderDao }
     single<LoanRepository> {
         LoanRepositoryImpl(
             loansStore = get(AppStoreRegistry.Loans),
@@ -219,7 +221,6 @@ val DemoRepositoryModule = module {
 
     // Price alerts — Store-backed (OFFLINE_LOCAL_ONLY archetype).
     // AlertsStore is the source of truth; AlertDao is the write target.
-    single { get<AppDatabase>().alertDao }
     single<AlertsRepository> {
         AlertsRepositoryImpl(
             alertsStore = get(AppStoreRegistry.Alerts),

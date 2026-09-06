@@ -68,7 +68,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
  * `kpt.core.network.BuildKonfig.<KEY>` inside its own generated block.
  *
  * ## Fresh-fork baseline
- * The demo declarations in app-profile sit in a `# demo:begin`/`# demo:end` fence, so
+ * The demo declarations in app-profile sit inside a comment fence, so
  * `scripts/remove-demo.sh` strips them and the regions regenerate EMPTY. The schema history goes
  * with them (a fresh fork has no installed users to migrate) and the same script resets
  * [TEMPLATE_BASE_VERSION] to 1 — leaving a valid framework-only `@Database` at v1 with no
@@ -94,16 +94,16 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         DraftEntity::class,
         ConflictEntity::class,
         // gen-entities:begin
-        kpt.core.database.demo.currency.entity.ExchangeRatesEntity::class,
-        kpt.core.database.demo.crypto.entity.CoinMarketEntity::class,
-        kpt.core.database.demo.crypto.entity.CoinDetailEntity::class,
-        kpt.core.database.demo.currency.entity.RateHistoryEntity::class,
-        kpt.core.database.demo.watchlist.entity.WatchlistEntity::class,
-        kpt.core.database.demo.banking.entity.LoanEntity::class,
-        kpt.core.database.demo.banking.entity.BillReminderEntity::class,
-        kpt.core.database.demo.alerts.AlertEntity::class,
-        kpt.core.database.demo.economic.InterestRateSeriesEntity::class,
-        kpt.core.database.demo.cloudtodo.CloudTodoEntity::class,
+        kpt.core.database.currency.entity.ExchangeRatesEntity::class,
+        kpt.core.database.crypto.entity.CoinMarketEntity::class,
+        kpt.core.database.crypto.entity.CoinDetailEntity::class,
+        kpt.core.database.currency.entity.RateHistoryEntity::class,
+        kpt.core.database.watchlist.entity.WatchlistEntity::class,
+        kpt.core.database.banking.entity.LoanEntity::class,
+        kpt.core.database.banking.entity.BillReminderEntity::class,
+        kpt.core.database.alerts.AlertEntity::class,
+        kpt.core.database.economic.InterestRateSeriesEntity::class,
+        kpt.core.database.cloudtodo.CloudTodoEntity::class,
         // gen-entities:end
     ],
     version = AppDatabase.VERSION,
@@ -115,7 +115,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8),
-        AutoMigration(from = 8, to = 10, spec = kpt.core.database.demo.MigrationSpec8to10::class),
+        AutoMigration(from = 8, to = 10, spec = kpt.core.database.migrations.MigrationSpec8to10::class),
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
@@ -124,9 +124,9 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 )
 // gen-converters:begin
 @ColumnTypeConverters(
-    kpt.core.database.demo.currency.converter.ChargeTypeConverters::class,
-    kpt.core.database.demo.crypto.converter.FintechTypeConverters::class,
-    kpt.core.database.demo.banking.converter.BankingTypeConverters::class,
+    kpt.core.database.currency.converter.ChargeTypeConverters::class,
+    kpt.core.database.crypto.converter.FintechTypeConverters::class,
+    kpt.core.database.banking.converter.BankingTypeConverters::class,
 )
 // gen-converters:end
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -139,16 +139,16 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val conflictDao: ConflictDao
 
     // gen-daos:begin
-    abstract val exchangeRatesDao: kpt.core.database.demo.currency.dao.ExchangeRatesDao
-    abstract val cloudTodoDao: kpt.core.database.demo.cloudtodo.CloudTodoDao
-    abstract val coinMarketDao: kpt.core.database.demo.crypto.dao.CoinMarketDao
-    abstract val coinDetailDao: kpt.core.database.demo.crypto.dao.CoinDetailDao
-    abstract val rateHistoryDao: kpt.core.database.demo.currency.dao.RateHistoryDao
-    abstract val watchlistDao: kpt.core.database.demo.watchlist.dao.WatchlistDao
-    abstract val loanDao: kpt.core.database.demo.banking.dao.LoanDao
-    abstract val billReminderDao: kpt.core.database.demo.banking.dao.BillReminderDao
-    abstract val alertDao: kpt.core.database.demo.alerts.AlertDao
-    abstract val interestRateSeriesDao: kpt.core.database.demo.economic.InterestRateSeriesDao
+    abstract val exchangeRatesDao: kpt.core.database.currency.dao.ExchangeRatesDao
+    abstract val cloudTodoDao: kpt.core.database.cloudtodo.CloudTodoDao
+    abstract val coinMarketDao: kpt.core.database.crypto.dao.CoinMarketDao
+    abstract val coinDetailDao: kpt.core.database.crypto.dao.CoinDetailDao
+    abstract val rateHistoryDao: kpt.core.database.currency.dao.RateHistoryDao
+    abstract val watchlistDao: kpt.core.database.watchlist.dao.WatchlistDao
+    abstract val loanDao: kpt.core.database.banking.dao.LoanDao
+    abstract val billReminderDao: kpt.core.database.banking.dao.BillReminderDao
+    abstract val alertDao: kpt.core.database.alerts.AlertDao
+    abstract val interestRateSeriesDao: kpt.core.database.economic.InterestRateSeriesDao
     // gen-daos:end
 
     companion object {

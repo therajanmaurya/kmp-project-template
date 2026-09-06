@@ -12,8 +12,8 @@ package kpt.core.data.demo.banking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kpt.core.database.demo.banking.dao.BillReminderDao
-import kpt.core.database.demo.banking.entity.BillReminderEntity
+import kpt.core.database.banking.dao.BillReminderDao
+import kpt.core.database.banking.entity.BillReminderEntity
 
 /**
  * In-memory fake of [BillReminderDao] for repository-level unit tests.

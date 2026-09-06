@@ -14,7 +14,7 @@ import org.koin.dsl.module
 /**
  * THE FORK'S Store5 DI seam. Empty on the neutral template — this is yours to fill.
  *
- * `core/store`'s demo bindings are an inline `// demo:begin … // demo:end` fence inside [StoreModule]
+ * `core/store`'s demo bindings are an inline comment fence inside [StoreModule]
  * rather than a separate file, so unlike the other layers there was never even a misnamed seam here —
  * a cleaned fork simply had nowhere of its own to register stores. This file is that place, and it
  * lives outside `demo/` so `scripts/remove-demo.sh` leaves it standing.

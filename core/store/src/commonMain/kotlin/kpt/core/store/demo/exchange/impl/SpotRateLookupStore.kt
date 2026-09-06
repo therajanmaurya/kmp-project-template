@@ -14,11 +14,11 @@ import io.github.mobilebytelabs.kmptoolkit.networkmonitor.RetryPolicy
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.executeWithRetry
 import kotlinx.coroutines.flow.map
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.database.demo.currency.dao.ExchangeRatesDao
-import kpt.core.database.demo.currency.mapper.toDomain
-import kpt.core.database.demo.currency.mapper.toEntity
+import kpt.core.database.currency.dao.ExchangeRatesDao
+import kpt.core.database.currency.mapper.toDomain
+import kpt.core.database.currency.mapper.toEntity
 import kpt.core.model.demo.currency.ExchangeRates
-import kpt.core.network.demo.currency.api.FrankfurterApi
+import kpt.core.network.frankfurter.api.FrankfurterApi
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store

@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.database.demo.alerts.AlertDao
-import kpt.core.database.demo.alerts.AlertEntity
+import kpt.core.database.alerts.AlertDao
+import kpt.core.database.alerts.AlertEntity
 import kpt.core.model.demo.alerts.PriceAlert
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.SourceOfTruth

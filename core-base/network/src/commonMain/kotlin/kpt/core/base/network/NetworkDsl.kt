@@ -76,7 +76,7 @@ inline fun <reified T : Any> Module.restApi(
  * Usage:
  * ```
  * val ProjectNetworkModule = module {
- *     supabaseApi("supabase_data") { AppConfigApi(it) }
+ *     supabaseApi("project") { AppConfigApi(it) }
  * }
  * ```
  */

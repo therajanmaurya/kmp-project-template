@@ -72,7 +72,7 @@ network:
       # demo:begin — AppConfigApi is the DEMO Supabase facade (deleted by remove-demo.sh). The access
       # point itself is a template placeholder a fork rebrands, so only the binding is fenced: a
       # cleaned fork keeps the endpoint and drops the api: line.
-      api: kpt.core.network.demo.appconfig.api.AppConfigApi
+      api: kpt.core.network.supabasedata.api.AppConfigApi
       # demo:end
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this and supplies the env var /
       # local.properties entry; without it the row generates "" and the client stays inert.
@@ -83,17 +83,17 @@ network:
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
-      api: kpt.core.network.demo.cloudtodo.api.JsonPlaceholderApi
+      api: kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
-      api: kpt.core.network.demo.currency.api.FrankfurterApi
+      api: kpt.core.network.frankfurter.api.FrankfurterApi
     - id: coingecko                  # crypto market data
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
-      api: kpt.core.network.demo.crypto.api.CoinGeckoApi
+      api: kpt.core.network.coingecko.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
       type: rest
       base_url: https://api.stlouisfed.org/
@@ -101,12 +101,12 @@ network:
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
-      api: kpt.core.network.demo.economic.api.FredApi
+      api: kpt.core.network.fred.api.FredApi
     - id: worldbank                  # World Bank macro indicators
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
-      api: kpt.core.network.demo.economic.api.WorldBankApi
+      api: kpt.core.network.worldbank.api.WorldBankApi
     # demo:end
 
 # ── Room database — the fork's OWN schema additions (white-label seam, E1/C7) ────────────────

@@ -20,8 +20,9 @@ import org.koin.dsl.module
 
 // NOTE: Backend base URLs are NOT hardcoded here or in config classes anymore — every server is a
 // declared access point in app-profile/app.yaml#network.access_points (→ AccessPointRegistry via
-// syncForkConfig). The demo APIs are wired in DemoNetworkModule via `restApi("<id>") { … }`, which
-// auto-builds each transport from its access point. Fork-customisation = edit app.yaml + syncForkConfig.
+// syncForkConfig). Every API is wired in the GENERATED [GeneratedApiBindings] via
+// `restApi("<id>") { … }`, which auto-builds each transport from its access point.
+// Fork-customisation = edit app.yaml + syncForkConfig.
 // FRED's API key remains a per-request @Query param (a vault secret: mifos-x-fred-api-key → BuildKonfig).
 // Dynamic server config (consumer-facing, from core-base/network):
 //   - SupabaseConfigClient(s) are registered below so forks can fetch runtime server config from a
@@ -37,10 +38,10 @@ import org.koin.dsl.module
 //     DynamicUrlConfigProvider (reads its selected server, keyed by AppUrlTypes) and passes it as
 //     `dynamicUrlProvider = get()` on any client that should switch base URL at runtime. The
 //     toolkit's own fixed-URL APIs (FRED / World Bank / CoinGecko / Frankfurter) don't use it.
-// INFRA-ONLY, owner: template (E1 / C2). The demo API configs + FintechApiClient + demo API bindings
-// relocated to the fork-owned [kpt.core.network.demo.di.DemoNetworkModule]; this aggregator carries
-// ZERO `kpt.core.*.demo.*` imports so a template sync can blind-copy it without re-introducing demo
-// wiring a fork already stripped.
+// INFRA-ONLY, owner: template (E1 / C2). API types live in per-access-point packages
+// (`kpt.core.network.<id>.api`), their bindings are GENERATED into [GeneratedApiBindings], and any
+// non-derivable single goes in the fork-owned [ProjectNetworkModule]. So this aggregator carries no
+// endpoint-specific reference at all and a template sync can blind-copy it.
 val NetworkModule = module {
 
     // Every declared endpoint's Koin binding, GENERATED from app-profile#network.access_points into

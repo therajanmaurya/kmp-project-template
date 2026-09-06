@@ -11,8 +11,8 @@ package kpt.core.data.demo.alerts
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kpt.core.database.demo.alerts.AlertDao
-import kpt.core.database.demo.alerts.AlertEntity
+import kpt.core.database.alerts.AlertDao
+import kpt.core.database.alerts.AlertEntity
 
 /**
  * In-memory fake of [AlertDao] whose [observeAll] is a **cold snapshot** — each subscription

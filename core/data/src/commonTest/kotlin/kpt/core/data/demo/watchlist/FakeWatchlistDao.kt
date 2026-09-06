@@ -11,8 +11,8 @@ package kpt.core.data.demo.watchlist
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kpt.core.database.demo.watchlist.dao.WatchlistDao
-import kpt.core.database.demo.watchlist.entity.WatchlistEntity
+import kpt.core.database.watchlist.dao.WatchlistDao
+import kpt.core.database.watchlist.entity.WatchlistEntity
 
 /**
  * In-memory fake of [WatchlistDao] whose reactive reads are **cold snapshots** — each

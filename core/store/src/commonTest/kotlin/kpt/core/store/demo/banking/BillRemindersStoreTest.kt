@@ -11,8 +11,8 @@ package kpt.core.store.demo.banking
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kpt.core.database.demo.banking.dao.BillReminderDao
-import kpt.core.database.demo.banking.entity.BillReminderEntity
+import kpt.core.database.banking.dao.BillReminderDao
+import kpt.core.database.banking.entity.BillReminderEntity
 import kpt.core.store.demo.banking.impl.provideBillRemindersStore
 import kotlin.test.Test
 import kotlin.test.assertNotNull

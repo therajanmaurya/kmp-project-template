@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.map
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.base.store.paging.PageKey
-import kpt.core.database.demo.crypto.dao.CoinMarketDao
-import kpt.core.database.demo.crypto.mapper.toDomain
-import kpt.core.database.demo.crypto.mapper.toEntity
+import kpt.core.database.crypto.dao.CoinMarketDao
+import kpt.core.database.crypto.mapper.toDomain
+import kpt.core.database.crypto.mapper.toEntity
 import kpt.core.model.demo.crypto.CoinMarket
-import kpt.core.network.demo.crypto.api.CoinGeckoApi
+import kpt.core.network.coingecko.api.CoinGeckoApi
 import kpt.core.store.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth

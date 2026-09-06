@@ -9,7 +9,7 @@
  */
 package kpt.core.store.demo.banking.impl
 
-import kpt.core.database.demo.banking.entity.BillReminderEntity
+import kpt.core.database.banking.entity.BillReminderEntity
 import kpt.core.model.demo.banking.BillReminder
 
 /**

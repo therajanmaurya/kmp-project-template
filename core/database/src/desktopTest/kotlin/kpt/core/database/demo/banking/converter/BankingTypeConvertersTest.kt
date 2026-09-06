@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.database.demo.banking.converter
+package kpt.core.database.banking.converter
 
 import kotlinx.datetime.LocalDate
 import kpt.core.model.demo.banking.BillCategory

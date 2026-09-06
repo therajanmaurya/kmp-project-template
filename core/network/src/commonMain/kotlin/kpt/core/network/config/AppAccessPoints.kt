@@ -42,7 +42,7 @@ object AppAccessPoints {
             loggableHost = "staging.example.com",
         ),
         AccessPoint(
-            id = "supabase_data",
+            id = "project",
             kind = AccessPointKind.SUPABASE,
             baseUrl = "https://project.supabase.co",
             loggableHost = "project.supabase.co",

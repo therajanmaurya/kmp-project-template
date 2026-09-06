@@ -16,7 +16,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.demo.economic.MacroIndicator
-import kpt.core.network.demo.economic.api.WorldBankApi
+import kpt.core.network.worldbank.api.WorldBankApi
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.Store
 import kotlin.time.Clock

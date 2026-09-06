@@ -12,8 +12,8 @@ package kpt.core.data.demo.banking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kpt.core.database.demo.banking.dao.LoanDao
-import kpt.core.database.demo.banking.entity.LoanEntity
+import kpt.core.database.banking.dao.LoanDao
+import kpt.core.database.banking.entity.LoanEntity
 
 /**
  * In-memory fake of [LoanDao] for repository-level unit tests.

@@ -35,7 +35,7 @@ import kotlin.test.assertEquals
  * through a Store5 `SourceOfTruth` and the repository's `ScreenDataStream` (`alertsStream(scope)` →
  * `alertsStore.asScreenStream(...)`), not a direct DAO flow.
  *
- * [FakeAlertDao] returns a **cold snapshot** [kpt.core.database.demo.alerts.AlertDao.observeAll]
+ * [FakeAlertDao] returns a **cold snapshot** [kpt.core.database.alerts.AlertDao.observeAll]
  * that never self-re-emits (modelling Room 3 alpha05 on wasmJs). These assertions can only pass
  * because:
  *  - `provideAlertsStore` wraps its SoT reader in `daoFlow(ALERTS_TABLE) { dao.observeAll() }`, and

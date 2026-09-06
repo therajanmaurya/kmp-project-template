@@ -15,7 +15,7 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.LoanRepository
-import kpt.core.database.demo.banking.dao.LoanDao
+import kpt.core.database.banking.dao.LoanDao
 import kpt.core.model.demo.banking.Loan
 import kpt.core.store.demo.DemoCacheKeys
 import kpt.core.store.demo.banking.impl.provideLoanDetailStore
@@ -72,7 +72,7 @@ internal class LoanRepositoryImpl(
     }
 
     private companion object {
-        /** Room `@Entity(tableName = …)` for [kpt.core.database.demo.banking.entity.LoanEntity]. */
+        /** Room `@Entity(tableName = …)` for [kpt.core.database.banking.entity.LoanEntity]. */
         const val LOANS_TABLE = "banking_loans"
     }
 }
