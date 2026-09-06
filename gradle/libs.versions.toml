@@ -5,7 +5,7 @@ kmpProductFlavors = "2.8.3"
 # ── Fork Identity — edit ONLY these 5 lines, then run ./gradlew syncForkConfig ──────────────────
 appId            = "org.mifos.kmp.template"   # Android applicationId + iOS bundle ID
 appDisplayName   = "Money Toolkit"    # Android app_name, iOS CFBundleDisplayName
-desktopAppName   = "App Toolkit"     # JVM package name, dock name
+desktopAppName   = "Money Toolkit"     # JVM package name, dock name
 projectName      = "kmp-project-template"      # rootProject.name, Fastlane PROJECT_NAME
 iosTeamId        = "YOUR_TEAM_ID"             # Apple Developer Team ID (PLACEHOLDER — set in app-profile/platforms/apple/apple.yaml#team_id)
 # ─────────────────────────────────────────────────────────────────────────────────────────────────

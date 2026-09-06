@@ -96,6 +96,19 @@ module AppProfile
     # to "App" / "App Toolkit". Only a hand-authored fork.properties ever had the key.
     "app.display.name"                   => "identity.app_name",
     "app.description"                    => "store.app_description",
+
+    # Per-flavor network endpoints + demo credentials + log tag. app.yaml documents these as flowing
+    # to gradle/fork.properties, and KMPFlavorsConventionPlugin reads them into per-flavor
+    # BuildConfig (BASE_URL / DEMO_USERNAME / DEMO_PASSWORD / LOG_TAG). They were mapped in Kotlin's
+    # APP_PROFILE_MAP but NOT here, so the pure-Ruby derive.rb path (used by CI and doctor's fast
+    # lane) produced a bridge missing them while syncForkConfig's produced one with them — two
+    # writers of one file with different coverage. Paths taken verbatim from the Kotlin map, which
+    # agreed with this one on all 113 shared keys.
+    "network.base.url.demo"              => "network.demo_base_url",
+    "network.base.url.prod"              => "network.prod_base_url",
+    "demo.username"                      => "network.demo_username",
+    "demo.password"                      => "network.demo_password",
+    "log.tag"                            => "network.log_tag",
     # ── org ──
     "org.name"                           => "org.name",
     "org.email"                          => "org.email",
