@@ -60,3 +60,29 @@ inline fun <reified T : Any> Module.restApi(
 ) {
     single<T> { create(get<AccessPointRegistry>().ktorfitFor(accessPointId)) }
 }
+
+/**
+ * Register a Supabase-backed API [T] wired to the Supabase access point [accessPointId] — the exact
+ * twin of [restApi], so both transports are declared the same way and neither is second-class.
+ *
+ * The [SupabaseClientFactory] is resolved from Koin (`NetworkModule` binds it); it owns URL resolution
+ * (from [AccessPoint.baseUrl]) and anon-key lookup, so a fork writes ONLY the facade [T] over
+ * `client.postgrest` and declares the endpoint in `app-profile/app.yaml#network.access_points`.
+ *
+ * Unlike REST, supabase-kt has no interface-generation step: `T` is the fork's own hand-written facade
+ * (a typed wrapper over Postgrest queries), not a generated stub. That is the one real asymmetry
+ * between the two paths, and it is inherent to supabase-kt rather than to this DSL.
+ *
+ * Usage:
+ * ```
+ * val ProjectNetworkModule = module {
+ *     supabaseApi("supabase_data") { AppConfigApi(it) }
+ * }
+ * ```
+ */
+inline fun <reified T : Any> Module.supabaseApi(
+    accessPointId: String,
+    crossinline create: (SupabaseConfigClient) -> T,
+) {
+    single<T> { create(get<SupabaseClientFactory>().requireClientFor(accessPointId)) }
+}

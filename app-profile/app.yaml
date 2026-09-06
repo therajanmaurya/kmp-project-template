@@ -23,10 +23,28 @@ network:
   demo_password: demo
   log_tag: MoneyToolkit
   # Declarative access-point topology — every REST + Supabase endpoint the app talks to, in ONE place.
-  # This is the SoT for core/network's AccessPointRegistry: a fork declares its N endpoints here
-  # (e.g. 3 REST + 2 Supabase), and ProjectNetworkModule wires each API in one line via
-  # `restApi("<id>") { it.createXApi() }` — core/network auto-builds the transport from the id's
-  # base_url + loggable_host. `type: rest | supabase`. (B3, epic pure-white-label-store5-network)
+  # This is the SoT for core/network's AccessPointRegistry AND for the generated DI wiring: declare an
+  # endpoint here, run `./gradlew syncForkConfig`, and the only thing left to write is the API type.
+  #
+  # Per-entry fields:
+  #   id             stable key referenced by restApi("<id>") / supabaseApi("<id>").
+  #   type           rest | supabase  → AccessPointKind.
+  #   base_url       transport base URL (REST) or project URL (Supabase).
+  #   loggable_host  host enabled for HTTP logging.
+  #   proxied_host   optional — route via the platform proxy (CORS-blocked hosts).
+  #   secret_alias   optional — vault alias for a REQUEST-time key (e.g. FRED's @Query api_key).
+  #   api            optional — FQN of the API type. Declaring it GENERATES the Koin binding into
+  #                  core/network/.../demo/di/GeneratedApiBindings.kt, so a fork writes ONLY the type:
+  #                    rest      → `restApi("<id>") { it.create<Simple>() }`  (Ktorfit factory by convention)
+  #                    supabase  → `supabaseApi("<id>") { <Simple>(it) }`     (single-arg ctor taking
+  #                                SupabaseConfigClient)
+  #                  Omit `api` for an endpoint that is declared but not yet wired.
+  #   anon_key_env   supabase only — env / local.properties key holding the anon key. Generated into
+  #                  AppSupabaseAnonKeys as a BuildKonfig read, so no key is ever committed. Omit and
+  #                  the point resolves to an empty key (client stays inert, isConfigured == false).
+  #
+  # syncForkConfig regenerates AppAccessPoints.points, AppUrlTypes, AppSupabaseAnonKeys and
+  # GeneratedApiBindings from this list. (B3, epic pure-white-label-store5-network)
   access_points:
     - id: main
       type: rest
@@ -40,20 +58,26 @@ network:
       type: supabase
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
-    # demo showcase REST endpoints — every server the toolkit actually talks to, wired in
-    # ProjectNetworkModule via restApi("<id>") { it.createXApi() }.
+      api: kpt.core.network.demo.appconfig.api.AppConfigApi
+      # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this and supplies the env var /
+      # local.properties entry; without it the row generates "" and the client stays inert.
+    # demo showcase REST endpoints — every server the toolkit actually talks to. Each declares its
+    # `api:`, so its Koin binding is GENERATED into GeneratedApiBindings.kt; none is hand-wired.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
+      api: kpt.core.network.demo.cloudtodo.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
+      api: kpt.core.network.demo.currency.api.FrankfurterApi
     - id: coingecko                  # crypto market data
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
+      api: kpt.core.network.demo.crypto.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
       type: rest
       base_url: https://api.stlouisfed.org/
@@ -61,10 +85,12 @@ network:
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
+      api: kpt.core.network.demo.economic.api.FredApi
     - id: worldbank                  # World Bank macro indicators
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
+      api: kpt.core.network.demo.economic.api.WorldBankApi
 
 org:
   name: Mifos Initiative

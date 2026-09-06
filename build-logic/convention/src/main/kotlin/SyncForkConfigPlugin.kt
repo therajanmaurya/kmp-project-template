@@ -323,7 +323,12 @@ abstract class SyncForkConfigTask : DefaultTask() {
                 if (!forkOut.containsKey(ks) && vs.isNotBlank() && !vs.contains('\n')) forkOut[ks] = vs
             }
             val sb = StringBuilder()
-                .append("# GENERATED from app-profile/app.yaml by syncForkConfig — do not hand-edit\n")
+                // The "DERIVED from app-profile" phrase is a CONTRACT, not prose: white-label-derived.sh
+                // greps head -3 for it to tell a generated bridge from a hand-authored one. derive.rb
+                // stamps the same phrase. They disagreed until 2026-09-06 — this writer said "GENERATED
+                // from app-profile/app.yaml" — so a syncForkConfig-written bridge was reported
+                // hand-authored, and the health verdict depended on which of the two writers ran last.
+                .append("# gradle/fork.properties — DERIVED from app-profile by syncForkConfig. DO NOT EDIT.\n")
                 .append("# Edit app-profile/app.yaml or app-profile/platforms/**/*.yaml instead;\n")
                 .append("# fork.properties is the derived build-bridge (config.rb fallback + inline reads).\n")
             forkOut.forEach { (k, v) -> sb.append(k).append('=').append(v).append('\n') }
@@ -331,7 +336,13 @@ abstract class SyncForkConfigTask : DefaultTask() {
             logger.lifecycle("syncForkConfig: regenerated fork.properties from app-profile (${forkOut.size} keys)")
 
             // B3 — regenerate core/network AccessPointRegistry.points from app-profile#network.access_points.
+            // The four passes share one SoT (network.access_points), so a declared endpoint reaches the
+            // registry, the UrlType vocabulary, the anon-key map AND its Koin binding in one run — the
+            // reason a fork only writes the API type.
             regenerateAccessPoints(root, appProfile)
+            regenerateUrlTypes(root, appProfile)
+            regenerateSupabaseAnonKeys(root, appProfile)
+            regenerateApiBindings(root, appProfile)
         }
 
         // ── 6. Store metadata files ───────────────────────────────────────────
@@ -853,6 +864,223 @@ abstract class SyncForkConfigTask : DefaultTask() {
         val endLineEnd = text.indexOf('\n', endIdx).let { if (it < 0) text.length else it }
         file.writeText(text.substring(0, beginIdx) + sb.toString() + text.substring(endLineEnd))
         logger.lifecycle("syncForkConfig: regenerated AppAccessPoints.points from app-profile ($count access points)")
+    }
+
+    /** The `network.access_points` list, normalized to maps with a non-blank `id`. Empty when absent. */
+    private fun accessPoints(appProfile: Map<String, Any?>): List<Map<*, *>> {
+        val network = appProfile["network"] as? Map<*, *> ?: return emptyList()
+        val aps = network["access_points"] as? List<*> ?: return emptyList()
+        return aps.mapNotNull { it as? Map<*, *> }
+            .filter { it["id"]?.toString()?.isNotBlank() == true }
+    }
+
+    private fun isSupabase(m: Map<*, *>): Boolean =
+        m["type"]?.toString()?.trim()?.lowercase() == "supabase"
+
+    /**
+     * Replace the text between [begin] and [end] sentinels in [file] with [body].
+     *
+     * No-op when the file or either sentinel is absent — a fork that stripped the demo wiring (or
+     * removed the block) is not an error, it is a fork that opted out. Returns true when it wrote.
+     */
+    private fun patchSentinel(file: File, begin: String, end: String, body: String): Boolean {
+        if (!file.isFile) return false
+        val text = file.readText()
+        val b = text.indexOf(begin)
+        val e = text.indexOf(end)
+        if (b < 0 || e < 0 || e < b) return false
+        val endLineEnd = text.indexOf('\n', e).let { if (it < 0) text.length else it }
+        file.writeText(text.substring(0, b) + body + text.substring(endLineEnd))
+        return true
+    }
+
+    /**
+     * Regenerate `AppUrlTypes` from the declared access points.
+     *
+     * [AccessPoint.type] defaults to `UrlType(id.uppercase())`, so the vocabulary is a pure projection
+     * of the id list — yet it was hand-maintained and had drifted to 3 constants against 8 declared
+     * points. That drift is silent AND wrong-answering: `AppMultiUrlConfigProvider.getBaseUrl` falls
+     * back to `UrlType.MAIN` for an unknown type, so a lookup for an undeclared id returned the MAIN
+     * base URL instead of failing. Generating it removes the class of bug rather than the instance.
+     */
+    private fun regenerateUrlTypes(root: File, appProfile: Map<String, Any?>) {
+        val points = accessPoints(appProfile)
+        if (points.isEmpty()) return
+        val file = File(root, "core/network/src/commonMain/kotlin/kpt/core/network/config/AppUrlTypes.kt")
+        val sb = StringBuilder()
+        sb.append("// syncForkConfig:url-types:begin — GENERATED from app-profile/app.yaml#network.access_points.\n")
+        sb.append("    // One constant per declared access point (UrlType(id.uppercase()), matching\n")
+        sb.append("    // AccessPoint.type's default). Edit the access points THERE; do not hand-edit this block.\n")
+        val names = mutableListOf<String>()
+        for (m in points) {
+            val id = m["id"].toString()
+            // The KEY must be exactly `id.uppercase()` — that is what AccessPoint.type defaults to, and
+            // UrlType equality is what AccessPointRegistry.restBaseUrl matches on. Only the Kotlin
+            // IDENTIFIER is sanitized (an id may contain characters an identifier cannot). Sanitizing
+            // the key too would silently break every hyphenated id: `pay-gw` would declare
+            // UrlType("PAY_GW") while its access point carries UrlType("PAY-GW"), so restBaseUrl would
+            // miss and getBaseUrl would fall back to MAIN's URL — the exact bug this codegen removes.
+            val key = id.uppercase()
+            val name = key.replace(Regex("[^A-Z0-9]"), "_")
+            names += name
+            val kindDoc = if (isSupabase(m)) "Supabase" else "REST"
+            sb.append("\n    /** `$id` — $kindDoc access point. */\n")
+            if (key == "MAIN") {
+                sb.append("    val MAIN: UrlType = UrlType.MAIN\n")
+            } else {
+                sb.append("    val $name: UrlType = UrlType(\"$key\")\n")
+            }
+        }
+        // One entry per line: a fork with many endpoints would otherwise generate a single line past
+        // any sane max-line-length, and the formatter cannot reflow generated output for us.
+        sb.append("\n    /** Every declared endpoint type, in app-profile order. */\n")
+        sb.append("    val all: List<UrlType> = listOf(\n")
+        names.forEach { sb.append("        ").append(it).append(",\n") }
+        sb.append("    )\n")
+        sb.append("    // syncForkConfig:url-types:end")
+        if (patchSentinel(file, "// syncForkConfig:url-types:begin", "// syncForkConfig:url-types:end", sb.toString())) {
+            logger.lifecycle("syncForkConfig: regenerated AppUrlTypes (${names.size} types)")
+        }
+    }
+
+    /**
+     * Regenerate `AppSupabaseAnonKeys` — one row per declared SUPABASE access point.
+     *
+     * A point declaring `anon_key_env: X` emits `BuildKonfig.X` (build-time read of env /
+     * local.properties, the same sanctioned path as FRED_API_KEY), so no key is ever written to a
+     * tracked file. A point WITHOUT it emits `""`, which leaves the client inert
+     * (`isConfigured == false`) rather than half-configured with a fake key.
+     */
+    private fun regenerateSupabaseAnonKeys(root: File, appProfile: Map<String, Any?>) {
+        val points = accessPoints(appProfile).filter { isSupabase(it) }
+        val file = File(
+            root,
+            "core/network/src/commonMain/kotlin/kpt/core/network/config/AppSupabaseAnonKeys.kt",
+        )
+        val sb = StringBuilder()
+        sb.append("// syncForkConfig:supabase-anon-keys:begin — GENERATED from app-profile/app.yaml.\n")
+        sb.append("    // One row per SUPABASE access point. `anon_key_env: X` on the point emits BuildKonfig.X\n")
+        sb.append("    // (build-time env / local.properties read, referenced by FQN so no import is needed\n")
+        sb.append("    // outside this block); no key is committed. Absent -> \"\" so the client stays inert.\n")
+        sb.append("    private val byId: Map<String, String> = mapOf(\n")
+        var withKey = 0
+        for (m in points) {
+            val id = m["id"].toString()
+            val env = m["anon_key_env"]?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            if (env != null) {
+                sb.append("        \"$id\" to kpt.core.network.BuildKonfig.$env,\n")
+                withKey++
+            } else {
+                sb.append("        \"$id\" to \"\",\n")
+            }
+        }
+        sb.append("    )\n")
+        sb.append("    // syncForkConfig:supabase-anon-keys:end")
+        if (patchSentinel(
+                file,
+                "// syncForkConfig:supabase-anon-keys:begin",
+                "// syncForkConfig:supabase-anon-keys:end",
+                sb.toString(),
+            )
+        ) {
+            logger.lifecycle(
+                "syncForkConfig: regenerated AppSupabaseAnonKeys (${points.size} points, $withKey keyed)",
+            )
+        }
+    }
+
+    /**
+     * Regenerate `GeneratedApiBindings.kt` — the Koin binding for every access point declaring `api:`.
+     *
+     * This is the pass that makes "a fork writes only the API type" true. Previously each endpoint
+     * needed a hand-added `restApi("<id>") { … }` line in `ProjectNetworkModule`, so a declared point
+     * and its wiring could drift in either direction (declared-but-unwired, or wired-to-an-undeclared
+     * id). Both are now impossible by construction: the binding list IS a projection of app-profile.
+     *
+     * A WHOLE FILE rather than a sentinel block inside `ProjectNetworkModule`, because the bindings
+     * need per-API imports and ktlint's import-ordering rule does not tolerate sentinel comments
+     * interleaved in the import block. `ProjectNetworkModule` keeps its hand-written wiring (e.g.
+     * `FredApiConfig`, whose key is a request-time @Query param, not client setup) and pulls this in
+     * with `includes(GeneratedApiBindings)`.
+     *
+     * Factory conventions, both mechanical from the declared FQN:
+     *  - REST     `a.b.XApi` -> import `a.b.createXApi`, emit `restApi("id") { it.createXApi() }`
+     *             (Ktorfit generates `create<InterfaceName>()` beside the interface).
+     *  - SUPABASE `a.b.XApi` -> import `a.b.XApi`, emit `supabaseApi("id") { XApi(it) }`
+     *             (single-arg constructor taking SupabaseConfigClient).
+     *
+     * Skipped entirely when the demo/di package is absent — a fork that ran the customizer's `--clean`
+     * removed `ProjectNetworkModule` too, so regenerating its sibling would resurrect stripped wiring.
+     */
+    private fun regenerateApiBindings(root: File, appProfile: Map<String, Any?>) {
+        val dir = File(root, "core/network/src/commonMain/kotlin/kpt/core/network/demo/di")
+        if (!dir.isDirectory) return
+
+        // (id, api FQN, isSupabase) per point that declares `api:`. A malformed FQN (no package, or a
+        // trailing dot) is skipped rather than emitted — a broken import would fail the whole module's
+        // compile, whereas a skipped binding is caught precisely by NAP-4 with a pointed message.
+        val bindings = accessPoints(appProfile).mapNotNull { m ->
+            val fqn = m["api"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            if (!fqn.contains('.') || fqn.substringAfterLast('.').isEmpty()) return@mapNotNull null
+            Triple(m["id"].toString(), fqn, isSupabase(m))
+        }
+        val imports = sortedSetOf<String>()
+        val lines = StringBuilder()
+        var rest = 0
+        var supa = 0
+        for ((id, fqn, supabase) in bindings) {
+            val pkg = fqn.substringBeforeLast('.')
+            val simple = fqn.substringAfterLast('.')
+            if (supabase) {
+                imports += fqn
+                imports += "kpt.core.base.network.supabaseApi"
+                lines.append("    supabaseApi(\"$id\") { $simple(it) }\n")
+                supa++
+            } else {
+                imports += "$pkg.create$simple"
+                imports += "kpt.core.base.network.restApi"
+                lines.append("    restApi(\"$id\") { it.create$simple() }\n")
+                rest++
+            }
+        }
+        imports += "org.koin.core.module.Module"
+        imports += "org.koin.dsl.module"
+
+        val sb = StringBuilder()
+        sb.append("/*\n")
+        sb.append(" * Copyright 2026 Mifos Initiative\n")
+        sb.append(" *\n")
+        sb.append(" * This Source Code Form is subject to the terms of the Mozilla Public\n")
+        sb.append(" * License, v. 2.0. If a copy of the MPL was not distributed with this\n")
+        sb.append(" * file, You can obtain one at https://mozilla.org/MPL/2.0/.\n")
+        sb.append(" *\n")
+        sb.append(" * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE\n")
+        sb.append(" */\n")
+        sb.append("package kpt.core.network.demo.di\n\n")
+        imports.forEach { sb.append("import ").append(it).append('\n') }
+        sb.append("\n/**\n")
+        sb.append(" * GENERATED by `./gradlew syncForkConfig` from `app-profile/app.yaml#network.access_points`\n")
+        sb.append(" * — one Koin binding per access point that declares `api:`. DO NOT HAND-EDIT.\n")
+        sb.append(" *\n")
+        sb.append(" * To add an API: declare the endpoint (with its `api:` FQN) in app-profile, write the API\n")
+        sb.append(" * type, and re-run syncForkConfig. There is no wiring step — that is the point.\n")
+        sb.append(" *\n")
+        sb.append(" * Pulled in by `ProjectNetworkModule` via `includes(GeneratedApiBindings)`.\n")
+        sb.append(" */\n")
+        sb.append("val GeneratedApiBindings: Module = module {\n")
+        if (lines.isEmpty()) {
+            sb.append("    // No access point declares `api:` yet — add one in app-profile/app.yaml.\n")
+        } else {
+            sb.append(lines)
+        }
+        sb.append("}\n")
+
+        val file = File(dir, "GeneratedApiBindings.kt")
+        val next = sb.toString()
+        if (!file.isFile || file.readText() != next) {
+            file.writeText(next)
+            logger.lifecycle("syncForkConfig: regenerated GeneratedApiBindings ($rest REST, $supa Supabase)")
+        }
     }
 
     private fun deepMerge(a: Map<String, Any?>, b: Map<String, Any?>): Map<String, Any?> {

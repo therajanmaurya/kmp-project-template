@@ -154,16 +154,36 @@ line per surface, never edits the shell:
 
 ### Network — N REST + N Supabase access points
 
-Every endpoint the app talks to is declared once in
-`app-profile/app.yaml#network.access_points` (`type: rest | supabase`) and generated into
-`AppAccessPoints.points`, which the fork registers as `AccessPointRegistry(AppAccessPoints.points)`
-in its `NetworkModule`. The registry resolves any number of REST **and** Supabase points:
+Every endpoint the app talks to is declared once in `app-profile/app.yaml#network.access_points`
+(`type: rest | supabase`). **`./gradlew syncForkConfig` projects that one list onto every derived
+surface**, so the only thing a fork writes is the API type itself:
 
-- **REST** — `restApi<T>("<id>")` DSL + `AccessPointRegistry.restBaseUrl(type)`; `core-base/network`
-  owns the transport, so a fork writes only the API interface + one `restApi("<id>")` line.
-- **Supabase** — `AccessPointRegistry.supabasePoints()` returns every declared Supabase point;
-  a per-point `SupabaseConfigClient` factory builds the client (URL from the registry, key from
-  secrets by id). `supabasePoints()` supports N Supabase projects, not a single hardcoded client.
+| Generated surface | What it carries |
+|---|---|
+| `AppAccessPoints.points` | the registry list (`AccessPointRegistry` wraps it in `NetworkModule`) |
+| `AppUrlTypes` | one `UrlType` constant per endpoint, for runtime base-URL switching |
+| `GeneratedApiBindings` | the Koin binding for every point declaring `api:` — included by `ProjectNetworkModule` |
+| `AppSupabaseAnonKeys` | one row per Supabase point; value from `BuildKonfig` via `anon_key_env:` |
+
+**Adding an endpoint is three steps: declare it (with its `api:` FQN) in `app.yaml`, write the API
+type, run `syncForkConfig`.** There is no wiring step — REST and Supabase alike.
+
+- **REST** — `restApi<T>("<id>")` builds the Ktor client + Ktorfit from the access point (base URL,
+  loggable host, proxy). Declaring `api: a.b.FooApi` generates `restApi("<id>") { it.createFooApi() }`.
+- **Supabase** — `supabaseApi<T>("<id>")` is the exact twin, resolving a per-point
+  `SupabaseConfigClient` (URL from the registry, anon key by id) via `SupabaseClientFactory`.
+  Declaring `api: a.b.FooApi` generates `supabaseApi("<id>") { FooApi(it) }`, so the facade needs a
+  single-arg constructor taking `SupabaseConfigClient`. N Supabase projects, not one hardcoded client.
+  Unlike REST there is no generated stub — supabase-kt has no interface-generation step, so `T` is the
+  fork's own typed wrapper over `client.postgrest`.
+
+The generated files are **committed** (a fresh clone must build without running Gradle), so nothing
+inherently forces them to still match `app.yaml`. `scripts/product-health/checks/network-access-points.sh`
+(NAP-1…NAP-7) is what does: it fails on a declared-but-unprojected endpoint, a stale base URL, a
+missing `UrlType`, an unbound `api:`, a Supabase point with no anon-key row, an anon key committed as a
+literal, and any hand-written `restApi(`/`supabaseApi(` outside the generated file. Two of those are
+otherwise silent — a missing `UrlType` constant makes `getBaseUrl` fall back to `MAIN`'s URL rather
+than fail, and a committed anon key works fine right up until it needs rotating.
 
 ### Tech Stack
 
