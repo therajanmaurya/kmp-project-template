@@ -78,7 +78,11 @@ wl_matches_any() {
   local val="$1" cat="$2" pat
   while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    printf '%s' "$val" | grep -qE "$pat" && return 0
+    # printf '%s\n' (NOT '%s'): an EMPTY $val must still present one empty LINE to grep, or the
+    # declared '^$' placeholder pattern can never match — grep sees zero lines and reports no match.
+    # That silently classified an unset field as "a foreign real-brand value" instead of a
+    # placeholder, which is the opposite verdict. Non-empty values are unaffected.
+    printf '%s\n' "$val" | grep -qE "$pat" && return 0
   done < <(wl_placeholders_load "$cat")
   return 1
 }
@@ -108,7 +112,11 @@ wl_matches_example() {
   local val="$1" cat="$2" pat
   while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    printf '%s' "$val" | grep -qE "$pat" && return 0
+    # printf '%s\n' (NOT '%s'): an EMPTY $val must still present one empty LINE to grep, or the
+    # declared '^$' placeholder pattern can never match — grep sees zero lines and reports no match.
+    # That silently classified an unset field as "a foreign real-brand value" instead of a
+    # placeholder, which is the opposite verdict. Non-empty values are unaffected.
+    printf '%s\n' "$val" | grep -qE "$pat" && return 0
   done < <(wl_example_load "$cat")
   return 1
 }

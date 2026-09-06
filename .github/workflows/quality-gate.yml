@@ -34,6 +34,20 @@ jobs:
       # openMF/Mifos signing+org identity — Apple 90288) + appid-consistency (FAILs if fork.properties
       # app.id drifted from libs.versions.toml appId) + store-listing (WARNs on un-authored copy).
       # The upstream template itself sets TEMPLATE_SELF_BUILD=1 so its fork-only checks skip.
+      # gradle/fork.properties is gitignored (per-fork filled-in values: signing DN, Apple team id,
+      # demo creds), so on a fresh CI clone it does not exist — and the checks below then fall back
+      # to gradle/fork.properties.template and short-circuit. appid-consistency and fork-identity
+      # were therefore never actually ENFORCED in CI, which is precisely the drift they exist to
+      # catch, and white-label-derived WARNed on every run with nothing able to clear it.
+      #
+      # Derive it from the app-profile SoT instead of committing it. derive.rb is pure Ruby (no JDK,
+      # no Gradle — this job stays a ~10s bash job) and emits only NON-placeholder values, so nothing
+      # sensitive is materialised: unfilled signing fields stay absent and read as the declared '^$'
+      # placeholder. Committing the file instead would put apple.team.id / demo.password / the
+      # keystore DN in git and give the derived bridge a second source of truth alongside app-profile.
+      - name: Derive fork.properties from app-profile (SoT → build bridge)
+        run: ruby scripts/white-label/derive.rb
+
       - name: Product health (fork.properties sanity)
         env:
           TEMPLATE_SELF_BUILD: ${{ github.repository == 'openMF/kmp-project-template' && '1' || '' }}
