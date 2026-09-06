@@ -310,12 +310,11 @@ ls -la cmp-web/build/distributions/
 
 ### macOS Build (macOS only)
 
+macOS ships through the Compose Desktop target, not a separate Xcode app — there is no
+`cmp-macos` module and no `.xcworkspace`:
+
 ```bash
-# Similar to iOS
-xcodebuild -workspace cmp-macos/macosApp.xcworkspace \
-  -scheme macosApp \
-  -configuration Debug \
-  build
+./gradlew :cmp-desktop:packageDmg
 ```
 
 ### Success!

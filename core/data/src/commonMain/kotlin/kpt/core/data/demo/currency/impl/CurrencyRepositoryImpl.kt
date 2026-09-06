@@ -25,7 +25,7 @@ import kpt.core.data.demo.currency.CurrencyRepository
 import kpt.core.model.demo.currency.ExchangeRates
 import kpt.core.model.demo.currency.RateHistory
 import kpt.core.model.demo.currency.RateHistoryKey
-import kpt.core.store.AppCacheKeys
+import kpt.core.store.demo.DemoCacheKeys
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.StoreReadResponse
@@ -49,7 +49,7 @@ class CurrencyRepositoryImpl(
         fetchPolicy: FetchPolicy,
     ): ScreenDataStream<ExchangeRates> = exchangeRatesStore.asScreenStream(
         key = baseCurrency,
-        cacheKey = AppCacheKeys.exchangeRates(baseCurrency),
+        cacheKey = DemoCacheKeys.exchangeRates(baseCurrency),
         scope = scope,
         fetchPolicy = fetchPolicy,
     )
@@ -60,7 +60,7 @@ class CurrencyRepositoryImpl(
         scope: CoroutineScope,
     ): ScreenDataStream<ExchangeRates> = spotRateStore.asScreenStream(
         key = baseCurrency,
-        cacheKey = AppCacheKeys.spotRate(baseCurrency),
+        cacheKey = DemoCacheKeys.spotRate(baseCurrency),
         scope = scope,
         // NETWORK_ONLY is DELIBERATE — this is the template's NETWORK_ONLY archetype showcase
         // (see STORE_ARCHETYPES.yaml + CLAUDE.md). A spot FX rate is the canonical case where stale
@@ -74,7 +74,7 @@ class CurrencyRepositoryImpl(
         scope: CoroutineScope,
     ): ScreenDataStream<RateHistory> = rateHistoryStore.asScreenStream(
         keyFlow = keyFlow,
-        cacheKeyFor = { key -> AppCacheKeys.rateHistory(key.from, key.to, key.days) },
+        cacheKeyFor = { key -> DemoCacheKeys.rateHistory(key.from, key.to, key.days) },
         scope = scope,
     )
 

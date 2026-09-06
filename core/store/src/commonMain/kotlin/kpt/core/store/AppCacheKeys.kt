@@ -15,38 +15,17 @@ package kpt.core.store
  * [AppStoreRegistry], so the key strings live in ONE place and cannot drift or silently collide.
  *
  * `core/data` repositories reference these constants + typed builders instead of inlining string
- * literals at the call site — a repo does `cacheKey = AppCacheKeys.LOANS` or
- * `cacheKey = AppCacheKeys.loan(id)`, never `cacheKey = "loan:$id"`. The format of a key lives here;
+ * literals at the call site — a repo does `cacheKey = AppCacheKeys.MY_THINGS` or
+ * `cacheKey = AppCacheKeys.myThing(id)`, never `cacheKey = "myThing:$id"`. The format of a key lives here;
  * a call site only supplies the values. A fork adds one line per new stream, next to its store
- * qualifier in [AppStoreRegistry].
+ * qualifier in [AppStoreRegistry]:
+ * ```
+ * const val MY_THINGS = "myThings"
+ * fun myThing(id: String): String = "myThing:$id"
+ * ```
+ *
+ * Intentionally EMPTY on the template (E1/C5). The demo showcase's keys live in the fork-owned
+ * [kpt.core.store.demo.DemoCacheKeys] under `demo/`, so `remove-demo.sh` deletes them with the rest
+ * of the showcase and a template sync can blind-copy THIS file without re-introducing them.
  */
-object AppCacheKeys {
-    // demo:begin — whole-list / single-instance streams (static keys).
-    const val ALERTS = "alerts"
-    const val WATCHLIST = "watchlist"
-    const val LOANS = "loans"
-    const val BILL_REMINDERS = "billReminders"
-    const val COIN_MARKETS = "crypto:coinMarkets"
-
-    // Per-key streams — typed builders own the format string; the call site passes only the values.
-    fun loan(id: String): String = "loan:$id"
-
-    /** Cache key for one bill reminder's store-backed detail read. */
-    fun billReminder(id: String): String = "billReminder:$id"
-
-    fun coinDetail(coinId: String): String = "crypto:coinDetail:$coinId"
-
-    fun cloudTodo(id: Int): String = "cloudTodo:$id"
-
-    fun exchangeRates(baseCurrency: String): String = "currency:exchangeRates:$baseCurrency"
-
-    fun spotRate(baseCurrency: String): String = "currency:spotRate:$baseCurrency"
-
-    fun rateHistory(from: String, to: String, days: Int): String = "currency:rateHistory:$from-$to-${days}d"
-
-    fun interestRateSeries(seriesId: String, days: Int): String = "economic:rates:$seriesId:${days}d"
-
-    fun macroIndicator(countryCode: String, indicator: String, years: Int): String =
-        "economic:macro:$countryCode:$indicator:${years}y"
-    // demo:end
-}
+object AppCacheKeys

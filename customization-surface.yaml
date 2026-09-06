@@ -81,14 +81,28 @@ rules:
   - glob: "cmp-navigation/**/*TabItem*.kt"
     owner: merge
     strategy: kotlin-3way
-  # Room database registry: template ships the base @Database; forks add their own entities/DAOs/
-  # migrations ONLY inside the `// fork:begin`/`// fork:end` regions (entities, autoMigrations, DAO
-  # accessors), and bump the version via the fork-owned ForkDatabaseConfig.VERSION_OFFSET — never the
-  # template's TEMPLATE_BASE_VERSION line. Because fork edits live in disjoint regions/file from the
-  # template's demo:begin/end + base-version, the kotlin-3way (git merge-file) merges without conflict.
+  # Room database registry (E1/C7 — was the LAST hand-merged file under core/**).
+  # Room needs one compile-time `entities = [...]` array literal, so a fork's tables cannot live in a
+  # separate file the way every other seam works. They do NOT need to be merged, though: a fork
+  # DECLARES them in `app-profile/app.yaml#database` (fork-owned, never synced) and the mandatory
+  # post-sync `./gradlew syncForkConfig` projects them back into this file's `fork-imports` /
+  # `fork-entities` / `fork-migrations` / `fork-daos` regions. So the sync FULL-COPIES the template's
+  # AppDatabase and the fork's schema is re-derived after the copy — same shape as the deployment
+  # metadata/screenshot regeneration (D-3), no 3-way merge, no conflict surface.
+  # The version stays split: template bumps TEMPLATE_BASE_VERSION, fork bumps the fork-owned
+  # ForkDatabaseConfig.VERSION_OFFSET below.
+  #
+  # `template` FULL-COPY since the E1/C7 relocation — the LAST hand-merged file under the core
+  # modules. Room needs ONE compile-time `entities = [...]` array literal, so a fork's tables cannot
+  # live in a separate file; they do not need to be MERGED though, only RE-DERIVED. Every
+  # project-specific declaration (demo AND fork) now lives in `app-profile/app.yaml#database` and is
+  # projected into the four `gen-*` regions by the post-sync `syncForkConfig`. The nested
+  # `MigrationSpec8to10` became a top-level `demo/` class, and generated members are referenced by
+  # FQN (ktlint forbids comments/blank lines in the import block, so no import region is possible).
+  # Equivalence is proven, not asserted: deleting `schemas/**/13.json` and rebuilding regenerates it
+  # BYTE-IDENTICAL (sha 3c948e1e…), so the relocation changed authoring location, not the database.
   - glob: "**/AppDatabase.kt"
-    owner: merge
-    strategy: kotlin-3way
+    owner: template
   # Fork-owned DB schema offset — the single line a fork edits for its own schema version. PRESERVED.
   - glob: "**/core/database/**/ForkDatabaseConfig.kt"
     owner: fork
@@ -245,6 +259,16 @@ rules:
     owner: fork
   - glob: "**/demo/**"
     owner: demo-showcase
+  # Fork DI seams — `di/Project<X>Module.kt` is the "yours to fill" per-layer seam (network, store,
+  # data, database). WLS-1..4 keep it alive through `remove-demo.sh`; ownership is what keeps it alive
+  # through a SYNC. As owner:template the template's EMPTY seam blind-copies over a fork's filled-in
+  # one on every sync — the same silent-loss class as AndroidManifest, and it defeats the entire point
+  # of the seam. Symmetric with `cmp-shared/**/ForkWorkerDeclarations.kt` above. Enforced by WLS-5
+  # (`scripts/product-health/checks/white-label-di-seams.sh`).
+  # Declared AFTER `**/demo/**` on purpose: a Project*Module stranded under demo/ is a WLS-2
+  # violation and must keep classifying as demo-showcase, not silently become fork-owned.
+  - glob: "core/*/src/**/di/Project*Module.kt"
+    owner: fork
   - glob: "build-logic/**/kotlin/local/**"   # LocalFlavors.kt fork flavor extensions
     owner: fork
   - glob: "cmp-android/src/main/res/**"
@@ -330,12 +354,25 @@ rules:
   - glob: "cmp-navigation/**/ui/*.kt"
     owner: merge
     strategy: kotlin-3way
-  # Core-module build deps — a fork adds module dependencies its own code compiles against; 3-way
-  # (symmetry with cmp-android/build.gradle.kts) so a template plugin/version bump merges without
-  # dropping fork deps. Single-segment `core` only — does NOT match core-base/**.
+  # Core-module dependency seam — the fork-owned half of `core/<mod>/build.gradle.kts`. Mirrors
+  # `feature-deps.gradle.kts`: the template build file `apply(from = ...)`s this, so a fork's deps
+  # live in a file the sync NEVER touches. Declared BEFORE the build.gradle.kts rule below so it
+  # wins (first match).
+  - glob: "**/core/*/module-deps.gradle.kts"
+    owner: fork
+  # Core-module build files — `template` FULL-COPY (was `merge`/kotlin-3way).
+  # The 3-way existed for ONE reason: "a fork adds module dependencies its own code compiles
+  # against". Those now live in the fork-owned `core/<mod>/module-deps.gradle.kts` seam above, which
+  # every core build file applies, so nothing fork-specific is hand-written here any more and the
+  # template can evolve plugins/KSP/version wiring freely with no merge surface. `core/network`'s
+  # BuildKonfig fields are likewise DERIVED into its `syncForkConfig:buildkonfig` region from
+  # app-profile (NAP-8), not hand-added.
+  # MIGRATION: a fork that adopted BEFORE the seam may still have hand-added deps in these files —
+  # full-copy would drop them. STEP 3.5's project-clobber guard surfaces that diff before apply;
+  # move those lines into module-deps.gradle.kts as part of adoption.
+  # Single-segment `core` only — does NOT match core-base/**.
   - glob: "**/core/**/build.gradle.kts"
-    owner: merge
-    strategy: kotlin-3way
+    owner: template
   # Legal content — the privacy-policy/terms CONTENT templates are the fork's real legal documents;
   # the generator (legal/generate.sh) + rendered legal/output/** stay template/generated below.
   - glob: "legal/*/template.md"

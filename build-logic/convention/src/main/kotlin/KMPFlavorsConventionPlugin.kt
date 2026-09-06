@@ -82,14 +82,20 @@ class KMPFlavorsConventionPlugin : Plugin<Project> {
                 // iOS xcconfig generation + variants.json export are provided by the plugin
                 // (kmp-product-flavors 2.8.3+). Identity stays in Config.xcconfig
                 // ($(APP_BUNDLE_ID) / $(TEAM_ID), synced from libs.versions.toml via
-                // syncForkConfig), so the per-variant xcconfigs reference those vars and Pods
-                // settings flow in per-configuration. Replaces the former hand-maintained
-                // GenerateIosFlavorXcconfigsTask + ExportKmpFlavorsManifestTask in build-logic.
+                // syncForkConfig), so the per-variant xcconfigs reference those vars.
+                // Replaces the former hand-maintained GenerateIosFlavorXcconfigsTask +
+                // ExportKmpFlavorsManifestTask in build-logic.
                 iosXcconfigGeneration.set(true)
                 iosManifestExport.set(true)
                 iosBundleIdBaseExpr.set("\$(APP_BUNDLE_ID)")
                 iosDevelopmentTeamExpr.set("\$(TEAM_ID)")
-                iosCocoapodsIntegration.set(true)
+
+                // E6 (SwiftPM/XCFramework) — OFF, and it must stay off. When true the
+                // generator appends an optional `#include? "../Pods/…"` to every generated
+                // xcconfig. `#include?` never errors on a missing file, so the dead Pods
+                // wiring would survive silently in every fork that syncs this template.
+                // Enforced by G-IOS-SWIFTPM (IOS-7 flag / IOS-6 generated output).
+                iosCocoapodsIntegration.set(false)
 
                 flavorDimensions {
                     register("contentType") { priority.set(0) }

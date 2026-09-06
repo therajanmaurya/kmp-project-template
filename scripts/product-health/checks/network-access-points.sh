@@ -9,6 +9,7 @@
 #   AppUrlTypes.kt            the UrlType vocabulary     (NAP-3)
 #   di/GeneratedApiBindings.kt the Koin bindings         (NAP-4)
 #   AppSupabaseAnonKeys.kt    the per-point anon keys    (NAP-5 rows · NAP-6 no committed key)
+#   core/network/build.gradle.kts  the BuildKonfig fields (NAP-8 every referenced field is declared)
 #
 # WHY a gate and not just codegen: the generated files are COMMITTED (the build must work on a fresh
 # clone with no Gradle run), so nothing forces them to still match app.yaml. Whoever edits app.yaml
@@ -181,6 +182,33 @@ else
     next if v == '""'
     next if v.match?(/\ABuildKonfig\.[A-Z0-9_]+\z/) || v.match?(/\A[\w.]*\.BuildKonfig\.[A-Z0-9_]+\z/)
     fail = bad("❌ NAP-6 anon key for '#{id}' is a literal in tracked source: #{v[0, 24]}…\n     → declare `anon_key_env: <ENV_KEY>` on the point and re-run syncForkConfig")
+  end
+end
+
+# ── NAP-8 — every referenced BuildKonfig field is DECLARED ───────────────────
+# The codegen emits `BuildKonfig.<anon_key_env>` into AppSupabaseAnonKeys, but the FIELD is declared
+# in core/network/build.gradle.kts. Those were two unlinked places: a fork declaring
+# `anon_key_env: MY_KEY` got a generated reference to a field nobody created — `Unresolved reference`
+# on :core:network, with no fork seam to fix it in (the build file is owner:merge, template-derived).
+# Both halves now derive from app-profile; this gate is what keeps them derived.
+bk_path = ENV["NAP_BUILD_FILE"].to_s.empty? ?
+  File.join(net_dir.sub(%r{/src/commonMain/kotlin/kpt/core/network\z}, ""), "build.gradle.kts") :
+  ENV["NAP_BUILD_FILE"]
+bk_src = read(bk_path)
+if bk_src.nil?
+  puts "⚠️  NAP-8 skipped — #{bk_path} not found"
+else
+  declared = bk_src.scan(/buildConfigField\(\s*STRING,\s*"([A-Z0-9_]+)"/).flatten.uniq
+  referenced = []
+  [keys_src, bind_src, ap_src, ut_src].compact.each do |src|
+    clean = src.gsub(%r{/\*.*?\*/}m, "").gsub(%r{//[^\n]*}, "")
+    referenced.concat(clean.scan(/BuildKonfig\.([A-Z0-9_]+)/).flatten)
+  end
+  missing = referenced.uniq - declared
+  if missing.any?
+    fail = bad("❌ NAP-8 generated code references BuildKonfig field(s) that are not declared: #{missing.join(', ')}\n" \
+               "     → declare the key in app-profile (`anon_key_env:`/`api_key_env:` on the point, or " \
+               "network.build_config_fields) and re-run `./gradlew syncForkConfig`")
   end
 end
 

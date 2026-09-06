@@ -9,7 +9,7 @@
  */
 package kpt.feature.loans.di
 
-import kpt.core.data.di.OutboxQualifiers
+import kpt.core.data.demo.di.DemoOutboxQualifiers
 import kpt.feature.loans.LoanReminderUseCase
 import kpt.feature.loans.ui.EditLoanViewModel
 import kpt.feature.loans.ui.LoanDetailViewModel
@@ -44,7 +44,7 @@ val LoansModule = module {
     viewModel { params ->
         EditLoanViewModel(
             repository = get(),
-            outbox = get(qualifier = OutboxQualifiers.Loan),
+            outbox = get(qualifier = DemoOutboxQualifiers.Loan),
             loanId = params.getOrNull(),
         )
     }

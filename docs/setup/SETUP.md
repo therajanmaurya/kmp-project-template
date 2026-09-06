@@ -121,7 +121,8 @@ This will:
 
 ### Xcode (for iOS)
 
-1. Open the `cmp-ios/KmpProject.xcworkspace` file in Xcode
+1. Open the `cmp-ios/iosApp.xcodeproj` file in Xcode (a plain project — there is no
+   CocoaPods `.xcworkspace` since the SwiftPM/XCFramework migration)
 2. Select your development team in the project settings
 3. Configure an iOS simulator or device for testing
 
@@ -152,13 +153,14 @@ Or use Android Studio's run button with a configured AVD (Android Virtual Device
 
 #### iOS
 
-Open the Xcode workspace and run the project on a simulator or device.
+Open `cmp-ios/iosApp.xcodeproj` in Xcode, pick a flavor scheme (`demoDebug`, `prodRelease`, …),
+and run on a simulator or device.
 
 Alternatively, use the command line:
 
 ```bash
-cd cmp-ios
-xcodebuild -workspace KmpProject.xcworkspace -scheme KmpProject -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 14,OS=latest'
+xcodebuild -project cmp-ios/iosApp.xcodeproj -scheme demoDebug -configuration demoDebug \
+  -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
 ```
 
 #### Desktop

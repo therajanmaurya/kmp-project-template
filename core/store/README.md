@@ -14,7 +14,7 @@ This is the consumer customization seam: edit freely in a fork.
 - **`AppErrorMapper`** — domain-error → user-message mapping (`categorize()`).
 - **`AppStoreRegistry`** — feature-tagged Store5 factory qualifiers + TTLs.
 - **`AppCacheKeys`** — the single source of truth for every `asScreenStream` cacheKey; constants for
-  whole-list streams, typed builders (`AppCacheKeys.loan(id)`) for per-key streams. Never inline a
+  whole-list streams, typed builders (`AppCacheKeys.myThing(id)`) for per-key streams. Never inline a
   cacheKey string at a call site.
 - **`MutationGateway`** — the single write door. A repository never calls a DAO write directly; see
   [STORE_ARCHITECTURE.md §4](../../docs/architecture/STORE_ARCHITECTURE.md#4-write-path--store-as-the-single-write-sot).

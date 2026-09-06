@@ -87,8 +87,10 @@ Rules that hold at every step:
 - The entity→domain map lives **inside** `SourceOfTruth.reader`, so the store emits the **domain** model.
 - `core/data` calls `asScreenStream`, never the feature layer.
 - A feature module sees only `core/data` + `core/domain` — never `core/store` or `core/network`.
-- `cacheKey` comes from `AppCacheKeys` (`core/store`), never an inline string literal. Static keys are
-  constants (`AppCacheKeys.LOANS`); per-key streams use typed builders (`AppCacheKeys.loan(id)`) so the
+- `cacheKey` comes from `AppCacheKeys` (`core/store`), never an inline string literal. (The demo
+  showcase's own keys live in the fork-owned `DemoCacheKeys` under `core/store/**/demo/`, so
+  `remove-demo.sh` strips them without touching the template seam.) Static keys are
+  constants (`AppCacheKeys.MY_THINGS`); per-key streams use typed builders (`AppCacheKeys.myThing(id)`) so the
   format lives in one place and cannot drift or collide.
 
 ### What actually hits the network, and when
@@ -205,7 +207,7 @@ class LoanRepositoryImpl(
     private val screen: ScreenStreamContext,
 ) {
     fun loan(id: LoanId, scope: CoroutineScope) =
-        store.asScreenStream(id, screen, AppCacheKeys.loan(id.value), scope)
+        store.asScreenStream(id, screen, DemoCacheKeys.loan(id.value), scope)
 }
 ```
 

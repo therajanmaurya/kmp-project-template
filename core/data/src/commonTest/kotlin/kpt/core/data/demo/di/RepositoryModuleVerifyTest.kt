@@ -9,10 +9,9 @@
  */
 @file:OptIn(org.koin.core.annotation.KoinInternalApi::class)
 
-package kpt.core.data.di
+package kpt.core.data.demo.di
 
 import kpt.core.base.store.submit.SubmitOutbox
-import kpt.core.data.demo.di.DemoRepositoryModule
 import org.koin.core.qualifier.Qualifier
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -20,15 +19,17 @@ import kotlin.test.assertTrue
 
 /**
  * Verifies that every `SubmitOutbox<T>` declared in [DemoRepositoryModule] is registered
- * under its corresponding [OutboxQualifiers] entry. Catches regressions
- * where a new payload type is added to [OutboxQualifiers] but the matching
+ * under its corresponding [DemoOutboxQualifiers] entry. Catches regressions
+ * where a new payload type is added to [DemoOutboxQualifiers] but the matching
  * `single<>` registration is missing — or vice versa.
  *
  * NOTE (E1 / C1): the demo `SubmitOutbox<*>` bindings were relocated out of the infra
  * aggregator [DataModule] (`RepositoryModule.kt`) into the fork-owned
  * [DemoRepositoryModule] (`kpt/core/data/demo/di/DemoRepositoryModule.kt`); this test
- * introspects that module's mappings now. The [OutboxQualifiers] naming contract stays in
- * `kpt.core.data.di` (no demo imports), consumed by the demo feature modules.
+ * introspects that module's mappings now. The demo qualifiers themselves were relocated to
+ * [DemoOutboxQualifiers] (`kpt/core/data/demo/di/`) in the same E1/C4 move, so THIS test lives
+ * under `demo/` too and `remove-demo.sh` deletes it with the showcase it verifies. The
+ * template-owned [kpt.core.data.di.OutboxQualifiers] seam stays empty and demo-free.
  *
  * Failure mode if not caught: `ClassCastException` at first
  * `.saveByUniqueKey(payload)` call on the mis-registered outbox.
@@ -50,22 +51,22 @@ class RepositoryModuleVerifyTest {
 
     @Test
     fun loanOutboxIsRegisteredUnderLoanQualifier() {
-        assertSubmitOutboxBoundUnderQualifier(OutboxQualifiers.Loan)
+        assertSubmitOutboxBoundUnderQualifier(DemoOutboxQualifiers.Loan)
     }
 
     @Test
     fun billReminderOutboxIsRegisteredUnderBillReminderQualifier() {
-        assertSubmitOutboxBoundUnderQualifier(OutboxQualifiers.BillReminder)
+        assertSubmitOutboxBoundUnderQualifier(DemoOutboxQualifiers.BillReminder)
     }
 
     @Test
     fun loanCalcScenarioOutboxIsRegisteredUnderLoanCalcScenarioQualifier() {
-        assertSubmitOutboxBoundUnderQualifier(OutboxQualifiers.LoanCalcScenario)
+        assertSubmitOutboxBoundUnderQualifier(DemoOutboxQualifiers.LoanCalcScenario)
     }
 
     @Test
     fun priceAlertOutboxIsRegisteredUnderPriceAlertQualifier() {
-        assertSubmitOutboxBoundUnderQualifier(OutboxQualifiers.PriceAlert)
+        assertSubmitOutboxBoundUnderQualifier(DemoOutboxQualifiers.PriceAlert)
     }
 
     /**

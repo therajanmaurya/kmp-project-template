@@ -15,12 +15,21 @@
 #   WLS-2  no Project*Module lives under **/demo/**            (it would be deleted)
 #   WLS-3  FeatureRegistry lists every Project*Module OUTSIDE the demo fence  (it must survive)
 #   WLS-4  FeatureRegistry lists every Demo*Module INSIDE the demo fence      (it must not)
+#   WLS-5  every surviving di/Project<X>Module is owner:fork in customization-surface.yaml
+#
+# WLS-1..4 prove the seam survives `--clean`. WLS-5 proves it survives the OTHER thing that
+# rewrites a fork's tree: `/kmp-project-template-sync`. Ownership is what decides that — a seam
+# resolving `owner: template` is BLIND-COPIED, so the template's EMPTY Project<X>Module silently
+# replaces the fork's filled-in one on every sync. Surviving the demo strip and then being wiped
+# by the next sync is the same loss the seam exists to prevent, just on a different trigger.
 #
 # exit 0 PASS / 1 FAIL. Pure bash + grep.
 set -uo pipefail
 : "${HEALTH_ROOT:?white-label-di-seams: HEALTH_ROOT not set (run via product-health.sh)}"
 CORE="${WLS_CORE_DIR:-$HEALTH_ROOT/core}"
 REG="${WLS_REGISTRY:-$HEALTH_ROOT/cmp-navigation/src/commonMain/kotlin/cmp/navigation/registry/FeatureRegistry.kt}"
+SURFACE_SH="${WLS_SURFACE_SH:-$HEALTH_ROOT/scripts/customization-surface.sh}"
+SURFACE_YAML="${WLS_SURFACE_YAML:-$HEALTH_ROOT/customization-surface.yaml}"
 fail=0
 
 [ -d "$CORE" ] || { echo "no core/ — nothing to audit (ok)"; exit 0; }
@@ -72,6 +81,21 @@ if [ -f "$REG" ]; then
   done
 fi
 
-[ "$fail" = "0" ] || { echo "     → seams: demo/di/Demo*Module is stripped; di/Project*Module survives."; exit 1; }
+# ── WLS-5 — the seam must survive a TEMPLATE SYNC, not just --clean ──────────
+if [ -x "$SURFACE_SH" ] && [ -f "$SURFACE_YAML" ]; then
+  for f in $(find "$CORE" -path '*/di/Project*Module.kt' -not -path '*/demo/*' -not -path '*/build/*' 2>/dev/null | sort); do
+    rel="${f#$HEALTH_ROOT/}"
+    owner="$(CS_CONTRACT="$SURFACE_YAML" bash "$SURFACE_SH" resolve-owner "$rel" 2>/dev/null)"
+    if [ "$owner" != "fork" ]; then
+      echo "❌ WLS-5 $rel resolves owner:${owner:-<unmatched>} in customization-surface.yaml — must be 'fork'"
+      echo "     → a sync BLIND-COPIES it, replacing the fork's filled-in seam with the template's empty one"
+      fail=1
+    fi
+  done
+else
+  echo "⚠️  WLS-5 skipped — customization-surface contract not found ($SURFACE_YAML)"
+fi
+
+[ "$fail" = "0" ] || { echo "     → seams: demo/di/Demo*Module is stripped; di/Project*Module survives --clean AND sync."; exit 1; }
 n_seam=$(find "$CORE" -path '*/di/Project*Module.kt' -not -path '*/demo/*' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ')
 echo "white-label DI seams: $n_seam fork seam(s) survive --clean, demo aggregators correctly fenced"

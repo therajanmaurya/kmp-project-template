@@ -39,7 +39,6 @@ import kpt.core.data.demo.profile.ProfileRepository
 import kpt.core.data.demo.profile.impl.ProfileRepositoryImpl
 import kpt.core.data.demo.watchlist.WatchlistRepository
 import kpt.core.data.demo.watchlist.impl.WatchlistRepositoryImpl
-import kpt.core.data.di.OutboxQualifiers
 import kpt.core.database.AppDatabase
 import kpt.core.database.demo.cloudtodo.CloudTodoDao
 import kpt.core.database.demo.cloudtodo.toDomain
@@ -101,13 +100,13 @@ val DemoRepositoryModule = module {
     // single<> definitions by raw type (SubmitOutbox::class), not full KType, so
     // multiple SubmitOutbox<*> bindings collide and the last one wins regardless of
     // the generic parameter. See `OutboxQualifiers` KDoc for full background.
-    single<SubmitOutbox<Loan>>(qualifier = OutboxQualifiers.Loan) {
+    single<SubmitOutbox<Loan>>(qualifier = DemoOutboxQualifiers.Loan) {
         RoomSubmitOutbox(dao = get(), serializer = Loan.serializer())
     }
-    single<SubmitOutbox<BillReminder>>(qualifier = OutboxQualifiers.BillReminder) {
+    single<SubmitOutbox<BillReminder>>(qualifier = DemoOutboxQualifiers.BillReminder) {
         RoomSubmitOutbox(dao = get(), serializer = BillReminder.serializer())
     }
-    single<SubmitOutbox<LoanCalcScenario>>(qualifier = OutboxQualifiers.LoanCalcScenario) {
+    single<SubmitOutbox<LoanCalcScenario>>(qualifier = DemoOutboxQualifiers.LoanCalcScenario) {
         RoomSubmitOutbox(dao = get(), serializer = LoanCalcScenario.serializer())
     }
 
@@ -124,7 +123,7 @@ val DemoRepositoryModule = module {
         LoanSubmitSyncer(
             syncer = OfflineSubmitSyncer<Loan, Loan>(
                 scope = get(),
-                outbox = get(qualifier = OutboxQualifiers.Loan),
+                outbox = get(qualifier = DemoOutboxQualifiers.Loan),
                 networkStatusFlow = get<NetworkMonitor>().networkStatus,
                 submitBlock = { payload ->
                     get<LoanRepository>().upsert(payload)
@@ -137,7 +136,7 @@ val DemoRepositoryModule = module {
         BillReminderSubmitSyncer(
             syncer = OfflineSubmitSyncer<BillReminder, BillReminder>(
                 scope = get(),
-                outbox = get(qualifier = OutboxQualifiers.BillReminder),
+                outbox = get(qualifier = DemoOutboxQualifiers.BillReminder),
                 networkStatusFlow = get<NetworkMonitor>().networkStatus,
                 submitBlock = { payload ->
                     get<BillReminderRepository>().upsert(payload)
@@ -229,7 +228,7 @@ val DemoRepositoryModule = module {
     }
 
     // Outbox for PriceAlert payloads — RoomSubmitOutbox writes to framework_submit_drafts.
-    single<SubmitOutbox<PriceAlert>>(qualifier = OutboxQualifiers.PriceAlert) {
+    single<SubmitOutbox<PriceAlert>>(qualifier = DemoOutboxQualifiers.PriceAlert) {
         RoomSubmitOutbox(dao = get(), serializer = PriceAlert.serializer())
     }
 
@@ -239,7 +238,7 @@ val DemoRepositoryModule = module {
     single(createdAtStart = true) {
         val syncer = OfflineSubmitSyncer<PriceAlert, PriceAlert>(
             scope = get(),
-            outbox = get(qualifier = OutboxQualifiers.PriceAlert),
+            outbox = get(qualifier = DemoOutboxQualifiers.PriceAlert),
             networkStatusFlow = get<NetworkMonitor>().networkStatus,
             submitBlock = { payload -> get<AlertsRepository>().submitAlert(payload) },
         )

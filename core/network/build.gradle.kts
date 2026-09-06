@@ -28,6 +28,9 @@ buildkonfig {
     // `kpt.core.network.BuildKonfig` is imported without ceremony.
     packageName = "kpt.core.network"
     defaultConfigs {
+        // demo:begin — FRED is a DEMO access point; `scripts/remove-demo.sh` deletes FredApi/FredApiConfig
+        // and DemoNetworkModule, so this field must go with them. Unfenced, a cleaned fork kept a
+        // BuildKonfig field for an API it no longer has.
         // FRED_API_KEY is a VAULT-managed client secret, NOT a hardcoded key. It is declared as the
         // `mifos-x-fred-api-key` alias (category env_var_client) in secrets-manifest.yaml, and the "fred"
         // access point in app-profile/app.yaml references it. `/secrets pull` materializes it to
@@ -38,6 +41,12 @@ buildkonfig {
             STRING, "FRED_API_KEY",
             System.getenv("FRED_API_KEY") ?: localProps.getProperty("FRED_API_KEY", ""),
         )
+        // demo:end
+        // syncForkConfig:buildkonfig:begin — GENERATED from `app-profile/app.yaml`: one field per
+        // access point declaring `anon_key_env:`/`api_key_env:`, plus every `network.build_config_fields`
+        // entry. DO NOT HAND-EDIT — declare the key in app-profile and re-run `./gradlew syncForkConfig`.
+        // Values are read at BUILD time from the env var or local.properties, so no secret is committed.
+        // syncForkConfig:buildkonfig:end
     }
 }
 
@@ -103,3 +112,16 @@ dependencies {
     add("kspIosArm64", libs.ktorfit.ksp)
     add("kspIosSimulatorArm64", libs.ktorfit.ksp)
 }
+
+// ── Fork-owned dependency seam (white-label, mirrors `feature-deps.gradle.kts`) ────────────────
+// A fork adds its OWN dependencies for this module in `core/network/module-deps.gradle.kts` — never in
+// this file. That is what lets THIS build file be `owner: template` and FULL-COPY on a template
+// sync: the fork's deps live in a file the sync never touches, so a template plugin/version bump
+// can no longer drop them and no 3-way merge is needed.
+//
+// String `"commonMainImplementation"(...)` notation is used in the seam, not the type-safe
+// `libs.`/`projects.` accessors: those are NOT generated for `apply(from = ...)` script plugins.
+//
+// Guarded like feature-deps: a fork that adopted the template BEFORE this seam existed may not have
+// the file yet, and an unconditional apply would fail the whole configuration.
+project.file("module-deps.gradle.kts").takeIf { it.exists() }?.let { apply(from = it) }

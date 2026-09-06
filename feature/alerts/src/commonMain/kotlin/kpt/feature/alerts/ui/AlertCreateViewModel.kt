@@ -29,7 +29,7 @@ import kotlin.time.Clock
  * Offline-first WRITE: the submit is routed through [BaseMutationViewModel]'s (`MutationMode.Draft`)
  * `DraftSubmitHandler`, which persists the [PriceAlert] payload to the
  * `framework_submit_drafts` outbox (`SubmitOutbox<PriceAlert>`, DI-qualified
- * `OutboxQualifiers.PriceAlert`) BEFORE hitting the repository. On network failure the
+ * `DemoOutboxQualifiers.PriceAlert`) BEFORE hitting the repository. On network failure the
  * shipped `OfflineSubmitSyncer` retries it on reconnect. [performSubmit] delegates to the
  * pre-existing [AlertsRepository.submitAlert] — this feature is the missing UI over a
  * backing that already existed (repurpose, not rebuild).

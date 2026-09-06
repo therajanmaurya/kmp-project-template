@@ -343,6 +343,8 @@ abstract class SyncForkConfigTask : DefaultTask() {
             regenerateUrlTypes(root, appProfile)
             regenerateSupabaseAnonKeys(root, appProfile)
             regenerateApiBindings(root, appProfile)
+            regenerateDatabaseForkRegions(root, appProfile)
+            regenerateBuildKonfigFields(root, appProfile)
         }
 
         // ── 6. Store metadata files ───────────────────────────────────────────
@@ -1086,6 +1088,169 @@ abstract class SyncForkConfigTask : DefaultTask() {
         if (!file.isFile || file.readText() != next) {
             file.writeText(next)
             logger.lifecycle("syncForkConfig: regenerated GeneratedApiBindings ($rest REST, $supa Supabase)")
+        }
+    }
+
+    /**
+     * Refill `AppDatabase.kt`'s four `fork-*` regions from `app-profile/app.yaml#database`.
+     *
+     * This is what lets `core/database/**/AppDatabase.kt` be `owner: template` (FULL-COPY on a
+     * template sync) instead of a permanent 3-way merge: Room needs one compile-time
+     * `entities = [...]` array literal, so a fork's tables cannot live in a separate file — but they
+     * CAN be re-derived into the copied file afterwards. A sync full-copies the template's
+     * AppDatabase (fork regions empty), then the mandatory post-sync `syncForkConfig` projects the
+     * fork's declared schema back in. Same shape as the deployment metadata/screenshot regeneration.
+     *
+     * Hand-editing a `fork-*` region is pointless — this overwrites it. Declare in app-profile.
+     */
+    /**
+     * Refill the `syncForkConfig:buildkonfig` region of `core/network/build.gradle.kts` — one
+     * `buildConfigField` per key a fork declares in app-profile.
+     *
+     * Closes the half of the endpoint contract that was missing: `syncForkConfig` generated the
+     * REFERENCE (`AppSupabaseAnonKeys` emits `BuildKonfig.<anon_key_env>`) while the DECLARATION had
+     * to be hand-added to this template-owned build file. A fork that declared `anon_key_env: X` got
+     * `Unresolved reference: X` and no seam to fix it in. Now the declaration is derived from the same
+     * SoT as the reference, so the two cannot drift.
+     *
+     * Sources: every access point's `anon_key_env:` / `api_key_env:`, plus `network.build_config_fields`
+     * for keys not tied to an endpoint. Names already declared OUTSIDE the region (the demo
+     * `FRED_API_KEY`) are skipped — a duplicate `buildConfigField` fails the buildkonfig plugin.
+     */
+    private fun regenerateBuildKonfigFields(root: File, appProfile: Map<String, Any?>) {
+        val file = File(root, "core/network/build.gradle.kts")
+        if (!file.isFile) return
+        val begin = "        // syncForkConfig:buildkonfig:begin"
+        val end = "        // syncForkConfig:buildkonfig:end"
+        val text = file.readText()
+        if (!text.contains(begin) || !text.contains(end)) return
+
+        // A BuildKonfig constant is a Kotlin identifier reached as `BuildKonfig.NAME`; anything else
+        // would emit uncompilable source. Skip rather than emit (same policy as regenerateApiBindings).
+        val valid = Regex("^[A-Z][A-Z0-9_]*$")
+
+        // (name -> env). LinkedHashMap keeps declaration order stable so the region does not churn.
+        val fields = LinkedHashMap<String, String>()
+        for (m in accessPoints(appProfile)) {
+            for (key in listOf("anon_key_env", "api_key_env")) {
+                val env = m[key]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+                if (valid.matches(env)) fields.putIfAbsent(env, env)
+            }
+        }
+        val network = (appProfile["network"] as? Map<*, *>).orEmpty()
+        for (row in (network["build_config_fields"] as? List<*>) ?: emptyList<Any?>()) {
+            val m = row as? Map<*, *> ?: continue
+            val name = m["name"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            if (!valid.matches(name)) continue
+            val env = m["from_env"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: name
+            if (valid.matches(env)) fields.putIfAbsent(name, env)
+        }
+
+        // Anything already declared outside the region wins — re-emitting it would be a duplicate.
+        val outside = text.substringBefore(begin) + text.substringAfter(end)
+        val existing = Regex("""buildConfigField\(\s*STRING,\s*"([A-Z0-9_]+)"""")
+            .findAll(outside).map { it.groupValues[1] }.toSet()
+
+        val body = buildString {
+            append(begin).append(" — GENERATED from `app-profile/app.yaml`: one field per\n")
+            append("        // access point declaring `anon_key_env:`/`api_key_env:`, plus every `network.build_config_fields`\n")
+            append("        // entry. DO NOT HAND-EDIT — declare the key in app-profile and re-run `./gradlew syncForkConfig`.\n")
+            append("        // Values are read at BUILD time from the env var or local.properties, so no secret is committed.\n")
+            for ((name, env) in fields) {
+                if (name in existing) continue
+                append("        buildConfigField(\n")
+                append("            STRING, \"").append(name).append("\",\n")
+                append("            System.getenv(\"").append(env).append("\") ?: localProps.getProperty(\"")
+                    .append(env).append("\", \"\"),\n")
+                append("        )\n")
+            }
+            append(end)
+        }
+        val before = file.readText()
+        patchSentinel(file, begin, end, body)
+        if (file.readText() != before) {
+            val emitted = fields.keys.count { it !in existing }
+            logger.lifecycle("syncForkConfig: regenerated core/network buildkonfig fields ($emitted field(s))")
+        }
+    }
+
+    private fun regenerateDatabaseForkRegions(root: File, appProfile: Map<String, Any?>) {
+        val file = File(
+            root,
+            "core/database/src/commonMain/kotlin/kpt/core/database/AppDatabase.kt",
+        )
+        if (!file.isFile) return
+
+        val db = (appProfile["database"] as? Map<*, *>).orEmpty()
+        fun list(key: String): List<Any?> = (db[key] as? List<*>) ?: emptyList<Any?>()
+
+        // FQN hygiene mirrors regenerateApiBindings: a malformed FQN is SKIPPED, never emitted —
+        // a bad import breaks the whole module's compile, while a skipped row is caught by the
+        // G-WHITE-LABEL-SEPARATION gate with a pointed message.
+        fun fqn(v: Any?): String? = v?.toString()?.trim()
+            ?.takeIf { it.isNotEmpty() && it.contains('.') && it.substringAfterLast('.').isNotEmpty() }
+
+        val entities = list("entities").mapNotNull(::fqn)
+
+        val daos = list("daos").mapNotNull { row ->
+            val m = row as? Map<*, *> ?: return@mapNotNull null
+            val name = m["name"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val type = fqn(m["type"]) ?: return@mapNotNull null
+            name to type
+        }
+
+        val migrations = list("auto_migrations").mapNotNull { row ->
+            val m = row as? Map<*, *> ?: return@mapNotNull null
+            val from = (m["from"] as? Number)?.toInt() ?: return@mapNotNull null
+            val to = (m["to"] as? Number)?.toInt() ?: return@mapNotNull null
+            val spec = fqn(m["spec"])
+            Triple(from, to, spec)
+        }
+
+
+        val converters = list("type_converters").mapNotNull(::fqn)
+
+        val entityBody = buildString {
+            append("        // gen-entities:begin\n")
+            entities.forEach { append("        ").append(it).append("::class,\n") }
+            append("        // gen-entities:end")
+        }
+        val migrationBody = buildString {
+            append("        // gen-migrations:begin\n")
+            migrations.forEach { (from, to, spec) ->
+                append("        AutoMigration(from = $from, to = $to")
+                if (spec != null) append(", spec = $spec::class")
+                append("),\n")
+            }
+            append("        // gen-migrations:end")
+        }
+        val daoBody = buildString {
+            append("    // gen-daos:begin\n")
+            daos.forEach { (name, type) -> append("    abstract val ").append(name).append(": ").append(type).append('\n') }
+            append("    // gen-daos:end")
+        }
+        // The WHOLE annotation is emitted or nothing at all: Room rejects an argument-less
+        // `@ColumnTypeConverters()`, so an empty converter list must leave no annotation behind.
+        val converterBody = buildString {
+            append("// gen-converters:begin\n")
+            if (converters.isNotEmpty()) {
+                append("@ColumnTypeConverters(\n")
+                converters.forEach { append("    ").append(it).append("::class,\n") }
+                append(")\n")
+            }
+            append("// gen-converters:end")
+        }
+
+        val before = file.readText()
+        patchSentinel(file, "        // gen-entities:begin", "        // gen-entities:end", entityBody)
+        patchSentinel(file, "        // gen-migrations:begin", "        // gen-migrations:end", migrationBody)
+        patchSentinel(file, "    // gen-daos:begin", "    // gen-daos:end", daoBody)
+        patchSentinel(file, "// gen-converters:begin", "// gen-converters:end", converterBody)
+        if (file.readText() != before) {
+            logger.lifecycle(
+                "syncForkConfig: regenerated AppDatabase fork regions " +
+                    "(${entities.size} entities, ${daos.size} DAOs, ${migrations.size} migrations, ${converters.size} converters)",
+            )
         }
     }
 

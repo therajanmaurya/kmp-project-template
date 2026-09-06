@@ -50,7 +50,12 @@ DEMO_FEATURES=$(awk '/demo:begin/{s=1;next} /demo:end/{s=0} s' settings.gradle.k
 # *.yaml included so app-profile/app.yaml's fenced demo access_points are stripped too — otherwise a
 # cleaned fork keeps DECLARING endpoints whose API classes step 4 just deleted, and the next
 # syncForkConfig regenerates bindings that cannot compile.
-MARKED_FILES=$(grep -rl 'demo:begin' --include='*.kt' --include='*.kts' --include='*.yaml' . 2>/dev/null | grep -v '/build/' || true)
+# Test fixtures are EXCLUDED: `scripts/product-health/tests/**` holds RED/GREEN canary trees whose
+# whole purpose is to CONTAIN demo fences (wls3-seam-fenced, wls4-demo-loose, network-buildkonfig).
+# Stripping them turns every RED fixture green, silently disabling the gates that verify the
+# white-label machinery — the strip would quietly break its own safety net.
+MARKED_FILES=$(grep -rl 'demo:begin' --include='*.kt' --include='*.kts' --include='*.yaml' . 2>/dev/null \
+  | grep -v '/build/' | grep -v '/product-health/tests/' || true)
 
 echo "remove-demo ($MODE): demo features = ${DEMO_FEATURES//$'\n'/ }"
 
@@ -72,7 +77,7 @@ DEMO_PKGS=$(echo "$DEMO_FEATURES" | sed 's/-//g' | paste -sd'|' -)
 [ -z "$DEMO_PKGS" ] && DEMO_PKGS="__none__"
 say "strip 'import kpt.core.*.demo.*' + demo-feature imports from surviving .kt files"
 if [ "$APPLY" -eq 1 ]; then
-  find . -name '*.kt' -not -path '*/build/*' -print0 | while IFS= read -r -d '' f; do
+  find . -name '*.kt' -not -path '*/build/*' -not -path '*/product-health/tests/*' -print0 | while IFS= read -r -d '' f; do
     sed -i '' -E \
       -e '/^import kpt\.core\.[a-z]+\.demo\./d' \
       -e '/^import kpt\.feature\.[a-z]+\.demo\./d' \
@@ -142,10 +147,18 @@ done <<< "$DEMO_FEATURES"
 # ── 6. Reset the Room schema VERSION to a fresh-fork baseline ─────────────────────────
 #     (the @AutoMigration history lived inside the stripped demo block; a fresh fork has
 #      no installed users to migrate, so it starts clean at v1).
+#     The target is TEMPLATE_BASE_VERSION, not VERSION: `VERSION` has been
+#     `TEMPLATE_BASE_VERSION + ForkDatabaseConfig.VERSION_OFFSET` since the version was split for
+#     conflict-free adoption, so the old `const val VERSION = [0-9]*` pattern matched NOTHING and
+#     this reset was a silent no-op — a cleaned fork kept v13 with its migration history stripped.
 DB="core/database/src/commonMain/kotlin/kpt/core/database/AppDatabase.kt"
 if [ -f "$DB" ]; then
-  say "reset $DB VERSION → 1"
-  [ "$APPLY" -eq 1 ] && sed -i '' 's/const val VERSION = [0-9][0-9]*/const val VERSION = 1/' "$DB"
+  say "reset $DB TEMPLATE_BASE_VERSION → 1"
+  if [ "$APPLY" -eq 1 ]; then
+    sed -i '' 's/const val TEMPLATE_BASE_VERSION = [0-9][0-9]*/const val TEMPLATE_BASE_VERSION = 1/' "$DB"
+    grep -q 'const val TEMPLATE_BASE_VERSION = 1$' "$DB" \
+      || { echo "remove-demo: FAILED to reset TEMPLATE_BASE_VERSION in $DB" >&2; exit 1; }
+  fi
 fi
 
 # ── 7. Formatter pass to drop the now-unused demo imports left by the block strip ─────

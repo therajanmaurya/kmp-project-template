@@ -24,7 +24,7 @@ build/
 build-cache/
 .externalNativeBuild
 .cxx
-# iOS — Xcode + CocoaPods
+# iOS — Xcode
 # Per-user Xcode state (breakpoints, window positions, UI state, scheme
 # selections) — never commit, it's per-developer and leaks personal data
 # (macOS username) into every fork.

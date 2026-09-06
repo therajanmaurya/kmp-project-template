@@ -1183,9 +1183,9 @@ gh workflow run multi-platform-build-and-publish.yml \
 ./gradlew :cmp-android:assembleDebug --stacktrace --info --debug
 
 # iOS
-xcodebuild -workspace cmp-ios/iosApp.xcworkspace \
-  -scheme iosApp \
-  -configuration Debug \
+xcodebuild -project cmp-ios/iosApp.xcodeproj \
+  -scheme demoDebug \
+  -configuration demoDebug \
   build | tee build.log
 
 # Fastlane
