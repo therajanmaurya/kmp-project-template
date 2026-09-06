@@ -90,6 +90,11 @@ module AppProfile
   MAP = {
     # ── identity / app ──
     "app.id"                             => "identity.app_id",
+    # identity.app_name is authored in app-profile and documented (CLAUDE.md) as flowing to
+    # fork.properties#app.display.name → BuildKonfig.APP_DISPLAY_NAME, but had no MAP entry, so a
+    # properly-DERIVED bridge never carried it: feature/settings + core-base/ui silently fell back
+    # to "App" / "App Toolkit". Only a hand-authored fork.properties ever had the key.
+    "app.display.name"                   => "identity.app_name",
     "app.description"                    => "store.app_description",
     # ── org ──
     "org.name"                           => "org.name",
