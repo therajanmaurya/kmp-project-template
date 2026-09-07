@@ -105,6 +105,9 @@ kotlin {
 
 dependencies {
     add("kspCommonMainMetadata", libs.ktorfit.ksp)
+    // Koin API bindings, derived from @ApiBinding on the API types. Metadata-only: the bindings are
+    // ONE commonMain file every target shares, unlike ktorfit's per-target `create*Api()` factories.
+    add("kspCommonMainMetadata", project(":tools:network-ksp"))
     add("kspAndroid", libs.ktorfit.ksp)
     add("kspJs", libs.ktorfit.ksp)
     add("kspWasmJs", libs.ktorfit.ksp)
@@ -125,3 +128,40 @@ dependencies {
 // Guarded like feature-deps: a fork that adopted the template BEFORE this seam existed may not have
 // the file yet, and an unconditional apply would fail the whole configuration.
 project.file("module-deps.gradle.kts").takeIf { it.exists() }?.let { apply(from = it) }
+
+/*
+ * The access-point KINDS, passed to :tools:network-ksp.
+ *
+ * A class cannot know whether its endpoint is REST or Supabase in a given fork — that is the point's
+ * `type:`, and the whole endpoint topology (URL, kind, owner, secrets) deliberately stays in
+ * app-profile as per-fork deployment config. `@ApiBinding` carries only the class<->point link, so
+ * the processor still needs the kind to pick the binding shape. Feeding the DECLARED ids in also
+ * makes an `@ApiBinding("typo")` a build error instead of a binding that fails at Koin graph
+ * construction on a device.
+ */
+val accessPointKinds = providers.provider {
+    val yaml = rootProject.file("app-profile/app.yaml")
+    if (!yaml.isFile) return@provider ""
+    val rows = mutableListOf<String>()
+    var inPoints = false
+    var id: String? = null
+    yaml.forEachLine { raw ->
+        val line = raw.substringBefore('#').trimEnd()
+        when {
+            line.matches(Regex("^  access_points:\\s*$")) -> inPoints = true
+            line.matches(Regex("^  [a-zA-Z_]+:.*$")) -> inPoints = false
+            line.matches(Regex("^[a-zA-Z_]+:.*$")) -> inPoints = false
+            inPoints -> {
+                Regex("^\\s*- id:\\s*([A-Za-z0-9_-]+)").find(line)?.let { id = it.groupValues[1] }
+                Regex("^\\s*type:\\s*([a-z]+)").find(line)?.let { m ->
+                    id?.let { rows += "$it:${m.groupValues[1]}" }
+                }
+            }
+        }
+    }
+    rows.joinToString("|")
+}
+
+ksp {
+    arg("kpt.network.accessPointKinds", accessPointKinds.get())
+}

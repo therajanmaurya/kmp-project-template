@@ -12,10 +12,12 @@ package kpt.core.network.coingecko.api
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.coingecko.dto.CoinDetailDto
 import kpt.core.network.coingecko.dto.CoinMarketDto
 
 /** CoinGecko public API v3. Base URL: [BASE_URL]. */
+@ApiBinding("coingecko")
 interface CoinGeckoApi {
 
     @GET("api/v3/coins/markets")

@@ -169,11 +169,14 @@ than declaring its own.
 qualifier, a duplicate cache-key string (two streams sharing a key share a fetched-at stamp, so one
 refresh silently marks the other fresh), a placeholder with no matching param, or a malformed `ttl`.
 
-> **For `/kmp-project-template-retrain` and `/implement`:** the annotation is the ONLY input. Do not
-> re-add `core_store.stores[]` or `core_store.cache_keys[]` to app-profile, do not author an
-> `AppStoreRegistry.kt` or `AppCacheKeys.kt`, do not hand-write entries in `GeneratedStoreBindings`,
-> and do not recreate a `ProjectStoreModule` seam. All of those existed before the KSP migration and
-> were removed; regenerating any of them produces duplicate declarations that fail the build.
+> **For `/kmp-project-template-retrain` and `/implement`:** across `core/store`, `core/database` and
+> `core/network` the ANNOTATION is the only input. Do not re-add `core_store.stores[]` /
+> `core_store.cache_keys[]`, `database.entities[]` / `database.daos[]` / `database.type_converters[]`,
+> or an access point's `api:` field to app-profile. Do not author `AppStoreRegistry.kt`,
+> `AppCacheKeys.kt` or `AppDatabase.kt`, do not hand-write entries in `GeneratedStoreBindings`,
+> `GeneratedDaoBindings`, `GeneratedConverterBindings` or `GeneratedApiBindings`, and do not recreate a
+> `ProjectStoreModule` seam. All of those existed before the KSP migrations and were removed;
+> regenerating any of them produces duplicate declarations that fail the build.
 
 ### Write side — one unified mutation ViewModel
 
@@ -226,26 +229,34 @@ surface**, so the only thing a fork writes is the API type itself:
 |---|---|
 | `AppAccessPoints.points` | the registry list (`AccessPointRegistry` wraps it in `NetworkModule`) |
 | `AppUrlTypes` | one `UrlType` constant per endpoint, for runtime base-URL switching |
-| `GeneratedApiBindings` | the Koin binding for every point declaring `api:` — included by `ProjectNetworkModule` |
+| `GeneratedApiBindings` | the Koin binding for every API type annotated `@ApiBinding` — included by `ProjectNetworkModule` |
 | `AppSupabaseAnonKeys` | one row per Supabase point; value from `BuildKonfig` via `anon_key_env:` |
 
-**Adding an endpoint is three steps: declare it (with its `api:` FQN) in `app.yaml`, write the API
-type, run `syncForkConfig`.** There is no wiring step — REST and Supabase alike.
+**Adding an endpoint is two steps: declare it in `app.yaml`, then write the API type and annotate it
+`@ApiBinding("<id>")`.** There is no wiring step — REST and Supabase alike.
+
+The split is deliberate. The endpoint's `base_url` / `type` / `owner` / `secret_alias` /
+`anon_key_env` are per-fork DEPLOYMENT config and stay in app-profile; the class↔point link is a
+property of the class and lives on it. Putting a URL in an annotation would force a fork to edit a
+template-owned API class to change it — the 3-way merge this contract exists to remove.
 
 - **REST** — `restApi<T>("<id>")` builds the Ktor client + Ktorfit from the access point (base URL,
-  loggable host, proxy). Declaring `api: a.b.FooApi` generates `restApi("<id>") { it.createFooApi() }`.
+  loggable host, proxy). `@ApiBinding("<id>")` on `FooApi` generates `restApi("<id>") { it.createFooApi() }`.
 - **Supabase** — `supabaseApi<T>("<id>")` is the exact twin, resolving a per-point
   `SupabaseConfigClient` (URL from the registry, anon key by id) via `SupabaseClientFactory`.
-  Declaring `api: a.b.FooApi` generates `supabaseApi("<id>") { FooApi(it) }`, so the facade needs a
-  single-arg constructor taking `SupabaseConfigClient`. N Supabase projects, not one hardcoded client.
+  `@ApiBinding("<id>")` on `FooApi` generates `supabaseApi("<id>") { FooApi(it) }`, so the facade needs
+  a single-arg constructor taking `SupabaseConfigClient`. N Supabase projects, not one hardcoded client.
   Unlike REST there is no generated stub — supabase-kt has no interface-generation step, so `T` is the
   fork's own typed wrapper over `client.postgrest`.
 
-The generated files are **committed** (a fresh clone must build without running Gradle), so nothing
-inherently forces them to still match `app.yaml`. `scripts/product-health/checks/network-access-points.sh`
-(NAP-1…NAP-7) is what does: it fails on a declared-but-unprojected endpoint, a stale base URL, a
-missing `UrlType`, an unbound `api:`, a Supabase point with no anon-key row, an anon key committed as a
-literal, and any hand-written `restApi(`/`supabaseApi(` outside the generated file. Two of those are
+`AppAccessPoints` / `AppUrlTypes` / `AppSupabaseAnonKeys` are **committed** (a fresh clone must build
+without running Gradle), so nothing inherently forces them to still match `app.yaml`;
+`GeneratedApiBindings` is a build artifact derived from the annotations.
+`scripts/product-health/checks/network-access-points.sh` (NAP-1…NAP-9) is what keeps them honest: it
+fails on a declared-but-unprojected endpoint, a stale base URL, a missing `UrlType`, an `@ApiBinding`
+naming an undeclared point (or none at all, which would make the check vacuous), a Supabase point with
+no anon-key row, an anon key committed as a literal, and any hand-written `restApi(`/`supabaseApi(`
+outside the generated file. Two of those are
 otherwise silent — a missing `UrlType` constant makes `getBaseUrl` fall back to `MAIN`'s URL rather
 than fail, and a committed anon key works fine right up until it needs rotating.
 

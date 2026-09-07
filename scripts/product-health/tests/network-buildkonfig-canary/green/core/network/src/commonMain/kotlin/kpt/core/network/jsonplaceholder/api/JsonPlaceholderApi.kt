@@ -9,23 +9,7 @@
  */
 package kpt.core.network.jsonplaceholder.api
 
-import de.jensklingenberg.ktorfit.http.Body
-import de.jensklingenberg.ktorfit.http.GET
-import de.jensklingenberg.ktorfit.http.PUT
-import de.jensklingenberg.ktorfit.http.Path
-import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
+import kpt.core.base.network.annotation.ApiBinding
 
-/**
- * jsonplaceholder `/todos` — a free WRITABLE demo REST API (POST/PUT accepted, echoed back).
- * The template's other demo APIs (CoinGecko/FRED/WorldBank/Frankfurter) are read-only, so this
- * is the only endpoint that can showcase the Store5 MUTABLE write archetype end-to-end.
- * Ktorfit-generated impl — raw DTO returns, no NetworkResult (matches the demo pipeline).
- */
-interface JsonPlaceholderApi {
-    @GET("todos/{id}")
-    suspend fun getTodo(@Path("id") id: Int): CloudTodoDto
-
-    /** Write-back (`PUT /todos/{id}`) — jsonplaceholder echoes the body as if persisted. */
-    @PUT("todos/{id}")
-    suspend fun updateTodo(@Path("id") id: Int, @Body todo: CloudTodoDto): CloudTodoDto
-}
+@ApiBinding("jsonplaceholder")
+interface JsonPlaceholderApi

@@ -12,10 +12,12 @@ package kpt.core.network.frankfurter.api
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.frankfurter.dto.ExchangeRatesDto
 import kpt.core.network.frankfurter.dto.RateHistoryDto
 
 /** Frankfurter open-source exchange rate API. Base URL: [BASE_URL]. */
+@ApiBinding("frankfurter")
 interface FrankfurterApi {
 
     @GET("v1/latest")

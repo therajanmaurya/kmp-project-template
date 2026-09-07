@@ -13,6 +13,7 @@ import de.jensklingenberg.ktorfit.http.Body
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.PUT
 import de.jensklingenberg.ktorfit.http.Path
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
 
 /**
@@ -21,6 +22,7 @@ import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
  * is the only endpoint that can showcase the Store5 MUTABLE write archetype end-to-end.
  * Ktorfit-generated impl — raw DTO returns, no NetworkResult (matches the demo pipeline).
  */
+@ApiBinding("jsonplaceholder")
 interface JsonPlaceholderApi {
     @GET("todos/{id}")
     suspend fun getTodo(@Path("id") id: Int): CloudTodoDto

@@ -11,6 +11,7 @@ package kpt.core.network.fred.api
 
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Query
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.fred.dto.FredObservationsDto
 
 /**
@@ -24,6 +25,7 @@ import kpt.core.network.fred.dto.FredObservationsDto
  *
  * Reference docs: https://fred.stlouisfed.org/docs/api/fred/series_observations.html
  */
+@ApiBinding("fred")
 interface FredApi {
 
     /**

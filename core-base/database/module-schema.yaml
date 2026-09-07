@@ -5,10 +5,14 @@
 # `entities = [...]` array literal on the @Database class, and core-base has no @Database — it is
 # entity-only. So the classes cannot be composed in from here; only their NAMES can be projected.
 #
-# `./gradlew syncForkConfig` emits them into AppDatabase's `gen-infra-entities` / `gen-infra-daos`
-# regions. Before that they were the last hardcoded references in that array, which meant adding a
-# framework table required hand-editing `core/database/AppDatabase.kt` — a file core-base does not
-# own. Now it is: declare the table here, ship a migration unit, done.
+# `core/database/build.gradle.kts` reads this file and passes it to `tools/database-ksp` as a ksp
+# arg, which emits the rows into the generated `@Database`. Before that they were hardcoded in that
+# array, which meant adding a framework table required hand-editing `core/database/AppDatabase.kt` —
+# a file core-base does not own. Now it is: declare the table here, ship a migration unit, done.
+#
+# Why these are NOT `@DbEntity`-annotated like a fork's own tables: they live in THIS module, and the
+# KSP pass that builds the @Database runs over `core/database`'s sources, which cannot see them.
+# Their names are projected instead.
 #
 # NOT fork-editable. A fork's own tables go in `app-profile/app.yaml#database.entities`; these are
 # the framework's, present in every fork, and a fork that drops one breaks core-base at runtime.

@@ -86,7 +86,6 @@ network:
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
       anon_key_env: MY_SUPABASE_KEY
-      api: kpt.core.network.project.api.AppConfigApi
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
       # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
@@ -94,19 +93,16 @@ network:
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
-      api: kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
       owner: template
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
-      api: kpt.core.network.frankfurter.api.FrankfurterApi
     - id: coingecko                  # crypto market data
       owner: template
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
-      api: kpt.core.network.coingecko.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
       owner: template
       type: rest
@@ -115,13 +111,11 @@ network:
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
-      api: kpt.core.network.fred.api.FredApi
     - id: worldbank                  # World Bank macro indicators
       owner: template
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
-      api: kpt.core.network.worldbank.api.WorldBankApi
 
 # ── Room database — the fork's OWN schema additions (white-label seam, E1/C7) ────────────────
 # Declare entities/DAOs/migrations HERE rather than hand-editing `core/database/**/AppDatabase.kt`:
@@ -201,12 +195,6 @@ database:
     - { id: economic,   owner: template }
     - { id: watchlist,  owner: template }
     - { id: migrations, owner: template }   # the template's own schema-history specs
-    # demo:end
-  type_converters:
-    # demo:begin
-    - kpt.core.database.currency.converter.ChargeTypeConverters
-    - kpt.core.database.crypto.converter.FintechTypeConverters
-    - kpt.core.database.banking.converter.BankingTypeConverters
     # demo:end
 
 org:

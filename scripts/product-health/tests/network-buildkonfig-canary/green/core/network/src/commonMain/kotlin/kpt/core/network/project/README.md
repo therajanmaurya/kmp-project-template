@@ -3,9 +3,9 @@
 SCAFFOLDED by `./gradlew syncForkConfig` from the `project` access point in
 `app-profile/app.yaml#network.access_points`. One package per endpoint.
 
-- `api/` — the Ktorfit interface for this endpoint. Declare its FQN as `api:` on the
-  access point and the Koin binding is GENERATED into `di/GeneratedApiBindings.kt`;
-  there is no wiring step.
+- `api/` — the Ktorfit interface for this endpoint. Annotate it
+  `@ApiBinding("project")` and its Koin binding is GENERATED into
+  `di/GeneratedApiBindings.kt`; there is no wiring step.
 - `dto/` — the wire types this endpoint returns.
 
 `type: supabase` — the binding is `supabaseApi("project") { ${simple}Api(it) }`, so the

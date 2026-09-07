@@ -4,15 +4,16 @@
 # GeneratedApiBindings.kt is derived from the FORK's app-profile, so it is not demo content — but it
 # used to live under `core/network/.../demo/di/`, and remove-demo.sh deletes every `**/demo/**`
 # package outright. That combination was silently destructive: `customize.sh` strips the demo BY
-# DEFAULT ("forking = starting clean"), so a fork lost the generated file, and regenerateApiBindings'
+# DEFAULT ("forking = starting clean"), so a fork lost the generated file, and the generator's
 # `if (!dir.isDirectory) return` guard then made every later syncForkConfig a NO-OP. A fork could
-# declare `api:` in app.yaml forever and never get a binding, with nothing reporting it.
+# declare an endpoint forever and never get a binding, with nothing reporting it.
 #
-# Moving the file to `di/` fixes that but creates the opposite hazard: it now survives while the demo
-# API classes it binds are deleted. So remove-demo.sh must ALSO (a) strip the fenced demo access
-# points from app-profile/app.yaml, so a cleaned fork stops DECLARING endpoints it can no longer
-# compile, and (b) reset the generated file to its empty-module form so the tree compiles before the
-# fork re-runs syncForkConfig.
+# Moving the file to `di/` fixed that but created the opposite hazard: it survived while the demo API
+# classes it bound were deleted, so remove-demo.sh had to reset it to its empty-module form. Neither
+# hazard exists any more: the binding is declared by `@ApiBinding` ON the API class and generated
+# into build/, so deleting an endpoint package deletes its declaration and there is no committed
+# output to strand. remove-demo.sh still strips the fenced demo access points from app-profile, so a
+# cleaned fork stops DECLARING endpoints it no longer has.
 #
 # `AppDatabase.kt` USED to carry the same hazard, and no longer can. Its entities/DAOs/converters
 # were declared in `app-profile/app.yaml#database` and projected into committed `gen-*` regions, so
@@ -31,7 +32,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../../.." && pwd)"
-GEN_REL="core/network/src/commonMain/kotlin/kpt/core/network/di/GeneratedApiBindings.kt"
+NET_PKGS="core/network/src/commonMain/kotlin/kpt/core/network"
 DB_PKGS="core/database/src/commonMain/kotlin/kpt/core/database"
 INFRA_SCHEMA_REL="core-base/database/module-schema.yaml"
 SCHEMA_REL="core/database/schemas/kpt.core.database.AppDatabase"
@@ -41,9 +42,12 @@ ok()  { echo "   ✅ $1"; }
 bad() { echo "   ❌ $1"; rc=1; }
 
 SB="$(mktemp -d)"; trap 'rm -rf "$SB"' EXIT
-mkdir -p "$SB/scripts" "$SB/app-profile" "$SB/feature" "$SB/$(dirname "$GEN_REL")"
+mkdir -p "$SB/scripts" "$SB/app-profile" "$SB/feature" "$SB/$NET_PKGS"
 cp "$ROOT/scripts/remove-demo.sh" "$SB/scripts/"
-cp "$ROOT/$GEN_REL" "$SB/$GEN_REL"
+# The demo endpoints, copied with their @ApiBinding annotations — those ARE the binding declaration.
+for d in coingecko frankfurter fred jsonplaceholder worldbank; do
+  [ -d "$ROOT/$NET_PKGS/$d" ] && cp -R "$ROOT/$NET_PKGS/$d" "$SB/$NET_PKGS/"
+done
 mkdir -p "$SB/$DB_PKGS" "$SB/$SCHEMA_REL" "$SB/$(dirname "$INFRA_SCHEMA_REL")"
 # The demo tables, copied with their annotations — those ARE the declaration now.
 for d in alerts banking cloudtodo crypto currency economic watchlist; do
@@ -70,12 +74,12 @@ printf 'package kpt.core.database.alerts\n' > "$SB/$PKG_PROBE/Probe.kt"
 
 echo "── demo strip vs generated bindings (remove-demo.sh) ──"
 before_pts="$(grep -cE '^    - id:' "$SB/app-profile/app.yaml")"
-before_bind="$(grep -c 'restApi(\|supabaseApi(' "$SB/$GEN_REL")"
+before_bind="$(grep -rl '@ApiBinding' "$SB/$NET_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
 before_ent="$(grep -rl '@DbEntity' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
 before_dao="$(grep -rl '@DbDao' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
 before_conv="$(grep -rl '@DbConverters' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
 before_schema="$(find "$SB/$SCHEMA_REL" -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
-[ "$before_bind" -gt 0 ] || bad "fixture is vacuous — the repo's generated file has no bindings to strip"
+[ "$before_bind" -gt 0 ] || bad "fixture is vacuous — no @ApiBinding classes were copied in to strip"
 
 # --no-regen: this sandbox is a handful of copied files with no gradlew, and the strip HARD-FAILS if
 # it cannot re-derive. Its exit code is checked — it was not, and every green this canary reported
@@ -91,23 +95,21 @@ fi
   && bad "declared owner:template package '$PKG_PROBE' SURVIVED --apply — the package sweep read app-profile AFTER the fence strip had already removed the declarations" \
   || ok "declared owner:template module package deleted by --apply"
 
-[ -f "$SB/$GEN_REL" ] \
-  && ok "generated bindings SURVIVE the strip (not under demo/)" \
-  || bad "generated bindings were DELETED — codegen is now a permanent no-op for a cleaned fork"
+# The binding declaration IS the annotated class, so deleting the endpoint package deletes it. There
+# is no committed generated file left to reset — which is the point: it cannot outlive its classes.
+after_bind="$(grep -rl '@ApiBinding' "$SB/$NET_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+[ "$after_bind" = "0" ] \
+  && ok "all $before_bind @ApiBinding declaration(s) went with their endpoint packages" \
+  || bad "$after_bind @ApiBinding survive — the next build binds an API class the strip deleted"
 
-if [ -f "$SB/$GEN_REL" ]; then
-  left="$(grep -c 'restApi(\|supabaseApi(' "$SB/$GEN_REL")"
-  [ "$left" = "0" ] \
-    && ok "reset to the empty module (was $before_bind bindings, now $left)" \
-    || bad "$left binding(s) remain, referencing deleted demo API classes"
-  imports="$(grep -c '^import kpt.core.network.demo' "$SB/$GEN_REL")"
-  [ "$imports" = "0" ] && ok "no dangling demo imports" || bad "$imports dangling demo import(s)"
-fi
+[ ! -f "$SB/$NET_PKGS/di/GeneratedApiBindings.kt" ] \
+  && ok "GeneratedApiBindings.kt is not committed source (generated from the annotations)" \
+  || bad "GeneratedApiBindings.kt exists in src/ — a cleaned fork would ship stale demo bindings"
 
-demo_api="$(grep -c 'api: kpt.core.network.demo' "$SB/app-profile/app.yaml")"
+demo_api="$(grep -c 'api: kpt.core.network' "$SB/app-profile/app.yaml")"
 [ "$demo_api" = "0" ] \
-  && ok "app.yaml no longer declares any demo api: binding" \
-  || bad "$demo_api demo api: line(s) survive — the next syncForkConfig would rebuild an uncompilable binding"
+  && ok "app.yaml declares no api: FQN at all (the class carries it now)" \
+  || bad "$demo_api api: line(s) survive — that field was retired with @ApiBinding"
 
 after_pts="$(grep -cE '^    - id:' "$SB/app-profile/app.yaml")"
 [ "$after_pts" -gt 0 ] && [ "$after_pts" -lt "$before_pts" ] \

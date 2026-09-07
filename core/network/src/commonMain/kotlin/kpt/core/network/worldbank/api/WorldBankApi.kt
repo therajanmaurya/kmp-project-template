@@ -12,6 +12,7 @@ package kpt.core.network.worldbank.api
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.worldbank.dto.WorldBankResponseDto
 
 /**
@@ -24,6 +25,7 @@ import kpt.core.network.worldbank.dto.WorldBankResponseDto
  * [WorldBankResponseDto] class wraps a custom serializer that lifts both halves
  * into named fields — endpoint consumers see a regular data class.
  */
+@ApiBinding("worldbank")
 interface WorldBankApi {
 
     /**

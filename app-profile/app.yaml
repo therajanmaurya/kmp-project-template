@@ -43,18 +43,19 @@ network:
   #   loggable_host  host enabled for HTTP logging.
   #   proxied_host   optional — route via the platform proxy (CORS-blocked hosts).
   #   secret_alias   optional — vault alias for a REQUEST-time key (e.g. FRED's @Query api_key).
-  #   api            optional — FQN of the API type. Declaring it GENERATES the Koin binding into
-  #                  core/network/.../demo/di/GeneratedApiBindings.kt, so a fork writes ONLY the type:
+  #   (no `api:` field) — the class<->point link lives on the CLASS, as `@ApiBinding("<id>")`, which
+  #                  generates the Koin binding into core/network/.../di/GeneratedApiBindings.kt:
   #                    rest      → `restApi("<id>") { it.create<Simple>() }`  (Ktorfit factory by convention)
   #                    supabase  → `supabaseApi("<id>") { <Simple>(it) }`     (single-arg ctor taking
   #                                SupabaseConfigClient)
-  #                  Omit `api` for an endpoint that is declared but not yet wired.
+  #                  An endpoint declared here with no annotated class is simply not wired yet.
   #   anon_key_env   supabase only — env / local.properties key holding the anon key. Generated into
   #                  AppSupabaseAnonKeys as a BuildKonfig read, so no key is ever committed. Omit and
   #                  the point resolves to an empty key (client stays inert, isConfigured == false).
   #
-  # syncForkConfig regenerates AppAccessPoints.points, AppUrlTypes, AppSupabaseAnonKeys and
-  # GeneratedApiBindings from this list. (B3, epic pure-white-label-store5-network)
+  # syncForkConfig regenerates AppAccessPoints.points, AppUrlTypes and AppSupabaseAnonKeys from this
+  # list. GeneratedApiBindings comes from `@ApiBinding` instead — see above. (B3, epic
+  # pure-white-label-store5-network)
   # Every access point declares `owner:` — the ONE field that decides its lifecycle:
   #
   #   owner: fork      the CONSUMER's endpoint. Kept by the customizer, never touched by a sync.
@@ -85,7 +86,6 @@ network:
       type: supabase
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
-      api: kpt.core.network.project.api.AppConfigApi
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
       # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
@@ -93,19 +93,16 @@ network:
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
-      api: kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
       owner: template
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
-      api: kpt.core.network.frankfurter.api.FrankfurterApi
     - id: coingecko                  # crypto market data
       owner: template
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
-      api: kpt.core.network.coingecko.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
       owner: template
       type: rest
@@ -114,37 +111,22 @@ network:
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
-      api: kpt.core.network.fred.api.FredApi
     - id: worldbank                  # World Bank macro indicators
       owner: template
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
-      api: kpt.core.network.worldbank.api.WorldBankApi
 
-# ── Room database — the fork's OWN schema additions (white-label seam, E1/C7) ────────────────
-# Declare entities/DAOs/migrations HERE rather than hand-editing `core/database/**/AppDatabase.kt`:
-# `./gradlew syncForkConfig` projects them into that file's `fork-imports` / `fork-entities` /
-# `fork-migrations` / `fork-daos` regions after every sync, so template schema updates and fork
-# schema additions never share a merge hunk. (AppDatabase.kt is still `owner: merge` — full-copy
-# additionally needs the DEMO declarations to leave the file; see customization-surface.yaml.)
+# ── Room database — declared by ANNOTATION, not here (E1/C7, superseded by the KSP migration) ──
+# This block used to carry `entities:` / `daos:` / `type_converters:` / `auto_migrations:`, which
+# syncForkConfig projected into `gen-*` regions of `core/database/**/AppDatabase.kt`. All of it is
+# gone: the declaration is now the annotation ON the class, and AppDatabase is generated whole.
 #
-# Adding a fork table is: write the @Entity + @Dao, declare them below, bump
-# ForkDatabaseConfig.VERSION_OFFSET, add the matching auto_migration hop, re-run syncForkConfig.
-#
-#   database:
-#     entities:
-#       - com.acme.core.database.invoice.InvoiceEntity
-#     daos:
-#       - name: invoiceDao
-#         type: com.acme.core.database.invoice.InvoiceDao
-#     auto_migrations:
-#       - {from: 13, to: 14}                     # optional `spec:` FQN for a @DeleteTable/@RenameColumn spec
-#     type_converters:
-#       - com.acme.core.database.invoice.MoneyConverters
-#
-# Empty on the template: the demo showcase's own tables live in the `demo:` fenced regions of
-# AppDatabase.kt and are stripped by `scripts/remove-demo.sh`, not declared here.
+# Adding a fork table is: write the `@Entity` and annotate it `@DbEntity`; write the `@Dao` and
+# annotate it `@DbDao`. Nothing else — no row here, no accessor, no Koin binding. The one thing
+# still recorded by hand is schema HISTORY, in `app-profile/migration-ledger.yaml`, because a
+# `from`/`to` edge is a contract with every installed device that no class can carry.
+
 # core/database — PACKAGE OWNERSHIP only.
 #
 # The schema itself is no longer declared here. Entities, DAOs and type-converters are declared by

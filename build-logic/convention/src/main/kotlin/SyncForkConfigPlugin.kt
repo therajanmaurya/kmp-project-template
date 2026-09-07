@@ -342,7 +342,6 @@ abstract class SyncForkConfigTask : DefaultTask() {
             regenerateAccessPoints(root, appProfile)
             regenerateUrlTypes(root, appProfile)
             regenerateSupabaseAnonKeys(root, appProfile)
-            regenerateApiBindings(root, appProfile)
             reconcileMigrationLedger(root, appProfile)
             regenerateBuildKonfigFields(root, appProfile)
             scaffoldAccessPointPackages(root, appProfile)
@@ -992,105 +991,6 @@ abstract class SyncForkConfigTask : DefaultTask() {
         }
     }
 
-    /**
-     * Regenerate `GeneratedApiBindings.kt` — the Koin binding for every access point declaring `api:`.
-     *
-     * This is the pass that makes "a fork writes only the API type" true. Previously each endpoint
-     * needed a hand-added `restApi("<id>") { … }` line in `ProjectNetworkModule`, so a declared point
-     * and its wiring could drift in either direction (declared-but-unwired, or wired-to-an-undeclared
-     * id). Both are now impossible by construction: the binding list IS a projection of app-profile.
-     *
-     * A WHOLE FILE rather than a sentinel block inside `ProjectNetworkModule`, because the bindings
-     * need per-API imports and ktlint's import-ordering rule does not tolerate sentinel comments
-     * interleaved in the import block. `ProjectNetworkModule` keeps its hand-written wiring (e.g.
-     * `FredApiConfig`, whose key is a request-time @Query param, not client setup) and pulls this in
-     * with `includes(GeneratedApiBindings)`.
-     *
-     * Factory conventions, both mechanical from the declared FQN:
-     *  - REST     `a.b.XApi` -> import `a.b.createXApi`, emit `restApi("id") { it.createXApi() }`
-     *             (Ktorfit generates `create<InterfaceName>()` beside the interface).
-     *  - SUPABASE `a.b.XApi` -> import `a.b.XApi`, emit `supabaseApi("id") { XApi(it) }`
-     *             (single-arg constructor taking SupabaseConfigClient).
-     *
-     * Emitted into the template-owned `di` package next to `NetworkModule`, which includes it. It must
-     * NOT live under `demo/` — see the directory comment below for the silent-no-op that caused.
-     */
-    private fun regenerateApiBindings(root: File, appProfile: Map<String, Any?>) {
-        // `di`, NOT `demo/di`. The bindings are derived from the FORK's app-profile, so they are not
-        // demo content — and `scripts/remove-demo.sh` deletes every `**/demo/**` package outright.
-        // While this lived under demo/di, the default `customize.sh` run (which strips the demo by
-        // design — "forking = starting clean") deleted the generated file, and this function's
-        // directory guard then made every later run a SILENT no-op: a fork could declare `api:`
-        // forever and never get a binding. `di` survives the strip, so the loop keeps working.
-        val dir = File(root, "core/network/src/commonMain/kotlin/kpt/core/network/di")
-        if (!dir.isDirectory) return
-
-        // (id, api FQN, isSupabase) per point that declares `api:`. A malformed FQN (no package, or a
-        // trailing dot) is skipped rather than emitted — a broken import would fail the whole module's
-        // compile, whereas a skipped binding is caught precisely by NAP-4 with a pointed message.
-        val bindings = accessPoints(appProfile).mapNotNull { m ->
-            val fqn = m["api"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-            if (!fqn.contains('.') || fqn.substringAfterLast('.').isEmpty()) return@mapNotNull null
-            Triple(m["id"].toString(), fqn, isSupabase(m))
-        }
-        val imports = sortedSetOf<String>()
-        val lines = StringBuilder()
-        var rest = 0
-        var supa = 0
-        for ((id, fqn, supabase) in bindings) {
-            val pkg = fqn.substringBeforeLast('.')
-            val simple = fqn.substringAfterLast('.')
-            if (supabase) {
-                imports += fqn
-                imports += "kpt.core.base.network.supabaseApi"
-                lines.append("    supabaseApi(\"$id\") { $simple(it) }\n")
-                supa++
-            } else {
-                imports += "$pkg.create$simple"
-                imports += "kpt.core.base.network.restApi"
-                lines.append("    restApi(\"$id\") { it.create$simple() }\n")
-                rest++
-            }
-        }
-        imports += "org.koin.core.module.Module"
-        imports += "org.koin.dsl.module"
-
-        val sb = StringBuilder()
-        sb.append("/*\n")
-        sb.append(" * Copyright 2026 Mifos Initiative\n")
-        sb.append(" *\n")
-        sb.append(" * This Source Code Form is subject to the terms of the Mozilla Public\n")
-        sb.append(" * License, v. 2.0. If a copy of the MPL was not distributed with this\n")
-        sb.append(" * file, You can obtain one at https://mozilla.org/MPL/2.0/.\n")
-        sb.append(" *\n")
-        sb.append(" * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE\n")
-        sb.append(" */\n")
-        sb.append("package kpt.core.network.di\n\n")
-        imports.forEach { sb.append("import ").append(it).append('\n') }
-        sb.append("\n/**\n")
-        sb.append(" * GENERATED by `./gradlew syncForkConfig` from `app-profile/app.yaml#network.access_points`\n")
-        sb.append(" * — one Koin binding per access point that declares `api:`. DO NOT HAND-EDIT.\n")
-        sb.append(" *\n")
-        sb.append(" * To add an API: declare the endpoint (with its `api:` FQN) in app-profile, write the API\n")
-        sb.append(" * type, and re-run syncForkConfig. There is no wiring step — that is the point.\n")
-        sb.append(" *\n")
-        sb.append(" * Pulled in by `NetworkModule` via `includes(GeneratedApiBindings)`.\n")
-        sb.append(" */\n")
-        sb.append("val GeneratedApiBindings: Module = module {\n")
-        if (lines.isEmpty()) {
-            sb.append("    // No access point declares `api:` yet — add one in app-profile/app.yaml.\n")
-        } else {
-            sb.append(lines)
-        }
-        sb.append("}\n")
-
-        val file = File(dir, "GeneratedApiBindings.kt")
-        val next = sb.toString()
-        if (!file.isFile || file.readText() != next) {
-            file.writeText(next)
-            logger.lifecycle("syncForkConfig: regenerated GeneratedApiBindings ($rest REST, $supa Supabase)")
-        }
-    }
 
     /**
      * Refill `AppDatabase.kt`'s four `fork-*` regions from `app-profile/app.yaml#database`.
@@ -1175,9 +1075,9 @@ abstract class SyncForkConfigTask : DefaultTask() {
                     append("# `$id` — access point package\n\n")
                     append("SCAFFOLDED by `./gradlew syncForkConfig` from the `$id` access point in\n")
                     append("`app-profile/app.yaml#network.access_points`. One package per endpoint.\n\n")
-                    append("- `api/` — the Ktorfit interface for this endpoint. Declare its FQN as `api:` on the\n")
-                    append("  access point and the Koin binding is GENERATED into `di/GeneratedApiBindings.kt`;\n")
-                    append("  there is no wiring step.\n")
+                    append("- `api/` — the Ktorfit interface for this endpoint. Annotate it\n")
+                    append("  `@ApiBinding(\"$id\")` and its Koin binding is GENERATED into\n")
+                    append("  `di/GeneratedApiBindings.kt`; there is no wiring step.\n")
                     append("- `dto/` — the wire types this endpoint returns.\n\n")
                     if (type == "supabase") {
                         append("`type: supabase` — the binding is `supabaseApi(\"$id\") { ${'$'}{simple}Api(it) }`, so the\n")
@@ -1217,7 +1117,8 @@ abstract class SyncForkConfigTask : DefaultTask() {
         if (!text.contains(begin) || !text.contains(end)) return
 
         // A BuildKonfig constant is a Kotlin identifier reached as `BuildKonfig.NAME`; anything else
-        // would emit uncompilable source. Skip rather than emit (same policy as regenerateApiBindings).
+        // would emit uncompilable source. Skip rather than emit (the api-binding generator did the same,
+        // before @ApiBinding replaced it).
         val valid = Regex("^[A-Z][A-Z0-9_]*$")
 
         // (name -> env). LinkedHashMap keeps declaration order stable so the region does not churn.

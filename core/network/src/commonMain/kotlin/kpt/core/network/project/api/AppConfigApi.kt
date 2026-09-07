@@ -10,13 +10,14 @@
 package kpt.core.network.project.api
 
 import kpt.core.base.network.SupabaseConfigClient
+import kpt.core.base.network.annotation.ApiBinding
 import kpt.core.network.project.dto.RemoteAppConfigDto
 
 /**
  * Reference SUPABASE access-point API — the Supabase twin of the Ktorfit demo APIs.
  *
  * This is what "a fork writes only the API type" looks like on the Supabase side. It is bound by
- * `GeneratedApiBindings` (generated from the `project` access point's `api:` declaration), so
+ * `GeneratedApiBindings` (generated from this class's `@ApiBinding("project")`), so
  * there is no hand-written wiring; the single-arg constructor taking [SupabaseConfigClient] is the
  * whole contract `supabaseApi<T>("<id>")` requires.
  *
@@ -32,6 +33,7 @@ import kpt.core.network.project.dto.RemoteAppConfigDto
  * A fork points this at its own project by setting the access point's `base_url` and
  * `anon_key_env:` in `app-profile/app.yaml`, then running `./gradlew syncForkConfig`.
  */
+@ApiBinding("project")
 class AppConfigApi(
     private val supabase: SupabaseConfigClient,
 ) {

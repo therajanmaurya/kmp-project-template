@@ -83,13 +83,10 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
  */
 @Database(
     entities = [
-        // gen-infra-entities:begin
         kpt.core.base.database.infra.entity.BookkeeperEntity::class,
         kpt.core.base.database.infra.entity.FetchedAtEntity::class,
         kpt.core.base.database.infra.entity.DraftEntity::class,
         kpt.core.base.database.infra.entity.ConflictEntity::class,
-        // gen-infra-entities:end
-        // gen-entities:begin
         kpt.core.database.currency.entity.ExchangeRatesEntity::class,
         kpt.core.database.crypto.entity.CoinMarketEntity::class,
         kpt.core.database.crypto.entity.CoinDetailEntity::class,
@@ -100,12 +97,10 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         kpt.core.database.alerts.AlertEntity::class,
         kpt.core.database.economic.InterestRateSeriesEntity::class,
         kpt.core.database.cloudtodo.CloudTodoEntity::class,
-        // gen-entities:end
     ],
     version = AppDatabase.VERSION,
     exportSchema = true,
     autoMigrations = [
-        // gen-migrations:begin
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
@@ -115,27 +110,19 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
         AutoMigration(from = 10, to = 11),
         AutoMigration(from = 11, to = 12),
         AutoMigration(from = 12, to = 13),
-        // gen-migrations:end
     ],
 )
-// gen-converters:begin
 @ColumnTypeConverters(
     kpt.core.database.currency.converter.ChargeTypeConverters::class,
     kpt.core.database.crypto.converter.FintechTypeConverters::class,
     kpt.core.database.banking.converter.BankingTypeConverters::class,
 )
-// gen-converters:end
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
-
-    // gen-infra-daos:begin
     abstract val bookkeeperDao: kpt.core.base.database.infra.dao.BookkeeperDao
     abstract val fetchedAtDao: kpt.core.base.database.infra.dao.FetchedAtDao
     abstract val draftDao: kpt.core.base.database.infra.dao.DraftDao
     abstract val conflictDao: kpt.core.base.database.infra.dao.ConflictDao
-    // gen-infra-daos:end
-
-    // gen-daos:begin
     abstract val exchangeRatesDao: kpt.core.database.currency.dao.ExchangeRatesDao
     abstract val cloudTodoDao: kpt.core.database.cloudtodo.CloudTodoDao
     abstract val coinMarketDao: kpt.core.database.crypto.dao.CoinMarketDao
@@ -146,7 +133,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val billReminderDao: kpt.core.database.banking.dao.BillReminderDao
     abstract val alertDao: kpt.core.database.alerts.AlertDao
     abstract val interestRateSeriesDao: kpt.core.database.economic.InterestRateSeriesDao
-    // gen-daos:end
 
     companion object {
         /**

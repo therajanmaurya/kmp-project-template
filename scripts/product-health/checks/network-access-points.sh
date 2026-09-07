@@ -62,7 +62,14 @@ end
 ap_src    = read(File.join(net_dir, "config/AppAccessPoints.kt"))
 ut_src    = read(File.join(net_dir, "config/AppUrlTypes.kt"))
 keys_src  = read(File.join(net_dir, "config/AppSupabaseAnonKeys.kt"))
-bind_src  = read(File.join(net_dir, "di/GeneratedApiBindings.kt"))
+# GENERATED into build/ from `@ApiBinding` — no longer committed source. Derived from the module
+# root rather than by counting `..` levels off net_dir, which is easy to get wrong by one.
+module_root = net_dir.sub(%r{/src/commonMain/kotlin/kpt/core/network\z}, "")
+bind_src  = read(File.join(module_root, "build/generated/ksp/metadata/commonMain/kotlin/kpt/core/network/di/GeneratedApiBindings.kt"))
+# Fall back to the committed location. Two readers need it: a fork that has not rebuilt since
+# adopting @ApiBinding still has the old file, and the canary fixtures are plain trees with no
+# build/ directory. If neither exists we take the "not built" path below rather than failing.
+bind_src ||= read(File.join(net_dir, "di/GeneratedApiBindings.kt"))
 
 fail = false
 def bad(msg)
@@ -141,18 +148,45 @@ else
 end
 
 # ── NAP-4 — the generated Koin bindings ──────────────────────────────────────
-want_bind = points.select { |p| p["api"].to_s.strip != "" }
+# The declaration moved onto the class: `@ApiBinding("<id>")`. Scanning the source for it is what
+# keeps this gate honest — reading the retired `api:` field would select ZERO points and then agree
+# with zero bindings, which is a vacuous pass, not a check (CI-1).
+# id -> the annotated type's simple name, so the factory/ctor shape below is checked against the
+# REAL class rather than a FQN string someone typed into YAML.
+annotated_simple = {}
+Dir.glob(File.join(net_dir, "**", "*.kt")).each do |f|
+  src = begin
+    File.read(f)
+  rescue StandardError
+    next
+  end
+  src.scan(/@ApiBinding\(\s*"([^"]+)"\s*\)\s*(?:@[\w.]+(?:\([^\n]*\))?\s*)*(?:public\s+|internal\s+|abstract\s+|open\s+|data\s+)*(?:class|interface|object)\s+(\w+)/m).each do |id, cls|
+    annotated_simple[id] = cls
+  end
+end
+annotated = annotated_simple.keys
+want_bind = points.select { |p| annotated.include?(p["id"].to_s) }
+if annotated.empty?
+  fail = bad("❌ NAP-4 no @ApiBinding found in core/network — the gate would pass vacuously")
+end
+orphan = annotated - points.map { |p| p["id"].to_s }
+fail = bad("❌ NAP-4 @ApiBinding names an undeclared access point: #{orphan.join(', ')}\n     → declare it in app-profile, or fix the id") if orphan.any?
 if bind_src.nil?
-  fail = bad("❌ NAP-4 GeneratedApiBindings.kt missing but #{want_bind.size} access point(s) declare `api:`\n     → run `./gradlew syncForkConfig`") if want_bind.any?
+  # NOT a failure. product-health runs as a pure-bash CI job with no Gradle (quality-gate.yml keeps
+  # it a ~10s step), so on a fresh checkout the artifact simply has not been produced yet. The
+  # invariants that do not need a build — every @ApiBinding names a declared point (above), and
+  # nothing is hand-wired (NAP-7) — still ran. The binding-vs-declaration comparison is additionally
+  # enforced by the compiler: a binding for a class that does not exist does not build.
+  puts "   ℹ️  NAP-4 GeneratedApiBindings not built — annotation/declaration agreement checked, binding shapes deferred to the compiler"
 else
   bound = bind_src.scan(/(?:restApi|supabaseApi)\("([^"]+)"\)/).flatten
   missing = want_bind.map { |p| p["id"].to_s } - bound
   extra   = bound - points.map { |p| p["id"].to_s }
-  fail = bad("❌ NAP-4 declares `api:` but has no generated binding: #{missing.join(', ')}\n     → run `./gradlew syncForkConfig`") if missing.any?
+  fail = bad("❌ NAP-4 @ApiBinding declared but no generated binding: #{missing.join(', ')}\n     → rebuild core/network") if missing.any?
   fail = bad("❌ NAP-4 binding for an id that is not a declared access point: #{extra.join(', ')}") if extra.any?
   want_bind.each do |p|
     id     = p["id"].to_s
-    simple = p["api"].to_s.split(".").last
+    simple = annotated_simple[p["id"].to_s]
     dsl    = p["type"].to_s.strip.downcase == "supabase" ? "supabaseApi" : "restApi"
     unless bind_src.include?(%Q{#{dsl}("#{id}")})
       fail = bad("❌ NAP-4 '#{id}' is #{p['type']} but its binding does not use #{dsl}(...)")
@@ -254,7 +288,7 @@ Dir.glob(File.join(net_dir, "**/*.kt")).sort.each do |f|
   src = src.gsub(%r{/\*.*?\*/}m, "").gsub(%r{//[^\n]*}, "")
   hits = src.scan(/^\s*(restApi|supabaseApi)\("([^"]+)"\)/)
   hits.each do |dsl, id|
-    fail = bad("❌ NAP-7 hand-wired #{dsl}(\"#{id}\") in #{f.sub(net_dir + '/', '')}\n     → declare `api:` on that access point in app-profile; the binding is generated")
+    fail = bad("❌ NAP-7 hand-wired #{dsl}(\"#{id}\") in #{f.sub(net_dir + '/', '')}\n     → annotate the API type `@ApiBinding(\"#{id}\")`; the binding is generated")
   end
 end
 
