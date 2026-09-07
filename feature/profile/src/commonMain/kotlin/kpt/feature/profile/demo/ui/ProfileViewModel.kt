@@ -12,7 +12,7 @@ package kpt.feature.profile.demo.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.data.demo.profile.ProfileRepository
+import kpt.core.data.profile.ProfileRepository
 import kpt.core.model.profile.ProfileInfo
 
 /**

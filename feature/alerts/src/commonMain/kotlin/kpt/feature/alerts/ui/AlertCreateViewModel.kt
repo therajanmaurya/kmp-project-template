@@ -17,7 +17,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.submit.SubmitOutbox
 import kpt.core.base.ui.viewmodel.BaseMutationViewModel
 import kpt.core.base.ui.viewmodel.MutationMode
-import kpt.core.data.demo.alerts.AlertsRepository
+import kpt.core.data.alerts.AlertsRepository
 import kpt.core.model.alerts.AlertDirection
 import kpt.core.model.alerts.PriceAlert
 import kotlin.random.Random
@@ -29,7 +29,7 @@ import kotlin.time.Clock
  * Offline-first WRITE: the submit is routed through [BaseMutationViewModel]'s (`MutationMode.Draft`)
  * `DraftSubmitHandler`, which persists the [PriceAlert] payload to the
  * `framework_submit_drafts` outbox (`SubmitOutbox<PriceAlert>`, DI-qualified
- * `DemoOutboxQualifiers.PriceAlert`) BEFORE hitting the repository. On network failure the
+ * `AppOutboxQualifiers.PriceAlert`) BEFORE hitting the repository. On network failure the
  * shipped `OfflineSubmitSyncer` retries it on reconnect. [performSubmit] delegates to the
  * pre-existing [AlertsRepository.submitAlert] — this feature is the missing UI over a
  * backing that already existed (repurpose, not rebuild).

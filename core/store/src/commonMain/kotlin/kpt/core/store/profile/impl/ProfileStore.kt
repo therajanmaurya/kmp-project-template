@@ -11,6 +11,7 @@
 
 package kpt.core.store.profile.impl
 
+import kpt.core.base.store.annotation.CacheKey
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.profile.ProfileInfo
@@ -40,6 +41,7 @@ fun interface ProfileInfoSource {
  * directly. Shipping the static screen without the seam is what forces that later rewrite.
  */
 @StoreProvider(id = "profile")
+@CacheKey(name = "KEY", key = "profile")
 fun provideProfileStore(source: ProfileInfoSource): Store<Unit, ProfileInfo> =
     StoreFactory.createMemoryStore(
         fetcher = Fetcher.of { _: Unit -> source.load() },

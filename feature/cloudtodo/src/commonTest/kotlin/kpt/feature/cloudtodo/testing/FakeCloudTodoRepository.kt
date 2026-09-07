@@ -17,7 +17,7 @@ import kpt.core.base.store.screen.ExperimentalScreenDataStreamTestingApi
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
-import kpt.core.data.demo.cloudtodo.CloudTodoRepository
+import kpt.core.data.cloudtodo.CloudTodoRepository
 import kpt.core.model.cloudtodo.CloudTodo
 
 /**

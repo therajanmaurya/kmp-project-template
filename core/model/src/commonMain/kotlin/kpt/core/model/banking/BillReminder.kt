@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
  *
  * Serializable so the offline-resilient `DraftSubmitHandler` can persist the
  * payload across process death even though the "submit" target is a
- * local-only [kpt.core.data.demo.banking.BillReminderRepository] commit.
+ * local-only [kpt.core.data.banking.BillReminderRepository] commit.
  *
  * @property id Stable identifier (client-generated UUID). Primary key.
  * @property name Bill label, e.g. "Electricity Bill", "Netflix".

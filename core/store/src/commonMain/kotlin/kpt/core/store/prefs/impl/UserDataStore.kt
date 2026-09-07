@@ -12,6 +12,7 @@
 package kpt.core.store.prefs.impl
 
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.store.annotation.CacheKey
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.user.UserData
@@ -48,6 +49,7 @@ fun interface UserDataSource {
  * is deliberately not part of this store's contract.
  */
 @StoreProvider(id = "userData")
+@CacheKey(name = "KEY", key = "userData")
 fun provideUserDataStore(source: UserDataSource): Store<Unit, UserData> =
     StoreFactory.createOfflineStore(
         sourceOfTruth = SourceOfTruth.of(

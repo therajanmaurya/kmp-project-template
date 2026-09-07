@@ -22,7 +22,7 @@ import kpt.core.base.store.screen.ExperimentalScreenDataStreamTestingApi
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
-import kpt.core.data.demo.profile.ProfileRepository
+import kpt.core.data.profile.ProfileRepository
 import kpt.core.model.profile.ProfileInfo
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

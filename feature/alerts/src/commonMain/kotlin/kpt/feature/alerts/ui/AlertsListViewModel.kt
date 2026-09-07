@@ -13,7 +13,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.alerts.AlertsRepository
+import kpt.core.data.alerts.AlertsRepository
 import kpt.core.model.alerts.PriceAlert
 
 /**

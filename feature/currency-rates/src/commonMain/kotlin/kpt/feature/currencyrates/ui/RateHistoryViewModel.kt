@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.stateIn
 import kpt.core.base.store.freshness.FreshnessSignal
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.currency.CurrencyRepository
+import kpt.core.data.currency.CurrencyRepository
 import kpt.core.model.currency.RateHistory
 import kpt.core.model.currency.RateHistoryKey
 

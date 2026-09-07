@@ -12,7 +12,6 @@ package cmp.navigation.registry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import kpt.core.base.ui.nav.popBackStackSafely
-import kpt.core.data.demo.di.DemoRepositoryModule
 import kpt.core.data.di.ProjectRepositoryModule
 import kpt.core.database.di.ProjectDatabaseModule
 import kpt.core.datastore.di.ProjectDatastoreModule
@@ -88,7 +87,6 @@ object FeatureRegistry {
         CloudTodoModule,
         ProfileModule,
         // ── demo DI aggregators (were inline fenced blocks in the core aggregators) ──
-        DemoRepositoryModule,
         // demo:end
     )
 

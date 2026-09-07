@@ -10,7 +10,7 @@
 package kpt.feature.macro.ui
 
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.economic.SupportedCountries
+import kpt.core.data.economic.SupportedCountries
 import kpt.core.model.economic.Country
 
 /**

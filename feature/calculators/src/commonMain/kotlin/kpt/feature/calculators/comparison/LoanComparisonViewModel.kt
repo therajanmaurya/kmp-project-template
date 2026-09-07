@@ -24,7 +24,7 @@ import kpt.core.model.emi.EmiResult
  * Manages exactly 3 loan scenarios side-by-side and emits a derived analysis
  * (per-scenario [EmiResult] + index of the cheapest by total payable).
  *
- * The "save scenario" feature wires into [kpt.core.data.demo.banking.LoanRepository]
+ * The "save scenario" feature wires into [kpt.core.data.banking.LoanRepository]
  * (see B6 plan) — left to the screen layer to bridge: convert a scenario to a
  * `Loan` and call `upsert`.
  */

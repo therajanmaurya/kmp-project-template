@@ -9,6 +9,7 @@
  */
 plugins {
     alias(libs.plugins.kmp.library.convention)
+    alias(libs.plugins.ksp)
 }
 
 androidComponents {
@@ -97,3 +98,24 @@ afterEvaluate {
     val webTests = setOf("jsNodeTest", "jsBrowserTest", "wasmJsNodeTest", "wasmJsBrowserTest")
     tasks.matching { it.name in webTests }.configureEach { enabled = false }
 }
+
+/*
+ * Repository Koin bindings, derived by :tools:data-ksp from @RepositoryBinding.
+ *
+ * Metadata-only: the bindings are ONE commonMain file every target shares. The generated dir goes on
+ * commonMain's srcDir so every per-target compilation sees it as ordinary source.
+ */
+dependencies {
+    add("kspCommonMainMetadata", project(":tools:data-ksp"))
+}
+
+kotlin.sourceSets.named("commonMain") {
+    kotlin.srcDir(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/kotlin"))
+}
+
+// Everything that READS commonMain waits for the metadata pass — including the per-target ksp tasks,
+// which take the generated dir as an input and would otherwise race a half-written file.
+val kspCommonMetadata = "kspCommonMainKotlinMetadata"
+tasks.matching {
+    (it.name.startsWith("compileKotlin") || it.name.startsWith("ksp")) && it.name != kspCommonMetadata
+}.configureEach { dependsOn(kspCommonMetadata) }

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kpt.core.base.store.freshness.FreshnessSignal
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.crypto.CryptoRepository
+import kpt.core.data.crypto.CryptoRepository
 import kpt.core.model.crypto.CoinDetail
 
 /**

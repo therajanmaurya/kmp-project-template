@@ -23,7 +23,7 @@ import kpt.core.base.database.infra.entity.DraftEntity
  * `Flow` never re-emits on its own. Re-emission must come from `daoFlow { }` re-subscribing
  * on the `RoomChangeBus` signal that `notifyingWrite { }` publishes. Deliberately cold (not
  * a hot `MutableStateFlow`) so there is exactly one re-emit source and no Turbine race —
- * see [kpt.core.data.demo.watchlist.FakeWatchlistDao] for the same rationale.
+ * see [kpt.core.data.watchlist.FakeWatchlistDao] for the same rationale.
  */
 internal class FakeDraftDao : DraftDao {
 

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kpt.core.base.store.submit.SubmitState
 import kpt.core.base.store.submit.submitHandler
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.watchlist.WatchlistRepository
+import kpt.core.data.watchlist.WatchlistRepository
 
 /**
  * The WRITE side of the Personal Crypto Watchlist — the canonical `submit_offline_write`

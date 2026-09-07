@@ -29,10 +29,10 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
-import kpt.core.data.demo.banking.BillReminderRepository
-import kpt.core.data.demo.banking.LoanRepository
-import kpt.core.data.demo.currency.CurrencyRepository
-import kpt.core.data.demo.economic.EconomicRatesRepository
+import kpt.core.data.banking.BillReminderRepository
+import kpt.core.data.banking.LoanRepository
+import kpt.core.data.currency.CurrencyRepository
+import kpt.core.data.economic.EconomicRatesRepository
 import kpt.core.model.banking.BillReminder
 import kpt.core.model.banking.Loan
 import kpt.core.model.currency.ExchangeRates

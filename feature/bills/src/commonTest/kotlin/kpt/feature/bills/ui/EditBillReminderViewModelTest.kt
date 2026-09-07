@@ -18,7 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kpt.core.base.store.submit.SubmitOutboxStatus
 import kpt.core.base.store.submit.SubmitState
-import kpt.core.data.demo.banking.BillReminderRepository
+import kpt.core.data.banking.BillReminderRepository
 import kpt.core.model.banking.BillCategory
 import kpt.core.model.banking.BillReminder
 import kpt.core.model.banking.Recurrence

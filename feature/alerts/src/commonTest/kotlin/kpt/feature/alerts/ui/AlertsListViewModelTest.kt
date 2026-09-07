@@ -23,7 +23,7 @@ import kpt.core.base.store.screen.ExperimentalScreenDataStreamTestingApi
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
-import kpt.core.data.demo.alerts.AlertsRepository
+import kpt.core.data.alerts.AlertsRepository
 import kpt.core.model.alerts.AlertDirection
 import kpt.core.model.alerts.PriceAlert
 import kotlin.test.AfterTest

@@ -25,10 +25,10 @@ import kpt.core.base.store.screen.combineScreenStates
 import kpt.core.base.store.screen.emptyIfContent
 import kpt.core.base.store.screen.mapContent
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.banking.BillReminderRepository
-import kpt.core.data.demo.banking.LoanRepository
-import kpt.core.data.demo.currency.CurrencyRepository
-import kpt.core.data.demo.economic.EconomicRatesRepository
+import kpt.core.data.banking.BillReminderRepository
+import kpt.core.data.banking.LoanRepository
+import kpt.core.data.currency.CurrencyRepository
+import kpt.core.data.economic.EconomicRatesRepository
 import kpt.core.model.banking.BillReminder
 import kpt.core.model.currency.ExchangeRates
 import kpt.core.store.economic.impl.InterestRateSeriesKey

@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kpt.core.base.store.freshness.FreshnessSignal
 import kpt.core.base.store.screen.ScreenState
-import kpt.core.data.demo.economic.EconomicRatesRepository
+import kpt.core.data.economic.EconomicRatesRepository
 import kpt.core.model.economic.InterestRateSeries
 import kpt.core.store.economic.impl.InterestRateSeriesKey
 

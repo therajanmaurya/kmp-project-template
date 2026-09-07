@@ -35,7 +35,7 @@ package kpt.core.data.di
  * ```
  *
  * Intentionally EMPTY on the template (E1/C4). The demo showcase's qualifiers live in the
- * fork-owned [kpt.core.data.demo.di.DemoOutboxQualifiers] under `demo/`, so `remove-demo.sh`
+ * generated [kpt.core.data.config.AppOutboxQualifiers], derived from `@DataProvider(qualifier = …)`,
  * deletes them with the rest of the showcase and a template sync can blind-copy THIS file
  * without re-introducing them.
  */

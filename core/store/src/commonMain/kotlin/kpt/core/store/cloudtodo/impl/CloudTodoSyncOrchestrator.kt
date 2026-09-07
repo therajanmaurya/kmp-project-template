@@ -139,7 +139,7 @@ class CloudTodoSyncOrchestrator(
  * Parse a bookkeeper key back into a [CloudTodoKey], or `null` when it belongs to a different
  * store. The bookkeeper table is shared across every MutableStore in the app, so the prefix
  * is what keeps one store's orchestrator from replaying another store's failures. Must stay
- * in step with the `keySerializer` registered in `DemoRepositoryModule`.
+ * in step with the `keySerializer` in `provideCloudTodoBookkeeper` (core/data `cloudtodo/`).
  */
 fun String.toCloudTodoKeyOrNull(): CloudTodoKey? =
     removePrefix(CLOUD_TODO_KEY_PREFIX)

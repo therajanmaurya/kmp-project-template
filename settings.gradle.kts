@@ -115,6 +115,7 @@ include(":core:store")
 include(":tools:store-ksp")
 include(":tools:database-ksp")
 include(":tools:network-ksp")
+include(":tools:data-ksp")
 include(":core:ui")
 
 include(":feature:home")

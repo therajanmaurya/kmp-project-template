@@ -9,6 +9,7 @@
  */
 package kpt.core.store.emi.impl
 
+import kpt.core.base.store.annotation.CacheKey
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.emi.EmiResult
@@ -59,6 +60,11 @@ fun interface EmiCompute {
  * MEMORY_ONLY is only legal because no `cache_strategy` is declared for this feature (SC2).
  */
 @StoreProvider(id = "emi")
+@CacheKey(
+    fn = "of",
+    key = "emi:{principal}:{ratePercent}:{tenureMonths}",
+    params = ["principal:Double", "ratePercent:Double", "tenureMonths:Int"],
+)
 fun provideEmiStore(compute: EmiCompute): Store<EmiParams, EmiResult> =
     StoreFactory.createMemoryStore(
         fetcher = Fetcher.of { params: EmiParams -> compute(params) },

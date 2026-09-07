@@ -127,6 +127,37 @@ network:
 # still recorded by hand is schema HISTORY, in `app-profile/migration-ledger.yaml`, because a
 # `from`/`to` edge is a contract with every installed device that no class can carry.
 
+# core/data — PACKAGE OWNERSHIP.
+#
+# Same declared-package contract as core/model: the TEMPLATE's showcase domains are named here and
+# `scripts/remove-demo.sh` deletes them by name; a FORK's own repository package needs no row and is
+# resolved `fork` by the module catch-all in customization-surface.yaml.
+#
+# `demo/di/` is deliberately NOT a package row. DemoRepositoryModule + DemoOutboxQualifiers stay
+# under `demo/` because their lifecycle is governed by the DI-seam contract instead
+# (white-label-di-seams WLS-2/WLS-4: a Demo*Module must sit under demo/ and be listed INSIDE
+# FeatureRegistry's demo fence, so the strip removes both the module and its registration). Moving
+# them out would delete the module without unregistering it.
+data:
+  packages:
+    # demo:begin
+    - { id: alerts,    owner: template }   # price-alert repository (+ its submit outbox)
+    - { id: banking,   owner: template }   # loan + bill-reminder repositories
+    - { id: calc,      owner: template }   # amortization calculator repository
+    - { id: cloudtodo, owner: template }   # MUTABLE-store repository + sync orchestrator
+    - { id: crypto,    owner: template }   # coin market / detail repository
+    - { id: currency,  owner: template }   # exchange-rate + rate-history repository
+    - { id: economic,  owner: template }   # FRED + World Bank repositories
+    - { id: emi,       owner: template }   # EMI calculator repository
+    - { id: profile,   owner: template }   # profile repository
+    - { id: watchlist, owner: template }   # watchlist repository
+    # demo:end
+    # FRAMEWORK packages a clean fork KEEPS — `user` (UserDataRepository, logout manager) and `util`
+    # are read by the framework, so `owner: fork` in the STRIP vocabulary (kept), even though the
+    # sync full-copies them as template-authored code. Same two-axis call as core_store's `prefs`.
+    - { id: user,      owner: fork }
+    - { id: util,      owner: fork }
+
 # core/model — PACKAGE OWNERSHIP.
 #
 # The showcase's models used to sit under `kpt/core/model/demo/**` and be deleted by the generic

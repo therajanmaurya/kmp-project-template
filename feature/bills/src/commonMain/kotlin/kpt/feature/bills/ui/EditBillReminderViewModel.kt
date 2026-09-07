@@ -22,7 +22,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.submit.SubmitOutbox
 import kpt.core.base.ui.viewmodel.BaseMutationViewModel
 import kpt.core.base.ui.viewmodel.MutationMode
-import kpt.core.data.demo.banking.BillReminderRepository
+import kpt.core.data.banking.BillReminderRepository
 import kpt.core.model.banking.BillCategory
 import kpt.core.model.banking.BillReminder
 import kpt.core.model.banking.Recurrence

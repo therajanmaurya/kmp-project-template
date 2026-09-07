@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.map
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
-import kpt.core.data.demo.banking.BillReminderRepository
+import kpt.core.data.banking.BillReminderRepository
 import kpt.core.model.banking.BillCategory
 import kpt.core.model.banking.BillReminder
 import kpt.core.model.banking.Recurrence

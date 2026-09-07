@@ -9,7 +9,7 @@
  */
 package kpt.feature.bills.di
 
-import kpt.core.data.demo.di.DemoOutboxQualifiers
+import kpt.core.data.config.AppOutboxQualifiers
 import kpt.feature.bills.notification.BillNotificationGateway
 import kpt.feature.bills.notification.BillNotificationGatewayImpl
 import kpt.feature.bills.ui.BillRemindersListViewModel
@@ -40,7 +40,7 @@ val BillsModule = module {
             repository = get(),
             scheduler = get(),
             billId = billId,
-            outbox = get(qualifier = DemoOutboxQualifiers.BillReminder),
+            outbox = get(qualifier = AppOutboxQualifiers.BillReminder),
         )
     } bind EditBillReminderViewModel::class
 }

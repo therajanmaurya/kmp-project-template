@@ -9,6 +9,7 @@
  */
 package kpt.core.store.calc.impl
 
+import kpt.core.base.store.annotation.CacheKey
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.calc.AmortizationBreakdown
@@ -51,6 +52,11 @@ fun interface AmortizationCompute {
  * MEMORY_ONLY is legal only because no `cache_strategy` is declared for this feature (SC2).
  */
 @StoreProvider(id = "amortizationCalc")
+@CacheKey(
+    fn = "of",
+    key = "amortizationCalc:{principal}:{ratePercent}:{tenureMonths}",
+    params = ["principal:Double", "ratePercent:Double", "tenureMonths:Int"],
+)
 fun provideAmortizationCalcStore(
     compute: AmortizationCompute,
 ): Store<AmortizationCalcParams, AmortizationBreakdown> =

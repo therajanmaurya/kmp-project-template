@@ -14,7 +14,7 @@ import kotlinx.serialization.Serializable
 /**
  * A price alert configured by the user for a specific coin.
  *
- * Serializable because [kpt.core.data.demo.alerts.AlertsRepository] persists
+ * Serializable because [kpt.core.data.alerts.AlertsRepository] persists
  * unsent alerts to the `framework_submit_drafts` outbox during offline
  * submission — RoomSubmitOutbox writes the payload as JSON.
  *

@@ -291,7 +291,7 @@ class EditLoanViewModelTest {
  */
 private class OfflineFailingRepository(
     private val delegate: FakeLoanRepository,
-) : kpt.core.data.demo.banking.LoanRepository by delegate {
+) : kpt.core.data.banking.LoanRepository by delegate {
 
     override suspend fun upsert(loan: Loan) {
         throw OfflineIOException("network unavailable")

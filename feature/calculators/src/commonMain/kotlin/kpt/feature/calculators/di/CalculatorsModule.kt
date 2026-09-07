@@ -9,7 +9,7 @@
  */
 package kpt.feature.calculators.di
 
-import kpt.core.data.demo.di.DemoOutboxQualifiers
+import kpt.core.data.config.AppOutboxQualifiers
 import kpt.core.domain.demo.calc.amortizationSchedule
 import kpt.core.domain.demo.calc.computeEmi
 import kpt.core.model.banking.AmortizationRow
@@ -76,7 +76,7 @@ val CalculatorsModule = module {
     }
     viewModel { (scenarioId: String?) ->
         LoanCalcWizardViewModel(
-            outbox = get(qualifier = DemoOutboxQualifiers.LoanCalcScenario),
+            outbox = get(qualifier = AppOutboxQualifiers.LoanCalcScenario),
             repository = get(),
             scenarioIdArg = scenarioId,
         )

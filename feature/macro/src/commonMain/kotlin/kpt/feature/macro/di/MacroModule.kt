@@ -25,7 +25,7 @@ import org.koin.dsl.module
  * - [MacroIndicatorDetailViewModel] takes (countryCode, indicatorKind) as
  *   parameters — one VM per detail screen, scoped to the back-stack entry.
  * - [CountryPickerViewModel] has no parameters; it reads only from
- *   [kpt.core.data.demo.economic.SupportedCountries].
+ *   [kpt.core.data.economic.SupportedCountries].
  */
 val MacroModule = module {
     viewModel { (countryCode: String) ->

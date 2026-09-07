@@ -21,7 +21,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.submit.SubmitState
 import kpt.core.base.store.submit.submitHandler
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.banking.LoanRepository
+import kpt.core.data.banking.LoanRepository
 import kpt.core.model.banking.Loan
 
 /**

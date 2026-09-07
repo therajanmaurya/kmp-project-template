@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.emi.EmiCalculatorRepository
+import kpt.core.data.emi.EmiCalculatorRepository
 import kpt.core.model.emi.EmiResult
 import kpt.core.store.emi.impl.EmiParams
 

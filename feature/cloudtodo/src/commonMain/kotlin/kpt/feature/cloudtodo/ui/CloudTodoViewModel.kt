@@ -18,7 +18,7 @@ import kpt.core.base.store.mutation.BlockReason
 import kpt.core.base.store.mutation.MutationResult
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
-import kpt.core.data.demo.cloudtodo.CloudTodoRepository
+import kpt.core.data.cloudtodo.CloudTodoRepository
 import kpt.core.model.cloudtodo.CloudTodo
 
 /**
