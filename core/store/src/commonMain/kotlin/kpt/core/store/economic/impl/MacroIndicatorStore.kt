@@ -14,6 +14,8 @@ import io.github.mobilebytelabs.kmptoolkit.networkmonitor.RetryPolicy
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.executeWithRetry
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.demo.economic.MacroIndicator
 import kpt.core.network.worldbank.api.WorldBankApi
@@ -28,6 +30,8 @@ import kotlin.time.Clock
  * with the World Bank's annual publishing cadence means real fetches are very
  * rare (≤ 1 per week per country/indicator pair).
  */
+@StoreProvider(id = "macroIndicator", ttl = "7d")
+@CacheKey(fn = "of", key = "economic:macro:{countryCode}:{indicator}:{years}y", params = ["countryCode:String", "indicator:String", "years:Int"])
 fun provideMacroIndicatorStore(
     api: WorldBankApi,
     networkMonitor: NetworkMonitor,

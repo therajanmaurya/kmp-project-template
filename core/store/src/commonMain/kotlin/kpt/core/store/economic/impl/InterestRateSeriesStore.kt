@@ -18,6 +18,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.economic.InterestRateSeriesDao
@@ -44,6 +46,8 @@ import kotlin.time.Clock
  * representation, mapping to/from the [InterestRateSeries] domain model inline
  * (no separate mapper file — the mapping is trivial and local to this store).
  */
+@StoreProvider(id = "interestRateSeries", ttl = "24h")
+@CacheKey(fn = "of", key = "economic:rates:{seriesId}:{days}d", params = ["seriesId:String", "days:Int"])
 fun provideInterestRateSeriesStore(
     api: FredApi,
     config: FredApiConfig,

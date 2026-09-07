@@ -12,6 +12,8 @@ package kpt.core.store.watchlist.impl
 import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.watchlist.dao.WatchlistDao
 import kpt.core.database.watchlist.entity.WatchlistEntity
@@ -30,6 +32,8 @@ import org.mobilenativefoundation.store.store5.Store
  * wasmJs collectors re-emit after writes even when Room 3 alpha05's async InvalidationTracker
  * fails to fan out (no-op on Android/Desktop/iOS).
  */
+@StoreProvider(id = "watchlist")
+@CacheKey(name = "LIST", key = "watchlist")
 fun provideWatchlistStore(dao: WatchlistDao): Store<Unit, List<WatchlistItem>> = StoreFactory.createOfflineStore(
     sourceOfTruth = SourceOfTruth.of(
         reader = { _: Unit ->
@@ -51,6 +55,7 @@ fun provideWatchlistStore(dao: WatchlistDao): Store<Unit, List<WatchlistItem>> =
  * ([StoreFactory.createOfflineMutableStore] — no-op Updater); the writer/delete fire [notifyingWrite]
  * so the paired [provideWatchlistStore] read collectors re-emit on wasmJs (same `personal_watchlist` table).
  */
+@StoreProvider(id = "watchlistMutable", logout = false)
 fun provideWatchlistWriteStore(dao: WatchlistDao): MutableStore<String, WatchlistItem> =
     StoreFactory.createOfflineMutableStore(
         sourceOfTruth = SourceOfTruth.of(

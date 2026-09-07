@@ -12,6 +12,8 @@ package kpt.core.store.alerts.impl
 import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.alerts.AlertDao
 import kpt.core.database.alerts.AlertEntity
@@ -38,6 +40,8 @@ import org.mobilenativefoundation.store.store5.Store
  * on `alertDao.upsert` / `deleteById`. On Android/Desktop/iOS the wrap is a microsecond
  * no-op alongside Room's native invalidation.
  */
+@StoreProvider(id = "alerts")
+@CacheKey(name = "LIST", key = "alerts")
 fun provideAlertsStore(dao: AlertDao): Store<Unit, List<PriceAlert>> = StoreFactory.createOfflineStore(
     sourceOfTruth = SourceOfTruth.of(
         // Emit the DOMAIN model — the entity→domain map lives in the SourceOfTruth (read-path contract).
@@ -57,6 +61,7 @@ fun provideAlertsStore(dao: AlertDao): Store<Unit, List<PriceAlert>> = StoreFact
  * ([StoreFactory.createOfflineMutableStore] — no-op Updater); the writer/delete fire
  * [notifyingWrite] so the paired [provideAlertsStore] read collectors re-emit on wasmJs.
  */
+@StoreProvider(id = "alertsMutable", logout = false)
 fun provideAlertsWriteStore(dao: AlertDao): MutableStore<String, PriceAlert> =
     StoreFactory.createOfflineMutableStore(
         sourceOfTruth = SourceOfTruth.of(

@@ -21,23 +21,31 @@ import kpt.core.base.store.di.StoreModule as CoreBaseStoreModule
  * App-level Store wiring — FRAMEWORK ONLY.
  *
  * ## Why this file holds no store bindings
- * It used to carry ~30 hand-written `single(AppStoreRegistry.X) { provideXStore(...) }` blocks and a
- * second hand-kept list registering those stores for logout purge, all inside a `demo:` fence in a
- * FORK-OWNED file. Two problems followed from that. A fork never received upstream fixes to the
- * framework wiring below, because the whole file was excluded from sync to protect the fork's own
- * bindings. And the two lists could disagree — a store bound but not registered survives sign-out
- * and shows the previous user's cached rows to the next one on a shared device.
+ * It used to carry ~30 hand-written `single(...) { provideXStore(...) }` blocks plus a second
+ * hand-kept list registering those stores for logout purge, inside a `demo:` fence in a FORK-OWNED
+ * file. Two problems followed. A fork never received upstream fixes to the framework wiring below,
+ * because the whole file was excluded from sync to protect the fork's bindings. And the two lists
+ * could disagree — a store bound but not registered survives sign-out and shows the previous user's
+ * cached rows to the next person on a shared device.
  *
- * Both are now derived from `app-profile/app.yaml#core_store.stores` into [GeneratedStoreBindings],
- * so this file is template-owned again and a sync can blind-copy it.
+ * Both now come from one `@StoreProvider(logout = ...)` on the provider function, which `store-ksp`
+ * turns into [GeneratedStoreBindings]: the binding AND the purge, from a single fact. This file is
+ * template-owned again and a sync can blind-copy it.
  *
- * ## What goes where
- * - a store the app exposes  → declare it in app-profile; codegen writes the binding + purge
- * - a fork's own non-store singleton → [ProjectStoreModule]. NOTE it is wired by
- *   `cmp-navigation`'s FeatureRegistry, NOT included here — including it in both places would
- *   register every fork definition twice, which Koin rejects at graph construction with
- *   DefinitionOverrideException (invisible to the compiler).
- * - framework infrastructure → here
+ * ## Adding a store
+ * Annotate the provider. There is no wiring step, and no DI seam to add it to:
+ * ```kotlin
+ * @StoreProvider(id = "myThing", ttl = "5m")
+ * @CacheKey(name = "LIST", key = "myThing")
+ * fun provideMyThingStore(api: MyApi, dao: MyDao): Store<Unit, List<MyThing>> = …
+ * ```
+ * `store-ksp` derives the Koin qualifier, the TTL, the cache keys, the binding and the logout purge.
+ * Dependencies come from the SIGNATURE — they are never restated.
+ *
+ * There is deliberately no `ProjectStoreModule` seam. It existed when stores were hand-wired; with
+ * codegen it became a second way to do what the annotation already does, and an unnecessary one —
+ * `cmp-navigation`'s FeatureRegistry is fork-owned, so a fork that genuinely needs a bespoke Koin
+ * module can add its own there without a pre-wired hook in template code.
  *
  * Wire into Koin start-up:
  * ```kotlin

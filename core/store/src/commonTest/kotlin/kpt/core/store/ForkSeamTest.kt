@@ -1,0 +1,73 @@
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package kpt.core.store
+
+import kpt.core.base.ui.screen.ScreenStateDefaults
+import kpt.core.base.ui.screen.ScreenStateEmpty
+import kpt.core.base.ui.screen.ScreenStateError
+import kpt.core.base.ui.screen.ScreenStateLoading
+import kpt.core.base.ui.screen.ScreenStateNoNetwork
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+
+/**
+ * The two fork seams are NEUTRAL on the template.
+ *
+ * Both exist so a fork customizes without editing a template-owned file, which only works if the
+ * un-customized template inherits the framework behaviour untouched. `projectErrorMessage` returning
+ * anything but null would shadow all nine categorised error messages; `applyProjectOverrides`
+ * returning anything but its receiver would silently replace the framework's visuals for every fork
+ * that never asked for it.
+ *
+ * NOTE what this does NOT cover: that `config/AppErrorMapper` and `config/AppScreenStateDefaults`
+ * actually CALL these. Both call sites sit inside `@Composable` functions, and `core/store` does not
+ * carry the Compose ui-test dependency (it comes from CMPFeatureConventionPlugin, which only the
+ * feature modules apply). Deleting either call would leave every test here green, so the wiring is
+ * guarded by `store-fork-seam-wiring.sh` (FS-1/FS-2) instead.
+ */
+class ForkSeamTest {
+
+    @Test
+    fun project_error_message_declines_by_default() {
+        // Declining is what lets the framework's categorised copy through.
+        assertNull(projectErrorMessage(RuntimeException("boom")))
+        assertNull(projectErrorMessage(IllegalStateException()))
+    }
+
+    @Test
+    fun project_screen_state_overrides_are_identity_by_default() {
+        val defaults = ScreenStateDefaults(
+            loading = ScreenStateLoading.Skeleton(rowCount = 5),
+            empty = ScreenStateEmpty(title = "t", message = "m"),
+            error = ScreenStateError(title = "e", retryText = "r"),
+            noNetwork = ScreenStateNoNetwork(message = "n", retryText = "r"),
+        )
+        // Same instance, not merely an equal copy: the template must not rebuild what it was handed.
+        assertSame(defaults, defaults.applyProjectOverrides())
+    }
+
+    @Test
+    fun overriding_one_field_inherits_the_rest() {
+        // The inheritance contract a fork relies on — `copy` one thing, keep everything else.
+        val defaults = ScreenStateDefaults(
+            loading = ScreenStateLoading.Skeleton(rowCount = 5),
+            empty = ScreenStateEmpty(title = "framework-empty", message = "m"),
+            error = ScreenStateError(title = "framework-error", retryText = "r"),
+            noNetwork = ScreenStateNoNetwork(message = "n", retryText = "r"),
+        )
+        val branded = defaults.copy(empty = defaults.empty.copy(title = "fork-empty"))
+
+        assertEquals("fork-empty", branded.empty.title, "the fork's override must win")
+        assertEquals("framework-error", branded.error.title, "everything else must be inherited")
+        assertEquals("m", branded.empty.message, "untouched fields of an overridden block survive")
+    }
+}

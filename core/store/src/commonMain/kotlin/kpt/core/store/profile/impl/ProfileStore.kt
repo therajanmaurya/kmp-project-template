@@ -11,6 +11,7 @@
 
 package kpt.core.store.profile.impl
 
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.demo.profile.ProfileInfo
 import org.mobilenativefoundation.store.store5.Fetcher
@@ -38,6 +39,7 @@ fun interface ProfileInfoSource {
  * ONE thing — this fetcher — instead of restructuring a Composable that read a constant
  * directly. Shipping the static screen without the seam is what forces that later rewrite.
  */
+@StoreProvider(id = "profile")
 fun provideProfileStore(source: ProfileInfoSource): Store<Unit, ProfileInfo> =
     StoreFactory.createMemoryStore(
         fetcher = Fetcher.of { _: Unit -> source.load() },

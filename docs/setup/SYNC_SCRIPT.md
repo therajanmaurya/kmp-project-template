@@ -180,7 +180,7 @@ demo/sample code or your fork's customization seam**:
   template's demo never lands in your fork via sync, and your own `demo/` code is
   never clobbered. This is the same `**/demo/**` glob `scripts/white-label/customize.sh --clean` deletes.
 - **The `core/store` customization seam** — `AppScreenStateDefaults.kt`,
-  `AppErrorMapper.kt`, `AppStoreRegistry.kt`, and `StoreModule.kt` are the files a
+  `config/AppErrorMapper.kt` and `config/AppScreenStateDefaults.kt` are the files a
   fork edits to brand state visuals and register its own stores (see
   `core/store/README.md`). They are excluded so template updates to `core/` don't
   revert your branding.

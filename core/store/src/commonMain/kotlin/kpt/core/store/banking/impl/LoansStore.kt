@@ -12,6 +12,8 @@ package kpt.core.store.banking.impl
 import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.banking.dao.LoanDao
 import kpt.core.database.banking.entity.LoanEntity
@@ -35,6 +37,9 @@ import org.mobilenativefoundation.store.store5.Store
  * `core-base/database/.../invalidation/README.md`). On Android/Desktop/iOS the wrap
  * is a microsecond no-op alongside Room's native invalidation.
  */
+@StoreProvider(id = "loans")
+@CacheKey(name = "LIST", key = "loans")
+@CacheKey(fn = "item", key = "loan:{id}", params = ["id:String"])
 fun provideLoansStore(dao: LoanDao): Store<Unit, List<Loan>> = StoreFactory.createOfflineStore(
     sourceOfTruth = SourceOfTruth.of(
         // Emit the DOMAIN model — the entity→domain map lives in the SourceOfTruth (read-path contract).
@@ -68,6 +73,7 @@ fun provideLoanDetailStore(dao: LoanDao): Store<String, Loan> = StoreFactory.cre
  * callers. Local-only ([StoreFactory.createOfflineMutableStore] — no-op Updater); the writer/delete
  * fire [notifyingWrite] so the paired [provideLoansStore] read collectors re-emit on wasmJs.
  */
+@StoreProvider(id = "loansMutable", logout = false)
 fun provideLoansWriteStore(dao: LoanDao): MutableStore<String, Loan> =
     StoreFactory.createOfflineMutableStore(
         sourceOfTruth = SourceOfTruth.of(

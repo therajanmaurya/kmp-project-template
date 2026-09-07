@@ -119,7 +119,7 @@ class HomeDashboardViewModelTest {
      * did not corrupt the aggregate state.
      */
     @Test
-    fun `combined state re-emits cache-first after subscriber dip (nav-scoped VM regression)`() = runTest {
+    fun `combined state re-emits cache-first after subscriber dip — nav-scoped VM regression`() = runTest {
         val vm = buildViewModel()
         dispatcher.scheduler.advanceUntilIdle()
 

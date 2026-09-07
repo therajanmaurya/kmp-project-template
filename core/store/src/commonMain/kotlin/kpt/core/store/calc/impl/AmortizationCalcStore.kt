@@ -9,6 +9,7 @@
  */
 package kpt.core.store.calc.impl
 
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.demo.calc.AmortizationBreakdown
 import org.mobilenativefoundation.store.store5.Fetcher
@@ -49,6 +50,7 @@ fun interface AmortizationCompute {
  *
  * MEMORY_ONLY is legal only because no `cache_strategy` is declared for this feature (SC2).
  */
+@StoreProvider(id = "amortizationCalc")
 fun provideAmortizationCalcStore(
     compute: AmortizationCompute,
 ): Store<AmortizationCalcParams, AmortizationBreakdown> =

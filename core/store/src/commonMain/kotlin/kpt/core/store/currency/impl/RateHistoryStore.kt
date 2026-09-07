@@ -17,6 +17,8 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.currency.dao.RateHistoryDao
@@ -31,6 +33,8 @@ import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
 import kotlin.time.Clock
 
+@StoreProvider(id = "rateHistory", ttl = "1h")
+@CacheKey(fn = "of", key = "currency:rateHistory:{from}-{to}-{days}d", params = ["from:String", "to:String", "days:Int"])
 fun provideRateHistoryStore(
     api: FrankfurterApi,
     networkMonitor: NetworkMonitor,

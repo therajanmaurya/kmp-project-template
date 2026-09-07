@@ -10,6 +10,8 @@
 package kpt.core.store.cloudtodo.impl
 
 import kotlinx.coroutines.flow.map
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.ConflictStrategy
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.cloudtodo.CloudTodoDao
@@ -36,6 +38,8 @@ import org.mobilenativefoundation.store.store5.UpdaterResult
  * table (`cloud_todos`): the write store's SoT writer persists here, this read store's SoT reader
  * observes it, so a `store.write(...)` is reflected in the read stream via Room. `GET /todos/{id}`.
  */
+@StoreProvider(id = "cloudTodo")
+@CacheKey(fn = "item", key = "cloudTodo:{id}", params = ["id:Int"])
 fun provideCloudTodoReadStore(
     api: JsonPlaceholderApi,
     dao: CloudTodoDao,
@@ -65,6 +69,7 @@ fun provideCloudTodoReadStore(
  * authoritative (offline-first); the resolver also reports whether the two sides genuinely
  * diverged, which is what a `MutationResult.Conflicted` outcome is derived from.
  */
+@StoreProvider(id = "cloudTodoMutable", logout = false)
 fun provideCloudTodoStore(
     api: JsonPlaceholderApi,
     dao: CloudTodoDao,

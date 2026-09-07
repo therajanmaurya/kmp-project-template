@@ -13,6 +13,8 @@ import io.github.mobilebytelabs.kmptoolkit.networkmonitor.NetworkMonitor
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.RetryPolicy
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.executeWithRetry
 import kotlinx.coroutines.flow.map
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.currency.dao.ExchangeRatesDao
 import kpt.core.database.currency.mapper.toDomain
@@ -35,6 +37,8 @@ import org.mobilenativefoundation.store.store5.Store
  * Key: [String] — the base currency code (e.g., "USD", "EUR").
  * Value: [ExchangeRates] — domain model with all target rates for that base.
  */
+@StoreProvider(id = "spotRate")
+@CacheKey(fn = "of", key = "currency:spotRate:{baseCurrency}", params = ["baseCurrency:String"])
 fun provideSpotRateLookupStore(
     api: FrankfurterApi,
     networkMonitor: NetworkMonitor,

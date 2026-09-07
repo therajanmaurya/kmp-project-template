@@ -13,6 +13,8 @@ import io.github.mobilebytelabs.kmptoolkit.networkmonitor.NetworkMonitor
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.RetryPolicy
 import io.github.mobilebytelabs.kmptoolkit.networkmonitor.executeWithRetry
 import kotlinx.coroutines.flow.map
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.base.store.paging.PageKey
@@ -26,6 +28,8 @@ import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
 
+@StoreProvider(id = "coinMarkets", ttl = "2m")
+@CacheKey(name = "LIST", key = "crypto:coinMarkets")
 fun provideCoinMarketsStore(
     api: CoinGeckoApi,
     networkMonitor: NetworkMonitor,

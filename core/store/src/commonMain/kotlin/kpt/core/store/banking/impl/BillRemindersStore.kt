@@ -12,6 +12,8 @@ package kpt.core.store.banking.impl
 import kotlinx.coroutines.flow.map
 import kpt.core.base.database.invalidation.daoFlow
 import kpt.core.base.database.invalidation.notifyingWrite
+import kpt.core.base.store.annotation.CacheKey
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.banking.dao.BillReminderDao
 import kpt.core.database.banking.entity.BillReminderEntity
@@ -36,6 +38,9 @@ import org.mobilenativefoundation.store.store5.Store
  * `core-base/database/.../invalidation/README.md`). On Android/Desktop/iOS the wrap
  * is a microsecond no-op alongside Room's native invalidation.
  */
+@StoreProvider(id = "billReminders")
+@CacheKey(name = "LIST", key = "billReminders")
+@CacheKey(fn = "item", key = "billReminder:{id}", params = ["id:String"])
 fun provideBillRemindersStore(dao: BillReminderDao): Store<Unit, List<BillReminder>> =
     StoreFactory.createOfflineStore(
         sourceOfTruth = SourceOfTruth.of(
@@ -80,6 +85,7 @@ fun provideBillReminderDetailStore(dao: BillReminderDao): Store<String, BillRemi
  * no-op Updater); the writer/delete fire [notifyingWrite] so the paired [provideBillRemindersStore]
  * read collectors (and the repository's DAO-direct `daoFlow` reads) re-emit on wasmJs.
  */
+@StoreProvider(id = "billRemindersMutable", logout = false)
 fun provideBillRemindersWriteStore(dao: BillReminderDao): MutableStore<String, BillReminder> =
     StoreFactory.createOfflineMutableStore(
         sourceOfTruth = SourceOfTruth.of(

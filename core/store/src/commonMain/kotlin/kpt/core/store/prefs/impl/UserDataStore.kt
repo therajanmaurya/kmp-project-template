@@ -12,6 +12,7 @@
 package kpt.core.store.prefs.impl
 
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.user.UserData
 import org.mobilenativefoundation.store.store5.SourceOfTruth
@@ -46,6 +47,7 @@ fun interface UserDataSource {
  * single whole-`UserData` blob write, losing the per-setting API for no benefit — so the writer
  * is deliberately not part of this store's contract.
  */
+@StoreProvider(id = "userData")
 fun provideUserDataStore(source: UserDataSource): Store<Unit, UserData> =
     StoreFactory.createOfflineStore(
         sourceOfTruth = SourceOfTruth.of(

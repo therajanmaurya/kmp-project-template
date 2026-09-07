@@ -9,6 +9,7 @@
  */
 package kpt.core.store.emi.impl
 
+import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.model.demo.emi.EmiResult
 import org.mobilenativefoundation.store.store5.Fetcher
@@ -57,6 +58,7 @@ fun interface EmiCompute {
  *
  * MEMORY_ONLY is only legal because no `cache_strategy` is declared for this feature (SC2).
  */
+@StoreProvider(id = "emi")
 fun provideEmiStore(compute: EmiCompute): Store<EmiParams, EmiResult> =
     StoreFactory.createMemoryStore(
         fetcher = Fetcher.of { params: EmiParams -> compute(params) },
