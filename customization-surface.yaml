@@ -103,7 +103,31 @@ rules:
   # BYTE-IDENTICAL (sha 3c948e1e…), so the relocation changed authoring location, not the database.
   - glob: "**/AppDatabase.kt"
     owner: template
-  # Fork-owned DB schema offset — the single line a fork edits for its own schema version. PRESERVED.
+  # Fork-owned Room migration LEDGER — where each template migration unit landed in THIS fork's
+  # version sequence, plus the fork's own migrations. owner:fork is load-bearing, not tidiness: the
+  # template's ledger says v13, a fork's may say v27, and blind-copying ours over theirs would strand
+  # every installed device on a version with no path forward.
+  # Template-owned counterpart to the ledger: WHAT the template may add, with no version numbers.
+  # Full-copies, because a fork never edits it — its answer goes in the fork-owned ledger below.
+  # Framework tables, declared by the module that owns them. Template-owned: a fork that edited
+  # these would break core-base at runtime — its own tables go in app.yaml#database.entities.
+  - glob: "core-base/database/module-schema.yaml"
+    owner: template
+  - glob: "core/database/migration-units.yaml"
+    owner: template
+  - glob: "app-profile/migration-ledger.yaml"
+    owner: fork
+  # WHOLE-FILE generated => owner:fork, the same call as GeneratedApiBindings. These are derived in
+  # full from the fork's app-profile (DB filename from its appId; schema version from its ledger), so
+  # a sync has nothing to contribute and blind-copying the template's values over a fork's is pure
+  # loss until the next syncForkConfig. Contrast the network `config/**` files, which are owner:
+  # template because only a SENTINEL REGION inside them is generated — the file itself is template
+  # content. The rule is: whole-file generated -> fork; region-generated -> template.
+  - glob: "**/core/database/**/config/DatabaseConfig.kt"
+    owner: fork
+  - glob: "**/core/database/**/config/ForkDatabaseConfig.kt"
+    owner: fork
+  # Fork-owned DB schema version (GENERATED from the ledger). PRESERVED.
   - glob: "**/core/database/**/ForkDatabaseConfig.kt"
     owner: fork
   # Room exported schema JSONs (core/database/schemas/**/N.json) evolve per-fork: a fork adds entities
@@ -259,6 +283,15 @@ rules:
     owner: fork
   - glob: "**/demo/**"
     owner: demo-showcase
+  # The fork's preferences EXTEND the framework's: ProjectPreferencesRepository inherits
+  # UserPreferencesRepository and its impl delegates to the template's, so a fork gets every
+  # framework preference for free, adds its own, and overrides any it needs to alter. The template's
+  # two files stay hand-managed and full-copy; these two are never synced. No declaration drives it —
+  # inheritance makes "a framework preference cannot be removed" a compile error rather than a rule.
+  - glob: "**/core/datastore/**/ProjectPreferencesRepository.kt"
+    owner: fork
+  - glob: "**/core/datastore/**/ProjectPreferencesRepositoryImpl.kt"
+    owner: fork
   # Fork DI seams — `di/Project<X>Module.kt` is the "yours to fill" per-layer seam (network, store,
   # data, database). WLS-1..4 keep it alive through `remove-demo.sh`; ownership is what keeps it alive
   # through a SYNC. As owner:template the template's EMPTY seam blind-copies over a fork's filled-in

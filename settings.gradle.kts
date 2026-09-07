@@ -136,6 +136,7 @@ include(":feature:cloudtodo")
 
 include(":core-base:firebase")
 include(":core-base:common")
+include(":core-base:crypto")
 include(":core-base:data")
 include(":core-base:database")
 include(":core-base:datastore")

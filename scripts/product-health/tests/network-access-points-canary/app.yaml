@@ -11,8 +11,8 @@ network:
       api: com.acme.api.ShopApi
     - id: sb
       type: supabase
-      base_url: https://p.supabase.co
-      loggable_host: p.supabase.co
+      base_url: https://sb.supabase.co
+      loggable_host: sb.supabase.co
       api: com.acme.api.ConfigApi
       anon_key_env: SB_ANON_KEY
     - id: pay-gw

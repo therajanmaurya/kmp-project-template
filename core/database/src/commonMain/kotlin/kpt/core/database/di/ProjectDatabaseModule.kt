@@ -34,7 +34,7 @@ val ProjectDatabaseModule = module {
     // `createdAtStart = true` runs it at graph construction; the marker object only keys the single.
     single(createdAtStart = true) {
         kpt.core.database.currency.converter.ChargeTypeConverters.install(
-            get<kpt.core.base.security.FieldEncryptor>(),
+            get<kpt.core.base.crypto.FieldEncryptor>(),
         )
         ChargeTypeConvertersInstalled
     }

@@ -16,6 +16,15 @@ rc_ok=0
 cell() { # <tree> <expected-exit> <label>
   local tree="$1" exp="$2" lbl="$3" out rc
   out="$(HEALTH_ROOT="$HERE" NAP_YAML="$HERE/app.yaml" NAP_NET_DIR="$HERE/$tree" bash "$CHECK" 2>&1)"; rc=$?
+  # The label names the rule (e.g. "NAP-3 ..."); when a leg is expected to FAIL, require the output
+  # to actually cite that rule. Exit code alone cannot distinguish "NAP-3 caught it" from "some other
+  # rule fired" — nor from a vacuously-passing NAP-3 while a different rule keeps the exit non-zero.
+  local want=""
+  [ "$exp" = "1" ] && want="$(printf '%s' "$lbl" | grep -oE '^NAP-[0-9]+' || true)"
+  if [ -n "$want" ] && ! printf '%s' "$out" | grep -q "$want"; then
+    echo "   ❌ $lbl → exit $rc but did not cite $want (got: $(printf '%s' "$out" | grep -oE 'NAP-[0-9]+' | sort -u | tr '\n' ' '))"
+    rc_ok=1; return
+  fi
   if [ "$rc" = "$exp" ]; then
     echo "   ✅ $lbl → exit $rc (expected $exp)"
   else

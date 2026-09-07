@@ -228,17 +228,23 @@ done <<< "$DEMO_FEATURES"
 # ── 6. Reset the Room schema VERSION to a fresh-fork baseline ─────────────────────────
 #     (the @AutoMigration history lived inside the stripped demo block; a fresh fork has
 #      no installed users to migrate, so it starts clean at v1).
-#     The target is TEMPLATE_BASE_VERSION, not VERSION: `VERSION` has been
-#     `TEMPLATE_BASE_VERSION + ForkDatabaseConfig.VERSION_OFFSET` since the version was split for
-#     conflict-free adoption, so the old `const val VERSION = [0-9]*` pattern matched NOTHING and
-#     this reset was a silent no-op — a cleaned fork kept v13 with its migration history stripped.
-DB="core/database/src/commonMain/kotlin/kpt/core/database/AppDatabase.kt"
-if [ -f "$DB" ]; then
-  say "reset $DB TEMPLATE_BASE_VERSION → 1"
+#     Reset the fork-owned LEDGER, not a constant on AppDatabase: the version now lives in
+#     `app-profile/migration-ledger.yaml` and AppDatabase reads it via ForkDatabaseConfig.
+#     A fresh fork is CREATED with the framework tables in their current shape, so it needs no
+#     migration for them — it records every declared unit in `baseline_units` instead. Without that,
+#     the next syncForkConfig would append all of them as migrations the fork's v1 already contains.
+LEDGER="app-profile/migration-ledger.yaml"
+if [ -f "$LEDGER" ]; then
+  say "reset $LEDGER → version 1, empty migrations, baseline = every declared unit"
   if [ "$APPLY" -eq 1 ]; then
-    sed -i '' 's/const val TEMPLATE_BASE_VERSION = [0-9][0-9]*/const val TEMPLATE_BASE_VERSION = 1/' "$DB"
-    grep -q 'const val TEMPLATE_BASE_VERSION = 1$' "$DB" \
-      || { echo "remove-demo: FAILED to reset TEMPLATE_BASE_VERSION in $DB" >&2; exit 1; }
+    # `|| true`: grep exits 2 when the file is absent, and under `set -e` that killed the whole strip
+    # silently — a fork that stripped the white-label machinery legitimately has no units file.
+    units=$(grep -hoE 'id:[[:space:]]*[A-Za-z0-9_-]+' core/database/migration-units.yaml 2>/dev/null \
+              | sed 's/.*id:[[:space:]]*//' | paste -sd', ' - || true)
+    sed -i '' -e "s/^version:[[:space:]]*[0-9][0-9]*/version: 1/" \
+              -e "s/^baseline_units:.*/baseline_units: [${units}]/" "$LEDGER"
+    grep -q '^version: 1$' "$LEDGER" \
+      || { echo "remove-demo: FAILED to reset $LEDGER version" >&2; exit 1; }
   fi
 fi
 
@@ -263,6 +269,11 @@ for f in $GEN_REGION_FILES; do
   n_gen=$(grep -c 'gen-[a-z]*:begin' "$f" 2>/dev/null || echo 0)
   say "empty $n_gen generated region(s) in ${f#./}"
   if [ "$APPLY" -eq 1 ]; then
+    # PROJECT-SPECIFIC regions only. `gen-infra-*` is deliberately NOT matched (the pattern excludes
+    # hyphenated names): those hold the FRAMEWORK tables, which every fork has — emptying them would
+    # leave a cleaned fork with a @Database of zero entities until a regen happened to run, and Room
+    # fails at compile with no table at all. Demo/fork content is project-specific and must go; the
+    # framework's is not and must stay.
     awk '/gen-[a-z]+:begin/{print; skip=1; next} /gen-[a-z]+:end/{skip=0} !skip' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
     # A leftover demo reference here is a guaranteed compile break — fail loudly, never ship it.
     if grep -q 'kpt\.core\.database\.demo' "$f"; then

@@ -46,6 +46,7 @@ kotlin {
                 implementation(projects.core.database)
                 implementation(projects.core.model)
                 implementation(projects.core.datastore)
+                implementation(projects.coreBase.datastore)
 
                 implementation(compose.runtime)
                 implementation(compose.ui)
@@ -58,6 +59,7 @@ kotlin {
                 implementation(libs.multiplatform.settings.coroutines)
 
                 implementation(libs.koin.core)
+                implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.ktor.client.js)
             }
         }

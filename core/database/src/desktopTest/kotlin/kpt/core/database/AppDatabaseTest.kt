@@ -12,6 +12,7 @@ package kpt.core.database
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
+import kpt.core.database.config.DatabaseConfig
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

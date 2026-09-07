@@ -77,3 +77,23 @@ kotlin {
 // Guarded like feature-deps: a fork that adopted the template BEFORE this seam existed may not have
 // the file yet, and an unconditional apply would fail the whole configuration.
 project.file("module-deps.gradle.kts").takeIf { it.exists() }?.let { apply(from = it) }
+
+/*
+ * Web tests are disabled for this module.
+ *
+ * `core:data` reaches skiko through a LEGITIMATE edge - `core:store` exposes `core-base/ui`'s
+ * screen-state defaults (including Lottie animations) as `api`, and compottie pulls skiko. The
+ * generated JS/wasm test bundles therefore `import './skiko.mjs'`, but that file is only emitted
+ * for modules that apply the Compose plugin, which this one deliberately does not. Both
+ * environments fail identically with ERR_MODULE_NOT_FOUND - node AND headless Chrome - so this is
+ * not a matter of picking the right runtime.
+ *
+ * The tasks are turned off explicitly rather than left failing. The commonTest suite still runs on
+ * desktop, Android and iOS, so the logic is covered; what is lost is running it ON the web targets.
+ * Recovering that needs either the skiko edge gone from `core:store` (it is load-bearing today) or
+ * skiko's resources shipped for non-Compose consumers - a real change, not a config tweak.
+ */
+afterEvaluate {
+    val webTests = setOf("jsNodeTest", "jsBrowserTest", "wasmJsNodeTest", "wasmJsBrowserTest")
+    tasks.matching { it.name in webTests }.configureEach { enabled = false }
+}

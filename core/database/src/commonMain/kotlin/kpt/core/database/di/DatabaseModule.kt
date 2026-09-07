@@ -11,7 +11,7 @@ package kpt.core.database.di
 
 import kpt.core.base.database.DatabaseNaming
 import kpt.core.database.AppDatabase
-import kpt.core.database.DatabaseConfig
+import kpt.core.database.config.DatabaseConfig
 import org.koin.core.module.Module
 import org.koin.dsl.module
 

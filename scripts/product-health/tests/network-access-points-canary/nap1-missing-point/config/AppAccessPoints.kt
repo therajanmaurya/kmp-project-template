@@ -11,8 +11,8 @@ object AppAccessPoints {
         AccessPoint(
             id = "sb",
             kind = AccessPointKind.SUPABASE,
-            baseUrl = "https://p.supabase.co",
-            loggableHost = "p.supabase.co",
+            baseUrl = "https://sb.supabase.co",
+            loggableHost = "sb.supabase.co",
         ),
         AccessPoint(
             id = "pay-gw",

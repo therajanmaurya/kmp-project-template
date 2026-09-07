@@ -173,29 +173,6 @@ database:
     - {name: alertDao, type: kpt.core.database.alerts.AlertDao}
     - {name: interestRateSeriesDao, type: kpt.core.database.economic.InterestRateSeriesDao}
     # demo:end
-  auto_migrations:
-    # demo:begin — the template's own schema history. A FRESH fork has no installed users to
-    # migrate, so remove-demo.sh strips this AND resets TEMPLATE_BASE_VERSION to 1: the two must
-    # move together, or Room sees an AutoMigration targeting a version past the database's own.
-    - {from: 3, to: 4}     # framework_fetched_at
-    - {from: 4, to: 5}     # framework_submit_drafts
-    - {from: 5, to: 6}     # personal_watchlist
-    - {from: 6, to: 7}     # uniqueKey column on drafts
-    - {from: 7, to: 8}     # banking_loans + banking_bill_reminders
-    # v9 was never shipped — v8→9 and v9→10 landed in one unreleased commit, collapsed to one hop.
-    - {from: 8, to: 10, spec: kpt.core.database.migrations.MigrationSpec8to10}   # +alerts +interest_rate_series, drops samples
-    - {from: 10, to: 11}   # cloud_todos
-    - {from: 11, to: 12}   # framework_write_conflicts
-    - {from: 12, to: 13}   # attemptCount on framework_submit_drafts
-    # demo:end
-  # core/database's OWN packages — one per data domain it holds (`kpt/core/database/<id>/`).
-  # Declared PER MODULE, not in a shared registry: "core/database has an alerts entity" and
-  # "core/store has an alerts store" are different facts that are independently true, and the modules
-  # genuinely differ (exchange lives only in core/store; calc/emi have no table at all). A module
-  # stays self-describing, and improving one module does not edit a file that governs the others.
-  #
-  #   owner: fork      the consumer's own domain — kept by the customizer, never touched by a sync.
-  #   owner: template  the showcase's — `remove-demo.sh` deletes the package.
   packages:
     # demo:begin
     - { id: alerts,     owner: template }

@@ -47,6 +47,7 @@ while IFS= read -r f; do
   fi
 done <<< "$demo_mods"
 
+
 stranded=$(find "$CORE" -path '*/demo/*' -name 'Project*Module.kt' -not -path '*/build/*' 2>/dev/null)
 if [ -n "$stranded" ]; then
   echo "❌ WLS-2 Project*Module under demo/ — remove-demo.sh deletes it:"

@@ -18,6 +18,11 @@ rc_ok=0
 cell() { # <rb-fixture> <expected-exit> <label> [kt-fixture]
   local rb="$1" exp="$2" lbl="$3" kt="${4:-kt-in-sync.kt}" out rc
   out="$(HEALTH_ROOT="$HERE" FORK_PARITY_KT="$HERE/$kt" FORK_PARITY_RB="$HERE/$rb" bash "$CHECK" 2>&1)"; rc=$?
+  # A leg expected to FAIL must actually emit a diagnostic. Exit 1 with no ❌ line means the check
+  # bailed early (missing fixture, unset var) rather than detecting the defect under test.
+  if [ "$exp" = "1" ] && ! printf '%s' "$out" | grep -q '❌'; then
+    echo "   ❌ $lbl → exit $rc but produced no diagnostic (check bailed, did not detect)"; rc_ok=1; return
+  fi
   if [ "$rc" = "$exp" ]; then
     echo "   ✅ $lbl → exit $rc (expected $exp)"
   else

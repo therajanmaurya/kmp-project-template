@@ -15,6 +15,7 @@ import kpt.core.base.ui.nav.popBackStackSafely
 import kpt.core.data.demo.di.DemoRepositoryModule
 import kpt.core.data.di.ProjectRepositoryModule
 import kpt.core.database.di.ProjectDatabaseModule
+import kpt.core.datastore.di.ProjectDatastoreModule
 import kpt.core.network.di.ProjectNetworkModule
 import kpt.core.store.di.ProjectStoreModule
 import kpt.feature.addtowatchlist.di.AddToWatchlistModule
@@ -70,6 +71,7 @@ object FeatureRegistry {
         ProjectNetworkModule,
         ProjectDatabaseModule,
         ProjectStoreModule,
+        ProjectDatastoreModule,
         // demo:begin — default demo feature set + the demo DI aggregators.
         // customizer --clean strips this fenced block; the four Project* seams above survive.
         // ── default demo feature set — replace with your fork's ──

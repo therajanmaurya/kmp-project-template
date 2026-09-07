@@ -55,46 +55,60 @@ network:
   #
   # syncForkConfig regenerates AppAccessPoints.points, AppUrlTypes, AppSupabaseAnonKeys and
   # GeneratedApiBindings from this list. (B3, epic pure-white-label-store5-network)
+  # Every access point declares `owner:` — the ONE field that decides its lifecycle:
+  #
+  #   owner: fork      the CONSUMER's endpoint. Kept by the customizer, never touched by a sync.
+  #   owner: template  the template's own showcase. `scripts/remove-demo.sh` DELETES the entry AND
+  #                    its `kpt/core/network/<id>/` package, so "forking = starting clean" is a
+  #                    declared property of each endpoint rather than a positional comment fence the
+  #                    strip has to parse (such a fence could not express `project`, whose point
+  #                    sat outside it while its `api:` sat inside).
+  #
+  # `main`/`staging` are `fork`: they are placeholders for the CONSUMER's own backend, and
+  # `UrlType.MAIN` is the framework default in core-base/network — every fork needs one.
   access_points:
     - id: main
+      owner: fork
       type: rest
       base_url: https://api.example.com/
       loggable_host: api.example.com
     - id: staging
+      owner: fork
       type: rest
       base_url: https://staging.example.com/
       loggable_host: staging.example.com
-    - id: supabase_data
+    # ── template showcase — removed wholesale by the customizer ──────────────────────────────
+    # A fork declares its OWN Supabase point named for its project (id -> package), so this one is
+    # `template`: it goes with the showcase rather than being rebranded in place.
+    - id: project
+      owner: template
       type: supabase
       base_url: https://project.supabase.co
       loggable_host: project.supabase.co
       anon_key_env: MY_SUPABASE_KEY
-      # demo:begin — AppConfigApi is the DEMO Supabase facade (deleted by remove-demo.sh). The access
-      # point itself is a template placeholder a fork rebrands, so only the binding is fenced: a
-      # cleaned fork keeps the endpoint and drops the api: line.
-      api: kpt.core.network.supabasedata.api.AppConfigApi
-      # demo:end
-      # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this and supplies the env var /
-      # local.properties entry; without it the row generates "" and the client stays inert.
-    # demo:begin — demo showcase endpoints. Each declares its `api:`, so its Koin binding is GENERATED
-    # into GeneratedApiBindings.kt; none is hand-wired. `scripts/remove-demo.sh` strips this fenced
-    # block, so a cleaned fork stops declaring endpoints whose API classes it just deleted.
+      api: kpt.core.network.project.api.AppConfigApi
+      # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
+      # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
+      owner: template
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
       api: kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
     - id: frankfurter                # FX / currency exchange rates
+      owner: template
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
       api: kpt.core.network.frankfurter.api.FrankfurterApi
     - id: coingecko                  # crypto market data
+      owner: template
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
       api: kpt.core.network.coingecko.api.CoinGeckoApi
     - id: fred                       # US Federal Reserve economic data
+      owner: template
       type: rest
       base_url: https://api.stlouisfed.org/
       loggable_host: api.stlouisfed.org
@@ -103,11 +117,11 @@ network:
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
       api: kpt.core.network.fred.api.FredApi
     - id: worldbank                  # World Bank macro indicators
+      owner: template
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
       api: kpt.core.network.worldbank.api.WorldBankApi
-    # demo:end
 
 # ── Room database — the fork's OWN schema additions (white-label seam, E1/C7) ────────────────
 # Declare entities/DAOs/migrations HERE rather than hand-editing `core/database/**/AppDatabase.kt`:
@@ -133,10 +147,67 @@ network:
 # Empty on the template: the demo showcase's own tables live in the `demo:` fenced regions of
 # AppDatabase.kt and are stripped by `scripts/remove-demo.sh`, not declared here.
 database:
-  entities: []
-  daos: []
-  auto_migrations: []
-  type_converters: []
+  entities:
+    # demo:begin — the showcase's tables. remove-demo.sh strips this fence, so a cleaned fork
+    # regenerates AppDatabase with only the framework `infra` entities.
+    - kpt.core.database.currency.entity.ExchangeRatesEntity
+    - kpt.core.database.crypto.entity.CoinMarketEntity
+    - kpt.core.database.crypto.entity.CoinDetailEntity
+    - kpt.core.database.currency.entity.RateHistoryEntity
+    - kpt.core.database.watchlist.entity.WatchlistEntity
+    - kpt.core.database.banking.entity.LoanEntity
+    - kpt.core.database.banking.entity.BillReminderEntity
+    - kpt.core.database.alerts.AlertEntity
+    - kpt.core.database.economic.InterestRateSeriesEntity
+    - kpt.core.database.cloudtodo.CloudTodoEntity
+    # demo:end
+  daos:
+    # demo:begin
+    - {name: exchangeRatesDao, type: kpt.core.database.currency.dao.ExchangeRatesDao}
+    - {name: cloudTodoDao, type: kpt.core.database.cloudtodo.CloudTodoDao}
+    - {name: coinMarketDao, type: kpt.core.database.crypto.dao.CoinMarketDao}
+    - {name: coinDetailDao, type: kpt.core.database.crypto.dao.CoinDetailDao}
+    - {name: rateHistoryDao, type: kpt.core.database.currency.dao.RateHistoryDao}
+    - {name: watchlistDao, type: kpt.core.database.watchlist.dao.WatchlistDao}
+    - {name: loanDao, type: kpt.core.database.banking.dao.LoanDao}
+    - {name: billReminderDao, type: kpt.core.database.banking.dao.BillReminderDao}
+    - {name: alertDao, type: kpt.core.database.alerts.AlertDao}
+    - {name: interestRateSeriesDao, type: kpt.core.database.economic.InterestRateSeriesDao}
+    # demo:end
+  # TEMPLATE-owned: WHAT the template may add to a fork's schema. Deliberately carries NO version
+  # numbers — each fork applies a unit at ITS OWN next free version and records that in the
+  # fork-owned `app-profile/migration-ledger.yaml`. Identity is the `id`, not a position, which is
+  # what lets the same unit land at v14 in one fork and v27 in another without either colliding.
+  #
+  # ADDITIVE ONLY (enforced): a unit is applied at an arbitrary slot, so it may only CREATE TABLE or
+  # ADD COLUMN with a default. A rename or a conditional drop assumes a starting schema and breaks
+  # when replayed out of position.
+  #
+  # Domain migrations are NOT units — they belong to whoever owns the domain and live directly in
+  # that fork's own ledger.
+  migration_units:
+    - { id: framework-fetched-at,      adds_table: framework_fetched_at }
+    - { id: framework-submit-drafts,   adds_table: framework_submit_drafts }
+    - { id: drafts-unique-key,         adds_column: framework_submit_drafts.uniqueKey }
+    - { id: framework-write-conflicts, adds_table: framework_write_conflicts }
+    - { id: drafts-attempt-count,      adds_column: framework_submit_drafts.attemptCount }
+  packages:
+    # demo:begin
+    - { id: alerts,     owner: template }
+    - { id: banking,    owner: template }
+    - { id: cloudtodo,  owner: template }
+    - { id: crypto,     owner: template }
+    - { id: currency,   owner: template }
+    - { id: economic,   owner: template }
+    - { id: watchlist,  owner: template }
+    - { id: migrations, owner: template }   # the template's own schema-history specs
+    # demo:end
+  type_converters:
+    # demo:begin
+    - kpt.core.database.currency.converter.ChargeTypeConverters
+    - kpt.core.database.crypto.converter.FintechTypeConverters
+    - kpt.core.database.banking.converter.BankingTypeConverters
+    # demo:end
 
 org:
   name: Mifos Initiative

@@ -12,7 +12,7 @@ package kpt.core.database.currency.converter
 import androidx.room3.ColumnTypeConverter
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.json.Json
-import kpt.core.base.security.FieldEncryptor
+import kpt.core.base.crypto.FieldEncryptor
 
 private const val ENC_PREFIX = "ENC:"
 
