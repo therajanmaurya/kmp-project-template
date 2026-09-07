@@ -229,7 +229,7 @@ CS_PLACEHOLDER_RE='(^|[[:space:]])#[[:space:]]*PLACEHOLDER|com\.example\.app|App
 #                  plus a fork's own rows in any UNION LIST win by identity, while template-only
 #                  rows are appended (union-by-identity). Union lists + their identity field:
 #                  network.access_points/id · core_store.stores/id · core_store.packages/id ·
-#                  core_store.cache_keys/name|fn · database.daos/name · database.type_converters/*.
+#                  core_store.cache_keys/name|fn · database.packages/id.
 #                  This was `access_points` ONLY: every other list came from the template wholesale,
 #                  so a fork that declared its own store, cache key, DAO or package silently LOST it
 #                  on the next sync — and the generated Kotlin then faithfully regenerated without it,
@@ -299,16 +299,19 @@ cs_merge_yaml_schema() {
       p=skey[1]; for (i=2;i<=sp;i++) p=p"."skey[i]
       return p
     }
-    # Identity field per union list. NOT every list keys on `id`: daos are {name,type}, cache_keys
-    # are either a constant (`name`) or a builder (`fn`), and type_converters are bare FQN strings
-    # with no field at all ("*" = the whole value is the identity).
-    function union_spec(k){
-      if (k=="access_points") return "id"
-      if (k=="stores")        return "id"
-      if (k=="packages")      return "id"
-      if (k=="cache_keys")    return "name|fn"
-      if (k=="daos")          return "name"
-      if (k=="type_converters") return "*"
+    # Identity field per union list. NOT every list keys on `id`: cache_keys are either a constant
+    # (`name`) or a builder (`fn`).
+    # Keyed on the FULL DOTTED PATH, not the leaf. Two different lists can share a leaf name —
+    # `core_store.packages` and `database.packages` both exist — and keying on the leaf made them
+    # share one fork buffer, so the second list emitted the rows of the first one as well. That is a
+    # duplicate row in app-profile, i.e. a duplicate generated declaration. Matching whole paths
+    # also means a NEW list named `packages` under a third parent is not silently swept in.
+    function union_spec(p){
+      if (p=="network.access_points") return "id"
+      if (p=="core_store.stores")     return "id"
+      if (p=="core_store.packages")   return "id"
+      if (p=="core_store.cache_keys") return "name|fn"
+      if (p=="database.packages")     return "id"
       return ""
     }
     # Row identity, for BOTH yaml shapes this file mixes: block rows (`- id: main`, as
@@ -356,7 +359,7 @@ cs_merge_yaml_schema() {
       if (content ~ /^- /) next
       if (content ~ /:/) {
         k=keyof(line); r=restof(line); p=pathpush(ind,k)
-        if (union_spec(k)!="") { ap=1; ap_ind=ind; apkey=k; next }
+        if (union_spec(p)!="") { ap=1; ap_ind=ind; apkey=p; next }
         if (r!="" && r !~ /^[|>]/) {           # scalar leaf
           forkval[p]=stripc(r)
           forkph[p]=(line ~ ph) ? 1 : 0
@@ -385,10 +388,10 @@ cs_merge_yaml_schema() {
       }
       if (content ~ /:/) {
         k=keyof(line); r=restof(line); p=pathpush(ind,k)
-        if (union_spec(k)!="") {
+        if (union_spec(p)!="") {
           print line                            # the list header
-          for (i=1;i<=nfb[k];i++) print forkbuf[k, i]   # fork rows preserved (win by identity)
-          ap=1; ap_ind=ind; apkey=k; nib=0; curid=""
+          for (i=1;i<=nfb[p];i++) print forkbuf[p, i]   # fork rows preserved (win by identity)
+          ap=1; ap_ind=ind; apkey=p; nib=0; curid=""
           next
         }
         if (r!="" && r !~ /^[|>]/ && (p in forkwins) && (p in forkval) && forkph[p]==0) {

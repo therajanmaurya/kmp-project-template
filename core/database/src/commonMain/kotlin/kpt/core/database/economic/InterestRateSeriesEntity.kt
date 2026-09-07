@@ -10,6 +10,7 @@
 package kpt.core.database.economic
 
 import androidx.room3.Entity
+import kpt.core.base.database.annotation.DbEntity
 
 /**
  * Persistent row for a single data-point in an interest-rate time series.
@@ -23,6 +24,7 @@ import androidx.room3.Entity
  * @property value Observed rate value.
  * @property updatedAt Local cache-write timestamp in epoch-milliseconds.
  */
+@DbEntity
 @Entity(tableName = "interest_rate_series", primaryKeys = ["seriesId", "date"])
 data class InterestRateSeriesEntity(
     val seriesId: String,

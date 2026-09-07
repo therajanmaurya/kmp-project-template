@@ -11,6 +11,7 @@ package kpt.core.database.watchlist.entity
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import kpt.core.base.database.annotation.DbEntity
 
 /**
  * Persistent row representing a coin in the user's personal watchlist.
@@ -23,6 +24,7 @@ import androidx.room3.PrimaryKey
  * @property coinId CoinGecko coin identifier (e.g., "bitcoin", "ethereum"). Primary key.
  * @property addedAtMs Epoch millis when the coin was added — used for default sort order.
  */
+@DbEntity
 @Entity(tableName = "personal_watchlist")
 data class WatchlistEntity(
     @PrimaryKey

@@ -113,6 +113,7 @@ include(":core:network")
 include(":core:platform")
 include(":core:store")
 include(":tools:store-ksp")
+include(":tools:database-ksp")
 include(":core:ui")
 
 include(":feature:home")

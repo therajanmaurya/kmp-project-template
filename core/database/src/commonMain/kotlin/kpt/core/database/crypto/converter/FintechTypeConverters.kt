@@ -11,7 +11,9 @@ package kpt.core.database.crypto.converter
 
 import androidx.room3.ColumnTypeConverter
 import kotlinx.serialization.json.Json
+import kpt.core.base.database.annotation.DbConverters
 
+@DbConverters
 class FintechTypeConverters {
 
     @ColumnTypeConverter

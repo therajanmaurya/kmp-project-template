@@ -14,8 +14,10 @@ import androidx.room3.Query
 import androidx.room3.Transaction
 import androidx.room3.Upsert
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 import kpt.core.database.crypto.entity.CoinMarketEntity
 
+@DbDao
 @Dao
 interface CoinMarketDao {
 

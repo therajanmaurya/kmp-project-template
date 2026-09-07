@@ -11,6 +11,7 @@ package kpt.core.database.alerts
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import kpt.core.base.database.annotation.DbEntity
 
 /**
  * Persistent row for a price alert.
@@ -25,6 +26,7 @@ import androidx.room3.PrimaryKey
  *   `false` when it fires on price ≤ [targetPrice].
  * @property createdAt Creation timestamp in epoch-milliseconds.
  */
+@DbEntity
 @Entity(tableName = "alerts")
 data class AlertEntity(
     @PrimaryKey val id: String,

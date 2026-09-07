@@ -296,35 +296,15 @@ fi
 #     schema JSONs are ONE atomic unit: the JSONs under core/database/schemas/ describe the
 #     TEMPLATE's lineage (v1 is a lone `samples` table dropped back at v10), which has nothing to do
 #     with a cleaned fork's v1 of four infra tables. Leaving them behind is not cosmetic — the first
-#     time the fork bumps ForkDatabaseConfig.VERSION_OFFSET, Room validates its auto-migration
+#     time the fork bumps its ledger version, Room validates its auto-migration
 #     against the template's stale N.json and computes a migration between unrelated schemas.
 #     Deleting them makes the fork's first build export its own v1 from its own @Database.
-#     …and EMPTY the syncForkConfig-generated regions that projected those declarations into
-#     source. Stripping the app-profile fence removes the DECLARATION, but the generated OUTPUT is
-#     committed source: AppDatabase.kt's `gen-*` regions still hold the demo entities/DAOs/migrations
-#     whose classes step 4 just deleted (unresolved references), and an AutoMigration targeting v13
-#     against the v1 we just reset to. Done as text surgery rather than by invoking syncForkConfig so
-#     the strip stays gradle-free and deterministic; the fork's next syncForkConfig refills the
-#     regions from its OWN app-profile.
-GEN_REGION_FILES="core/database/src/commonMain/kotlin/kpt/core/database/AppDatabase.kt"
-echo "empty generated regions:"
-for f in $GEN_REGION_FILES; do
-  [ -f "$f" ] || continue
-  n_gen=$(grep -c 'gen-[a-z]*:begin' "$f" 2>/dev/null || echo 0)
-  say "empty $n_gen generated region(s) in ${f#./}"
-  if [ "$APPLY" -eq 1 ]; then
-    # PROJECT-SPECIFIC regions only. `gen-infra-*` is deliberately NOT matched (the pattern excludes
-    # hyphenated names): those hold the FRAMEWORK tables, which every fork has — emptying them would
-    # leave a cleaned fork with a @Database of zero entities until a regen happened to run, and Room
-    # fails at compile with no table at all. Demo/fork content is project-specific and must go; the
-    # framework's is not and must stay.
-    awk '/gen-[a-z]+:begin/{print; skip=1; next} /gen-[a-z]+:end/{skip=0} !skip' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-    # A leftover demo reference here is a guaranteed compile break — fail loudly, never ship it.
-    if grep -q 'kpt\.core\.database\.demo' "$f"; then
-      echo "remove-demo: FAILED to empty generated regions in $f (demo refs remain)" >&2; exit 1
-    fi
-  fi
-done
+#     The generated-region surgery that used to live here is GONE. AppDatabase is no longer
+#     committed source: `@DbEntity` / `@DbDao` / `@DbConverters` on the classes are the declaration,
+#     and `tools/database-ksp` derives AppDatabase + GeneratedDaoBindings into build/generated. Step
+#     4b2 deletes the demo packages, which takes their annotations with them, so the next build simply
+#     generates a smaller database. There is no committed output that can outlive its classes, and no
+#     way to leave an AutoMigration pointing past the version we just reset to.
 
 SCHEMAS="core/database/schemas"
 if [ -d "$SCHEMAS" ]; then

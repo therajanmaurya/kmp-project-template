@@ -13,6 +13,7 @@ import androidx.room3.ColumnTypeConverter
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.json.Json
 import kpt.core.base.crypto.FieldEncryptor
+import kpt.core.base.database.annotation.DbConverters
 
 private const val ENC_PREFIX = "ENC:"
 
@@ -28,6 +29,7 @@ private const val ENC_PREFIX = "ENC:"
  * is injected post-construction through the [Companion.install] method, which must
  * be called before the first database operation.
  */
+@DbConverters
 class ChargeTypeConverters {
 
     companion object {

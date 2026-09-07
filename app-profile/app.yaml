@@ -145,34 +145,17 @@ network:
 #
 # Empty on the template: the demo showcase's own tables live in the `demo:` fenced regions of
 # AppDatabase.kt and are stripped by `scripts/remove-demo.sh`, not declared here.
+# core/database — PACKAGE OWNERSHIP only.
+#
+# The schema itself is no longer declared here. Entities, DAOs and type-converters are declared by
+# ANNOTATION on the classes themselves (`@DbEntity` / `@DbDao` / `@DbConverters`), and
+# `tools/database-ksp` derives AppDatabase + GeneratedDaoBindings from them. The three lists that
+# used to live here restated what each class already said, in a second file, by hand.
+#
+# What remains is the ownership map `remove-demo.sh` reads to decide which packages a cleaned fork
+# deletes. Deleting a package takes its annotations with it, so the database simply regenerates
+# smaller — there is nothing to reset and no way to strand a reference to a table that is gone.
 database:
-  entities:
-    # demo:begin — the showcase's tables. remove-demo.sh strips this fence, so a cleaned fork
-    # regenerates AppDatabase with only the framework `infra` entities.
-    - kpt.core.database.currency.entity.ExchangeRatesEntity
-    - kpt.core.database.crypto.entity.CoinMarketEntity
-    - kpt.core.database.crypto.entity.CoinDetailEntity
-    - kpt.core.database.currency.entity.RateHistoryEntity
-    - kpt.core.database.watchlist.entity.WatchlistEntity
-    - kpt.core.database.banking.entity.LoanEntity
-    - kpt.core.database.banking.entity.BillReminderEntity
-    - kpt.core.database.alerts.AlertEntity
-    - kpt.core.database.economic.InterestRateSeriesEntity
-    - kpt.core.database.cloudtodo.CloudTodoEntity
-    # demo:end
-  daos:
-    # demo:begin
-    - {name: exchangeRatesDao, type: kpt.core.database.currency.dao.ExchangeRatesDao}
-    - {name: cloudTodoDao, type: kpt.core.database.cloudtodo.CloudTodoDao}
-    - {name: coinMarketDao, type: kpt.core.database.crypto.dao.CoinMarketDao}
-    - {name: coinDetailDao, type: kpt.core.database.crypto.dao.CoinDetailDao}
-    - {name: rateHistoryDao, type: kpt.core.database.currency.dao.RateHistoryDao}
-    - {name: watchlistDao, type: kpt.core.database.watchlist.dao.WatchlistDao}
-    - {name: loanDao, type: kpt.core.database.banking.dao.LoanDao}
-    - {name: billReminderDao, type: kpt.core.database.banking.dao.BillReminderDao}
-    - {name: alertDao, type: kpt.core.database.alerts.AlertDao}
-    - {name: interestRateSeriesDao, type: kpt.core.database.economic.InterestRateSeriesDao}
-    # demo:end
   packages:
     # demo:begin
     - { id: alerts,     owner: template }
@@ -183,12 +166,6 @@ database:
     - { id: economic,   owner: template }
     - { id: watchlist,  owner: template }
     - { id: migrations, owner: template }   # the template's own schema-history specs
-    # demo:end
-  type_converters:
-    # demo:begin
-    - kpt.core.database.currency.converter.ChargeTypeConverters
-    - kpt.core.database.crypto.converter.FintechTypeConverters
-    - kpt.core.database.banking.converter.BankingTypeConverters
     # demo:end
 
 # core/store — Store5 package ownership.

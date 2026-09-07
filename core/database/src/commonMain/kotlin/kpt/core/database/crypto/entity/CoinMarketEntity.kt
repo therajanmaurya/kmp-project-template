@@ -11,7 +11,9 @@ package kpt.core.database.crypto.entity
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import kpt.core.base.database.annotation.DbEntity
 
+@DbEntity
 @Entity(tableName = "coin_markets")
 data class CoinMarketEntity(
     @PrimaryKey

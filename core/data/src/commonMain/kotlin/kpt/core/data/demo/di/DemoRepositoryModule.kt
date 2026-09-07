@@ -61,12 +61,12 @@ import org.mobilenativefoundation.store.store5.Bookkeeper
  * `demo/di` — a name that read like a fork seam while carrying demo content on a demo lifecycle, so
  * `--clean` deleted the fork's only place to wire this layer.
  */
-// DAO bindings deliberately absent: every `single { get<AppDatabase>().<name> }` is DERIVED from
-// `app-profile/app.yaml#database.daos` into `core/database`'s GeneratedDaoBindings, which
+// DAO bindings deliberately absent: every `single { get<AppDatabase>().<name> }` is DERIVED from the
+// `@DbDao` annotation on the DAO itself into `core/database`'s GeneratedDaoBindings, which
 // DatabaseModule includes. Four of them were hand-written HERE (watchlist/loan/billReminder/alert) —
 // a core/data module binding a core/database concern — and once the generator existed that became a
 // duplicate `single` for the same type, i.e. a Koin DefinitionOverrideException at graph
-// construction. Declare the DAO in app-profile; do not bind it by hand.
+// construction. Annotate the DAO; do not bind it by hand.
 val DemoRepositoryModule = module {
     // Personal watchlist — local-only persistence for the SubmitHandler showcase.
     single<WatchlistRepository> {

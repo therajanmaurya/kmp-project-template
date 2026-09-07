@@ -14,22 +14,26 @@
 # compile, and (b) reset the generated file to its empty-module form so the tree compiles before the
 # fork re-runs syncForkConfig.
 #
-# The SAME hazard now exists for `core/database/**/AppDatabase.kt` (E1/C7): its demo entities/DAOs/
-# migrations/converters moved OUT of `demo:`-fenced blocks in the file and into
-# `app-profile/app.yaml#database`, projected back by syncForkConfig into `gen-*` regions. Stripping
-# the app-profile fence removes the DECLARATION, but the generated OUTPUT is committed source — so
-# remove-demo.sh must also empty those regions, or a cleaned fork keeps entities referencing
-# `kpt.core.database.demo.*` classes step 4 just deleted (unresolved refs) plus AutoMigrations
-# targeting a version past the v1 it just reset to. The exported schema JSONs go too: they describe
-# the TEMPLATE's lineage (v1 is a lone `samples` table), so a fork that later bumps VERSION_OFFSET
-# would have Room validate an auto-migration between two unrelated schemas.
+# `AppDatabase.kt` USED to carry the same hazard, and no longer can. Its entities/DAOs/converters
+# were declared in `app-profile/app.yaml#database` and projected into committed `gen-*` regions, so
+# the strip had to empty those regions by text surgery or a cleaned fork kept entities referencing
+# classes step 4 had just deleted. The declaration is now the `@DbEntity` / `@DbDao` /
+# `@DbConverters` annotation ON the class, and AppDatabase is generated into build/. Deleting a
+# package therefore deletes its declaration — the output cannot outlive its classes, because there
+# is no committed output. What this canary asserts for the database is that the DECLARATIONS go with
+# their packages, and that the FRAMEWORK ones (core-base/database/module-schema.yaml) do not.
+#
+# The exported schema JSONs still go: they describe the TEMPLATE's lineage (v1 is a lone `samples`
+# table), so a fork that later bumps its ledger version would have Room validate an auto-migration
+# between two unrelated schemas.
 #
 # Asserted against the REAL repo files in a throwaway copy — never the working tree.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../../.." && pwd)"
 GEN_REL="core/network/src/commonMain/kotlin/kpt/core/network/di/GeneratedApiBindings.kt"
-DB_REL="core/database/src/commonMain/kotlin/kpt/core/database/AppDatabase.kt"
+DB_PKGS="core/database/src/commonMain/kotlin/kpt/core/database"
+INFRA_SCHEMA_REL="core-base/database/module-schema.yaml"
 SCHEMA_REL="core/database/schemas/kpt.core.database.AppDatabase"
 LEDGER_REL="app-profile/migration-ledger.yaml"
 rc=0
@@ -40,8 +44,12 @@ SB="$(mktemp -d)"; trap 'rm -rf "$SB"' EXIT
 mkdir -p "$SB/scripts" "$SB/app-profile" "$SB/feature" "$SB/$(dirname "$GEN_REL")"
 cp "$ROOT/scripts/remove-demo.sh" "$SB/scripts/"
 cp "$ROOT/$GEN_REL" "$SB/$GEN_REL"
-mkdir -p "$SB/$(dirname "$DB_REL")" "$SB/$SCHEMA_REL"
-cp "$ROOT/$DB_REL" "$SB/$DB_REL"
+mkdir -p "$SB/$DB_PKGS" "$SB/$SCHEMA_REL" "$SB/$(dirname "$INFRA_SCHEMA_REL")"
+# The demo tables, copied with their annotations — those ARE the declaration now.
+for d in alerts banking cloudtodo crypto currency economic watchlist; do
+  [ -d "$ROOT/$DB_PKGS/$d" ] && cp -R "$ROOT/$DB_PKGS/$d" "$SB/$DB_PKGS/"
+done
+cp "$ROOT/$INFRA_SCHEMA_REL" "$SB/$INFRA_SCHEMA_REL" 2>/dev/null || true
 cp "$ROOT/$LEDGER_REL" "$SB/$LEDGER_REL" 2>/dev/null || true
 mkdir -p "$SB/core/database"
 cp "$ROOT/core/database/migration-units.yaml" "$SB/core/database/" 2>/dev/null || true
@@ -63,7 +71,9 @@ printf 'package kpt.core.database.alerts\n' > "$SB/$PKG_PROBE/Probe.kt"
 echo "── demo strip vs generated bindings (remove-demo.sh) ──"
 before_pts="$(grep -cE '^    - id:' "$SB/app-profile/app.yaml")"
 before_bind="$(grep -c 'restApi(\|supabaseApi(' "$SB/$GEN_REL")"
-before_ent="$(sed -n '/entities = \[/,/\]/p' "$SB/$DB_REL" | grep -c '::class')"
+before_ent="$(grep -rl '@DbEntity' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+before_dao="$(grep -rl '@DbDao' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+before_conv="$(grep -rl '@DbConverters' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
 before_schema="$(find "$SB/$SCHEMA_REL" -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
 [ "$before_bind" -gt 0 ] || bad "fixture is vacuous — the repo's generated file has no bindings to strip"
 
@@ -105,49 +115,45 @@ after_pts="$(grep -cE '^    - id:' "$SB/app-profile/app.yaml")"
   || bad "access-point strip wrong: $before_pts → $after_pts (expected a partial drop, not all/none)"
 
 
-echo "── demo strip vs the generated @Database regions (E1/C7) ──"
-[ "$before_ent" -gt 4 ] || bad "fixture is vacuous — AppDatabase had no generated entities to strip"
+echo "── demo strip vs the @Db* schema declarations ──"
+[ "$before_ent" -gt 0 ] || bad "fixture is vacuous — no @DbEntity classes were copied in to strip"
+[ "$before_dao" -gt 0 ] || bad "fixture is vacuous — no @DbDao classes were copied in to strip"
+[ "$before_conv" -gt 0 ] || bad "fixture is vacuous — no @DbConverters classes were copied in to strip"
 [ "$before_schema" -gt 0 ] || bad "fixture is vacuous — no exported schema JSONs to drop"
 
-demo_refs="$(grep -c 'kpt\.core\.database\.demo' "$SB/$DB_REL")"
-[ "$demo_refs" = "0" ] \
-  && ok "AppDatabase carries no demo reference (regions emptied)" \
-  || bad "$demo_refs demo reference(s) survive — they point at classes remove-demo just deleted (compile break)"
+# The declaration IS the annotated class, so deleting the package deletes the declaration. If any
+# survived, the next build would put a table back on the @Database whose package is gone.
+after_ent="$(grep -rl '@DbEntity' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+after_dao="$(grep -rl '@DbDao' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+after_conv="$(grep -rl '@DbConverters' "$SB/$DB_PKGS" 2>/dev/null | wc -l | tr -d ' ')"
+[ "$after_ent" = "0" ] \
+  && ok "all $before_ent @DbEntity declaration(s) went with their packages" \
+  || bad "$after_ent @DbEntity survive — the next build regenerates a table whose package is deleted"
+[ "$after_dao" = "0" ] \
+  && ok "all $before_dao @DbDao declaration(s) went with their packages" \
+  || bad "$after_dao @DbDao survive — AppDatabase would declare an accessor for a deleted interface"
+[ "$after_conv" = "0" ] \
+  && ok "all $before_conv @DbConverters declaration(s) went with their packages" \
+  || bad "$after_conv @DbConverters survive — @ColumnTypeConverters would name a deleted class"
 
-migs="$(sed -n '/autoMigrations = \[/,/\]/p' "$SB/$DB_REL" | grep -c 'AutoMigration(')"
-[ "$migs" = "0" ] \
-  && ok "no AutoMigration survives (a fresh fork has no installed users to migrate)" \
-  || bad "$migs AutoMigration(s) survive against the v1 baseline — Room rejects a migration past its version"
+# The FRAMEWORK tables are NOT on the demo lifecycle. They live in another module and are declared
+# in its own schema yaml, which the strip must leave alone: a cleaned fork with zero entities does
+# not compile at all, which is worse than any dangling reference.
+infra_e="$(grep -cE '^  - kpt\.core\.base\.database' "$SB/$INFRA_SCHEMA_REL" 2>/dev/null | head -1)"
+[ "${infra_e:-0}" -gt 0 ] 2>/dev/null \
+  && ok "cleaned fork KEEPS its ${infra_e} framework entities (core-base is not demo-lifecycle)" \
+  || bad "cleaned fork has ${infra_e:-0} framework entities — a @Database with no tables does not compile"
 
-conv="$(grep -c '@ColumnTypeConverters' "$SB/$DB_REL")"
-[ "$conv" = "0" ] \
-  && ok "@ColumnTypeConverters removed entirely (Room rejects an argument-less one)" \
-  || bad "@ColumnTypeConverters survives with deleted converter classes"
+# AppDatabase must NOT reappear as committed source. If something re-materialises it, the merge
+# surface this whole design removed is silently back.
+[ ! -f "$SB/$DB_PKGS/AppDatabase.kt" ] \
+  && ok "AppDatabase.kt is not committed source (generated from the annotations)" \
+  || bad "AppDatabase.kt exists in src/ — the hand-merged file is back and forks will 3-way merge it"
 
-# The version moved OUT of AppDatabase into the fork-owned ledger: the template no longer
-# contributes to a fork's schema version at all (TEMPLATE_BASE_VERSION + VERSION_OFFSET could not
-# work — a template bump shifted the fork's numbering out from under its installed devices).
 ver="$(grep -oE '^version:[[:space:]]*[0-9]+' "$SB/$LEDGER_REL" 2>/dev/null | grep -oE '[0-9]+')"
 [ "$ver" = "1" ] \
   && ok "ledger version reset to 1 (fresh-fork baseline)" \
   || bad "ledger version is ${ver:-<unset>}, not 1 — the reset silently missed (it did, for a while)"
-# The FRAMEWORK entities are generated too now (from core-base/database/module-schema.yaml), so the
-# strip empties their region like any other. That is only safe because syncForkConfig refills it
-# AFTER the strip — the ordering that customize.sh originally had backwards. If it ever regresses, a
-# cleaned fork gets a @Database with ZERO entities, which is worse than any dangling reference: Room
-# fails at compile with no table at all. Here (--no-regen) the region MUST be empty; the real
-# "4 entities come back" proof needs gradle and lives in the clone test.
-infra_e="$(sed -n '/gen-infra-entities:begin/,/gen-infra-entities:end/p' "$SB/$DB_REL" 2>/dev/null | grep -c '::class' | head -1)"
-infra_d="$(sed -n '/gen-infra-daos:begin/,/gen-infra-daos:end/p' "$SB/$DB_REL" 2>/dev/null | grep -c 'abstract val' | head -1)"
-[ "${infra_e:-0}" -gt 0 ] 2>/dev/null \
-  && ok "cleaned fork KEEPS its ${infra_e} framework entities (gen-infra-* is not demo-lifecycle)" \
-  || bad "cleaned fork has ${infra_e:-0} framework entities — a @Database with no tables does not compile"
-[ "${infra_d:-0}" -gt 0 ] 2>/dev/null \
-  && ok "cleaned fork KEEPS its ${infra_d} framework DAO accessors" \
-  || bad "cleaned fork has ${infra_d:-0} framework DAO accessors — core-base cannot resolve its own DAOs"
-grep -q 'gen-infra-entities:begin' "$SB/$DB_REL" 2>/dev/null \
-  && ok "infra entity region MARKERS survive (regen has somewhere to write)" \
-  || bad "gen-infra-entities markers gone — syncForkConfig can never refill; fork ships zero entities"
 
 # NOTE: `grep -c` prints 0 AND exits 1 on no-match, so `|| echo 0` would yield "0\n0".
 rows="$(grep -cE '^[[:space:]]*-[[:space:]]*\{.*from:' "$SB/$LEDGER_REL" 2>/dev/null | head -1)"

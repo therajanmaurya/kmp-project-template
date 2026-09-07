@@ -11,6 +11,7 @@ package kpt.core.database.banking.entity
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import kpt.core.base.database.annotation.DbEntity
 import kpt.core.model.demo.banking.BillCategory
 import kpt.core.model.demo.banking.Recurrence
 
@@ -23,6 +24,7 @@ import kpt.core.model.demo.banking.Recurrence
  * Type-converters in [kpt.core.database.banking.converter.BankingTypeConverters]
  * handle the [Recurrence] and [BillCategory] enum columns (TEXT).
  */
+@DbEntity
 @Entity(tableName = "banking_bill_reminders")
 data class BillReminderEntity(
     @PrimaryKey

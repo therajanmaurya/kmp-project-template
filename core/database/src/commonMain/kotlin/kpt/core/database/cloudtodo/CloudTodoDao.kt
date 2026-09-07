@@ -14,7 +14,9 @@ import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 
+@DbDao
 @Dao
 interface CloudTodoDao {
     @Query("SELECT * FROM cloud_todos WHERE id = :id")

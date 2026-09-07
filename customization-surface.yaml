@@ -82,27 +82,13 @@ rules:
     owner: merge
     strategy: kotlin-3way
   # Room database registry (E1/C7 — was the LAST hand-merged file under core/**).
-  # Room needs one compile-time `entities = [...]` array literal, so a fork's tables cannot live in a
-  # separate file the way every other seam works. They do NOT need to be merged, though: a fork
-  # DECLARES them in `app-profile/app.yaml#database` (fork-owned, never synced) and the mandatory
-  # post-sync `./gradlew syncForkConfig` projects them back into this file's `fork-imports` /
-  # `fork-entities` / `fork-migrations` / `fork-daos` regions. So the sync FULL-COPIES the template's
-  # AppDatabase and the fork's schema is re-derived after the copy — same shape as the deployment
-  # metadata/screenshot regeneration (D-3), no 3-way merge, no conflict surface.
-  # The version stays split: template bumps TEMPLATE_BASE_VERSION, fork bumps the fork-owned
-  # ForkDatabaseConfig.VERSION_OFFSET below.
-  #
-  # `template` FULL-COPY since the E1/C7 relocation — the LAST hand-merged file under the core
-  # modules. Room needs ONE compile-time `entities = [...]` array literal, so a fork's tables cannot
-  # live in a separate file; they do not need to be MERGED though, only RE-DERIVED. Every
-  # project-specific declaration (demo AND fork) now lives in `app-profile/app.yaml#database` and is
-  # projected into the four `gen-*` regions by the post-sync `syncForkConfig`. The nested
-  # `MigrationSpec8to10` became a top-level `demo/` class, and generated members are referenced by
-  # FQN (ktlint forbids comments/blank lines in the import block, so no import region is possible).
-  # Equivalence is proven, not asserted: deleting `schemas/**/13.json` and rebuilding regenerates it
-  # BYTE-IDENTICAL (sha 3c948e1e…), so the relocation changed authoring location, not the database.
-  - glob: "**/AppDatabase.kt"
-    owner: template
+  # AppDatabase.kt has NO row — deliberately. It was the LAST hand-merged file under core/,
+  # because Room needs ONE compile-time `entities = [...]` literal and a fork's tables could not live
+  # in a separate file the way every other seam works. It is now GENERATED WHOLE by
+  # `tools/database-ksp` from the `@DbEntity` / `@DbDao` / `@DbConverters` annotations into
+  # `build/generated/ksp/`, so there is no committed file for a sync to copy, merge, or own — and
+  # re-adding a row would be a dead glob (`--verify` zero-match). Generating the literal removed the
+  # merge rather than arbitrating it.
   # Fork-owned Room migration LEDGER — where each template migration unit landed in THIS fork's
   # version sequence, plus the fork's own migrations. owner:fork is load-bearing, not tidiness: the
   # template's ledger says v13, a fork's may say v27, and blind-copying ours over theirs would strand
@@ -110,7 +96,8 @@ rules:
   # Template-owned counterpart to the ledger: WHAT the template may add, with no version numbers.
   # Full-copies, because a fork never edits it — its answer goes in the fork-owned ledger below.
   # Framework tables, declared by the module that owns them. Template-owned: a fork that edited
-  # these would break core-base at runtime — its own tables go in app.yaml#database.entities.
+  # these would break core-base at runtime. A fork's OWN tables are not declared in YAML at all —
+  # they are `@DbEntity`-annotated classes, which is why this file has no fork counterpart.
   - glob: "core-base/database/module-schema.yaml"
     owner: template
   - glob: "core/database/migration-units.yaml"
@@ -131,7 +118,8 @@ rules:
   - glob: "**/core/database/**/ForkDatabaseConfig.kt"
     owner: fork
   # Room exported schema JSONs (core/database/schemas/**/N.json) evolve per-fork: a fork adds entities
-  # + bumps the version via VERSION_OFFSET, producing its OWN schema files at higher versions. sync-dirs.sh
+  # + bumps the version in its own migration ledger, producing its OWN schema files at higher
+  # versions. sync-dirs.sh
   # blind-preserves `*/schemas/*`; this rule makes the ownership contract agree (owner:fork), so a synced
   # template never clobbers a fork's schema history.
   - glob: "**/schemas/**"
@@ -329,14 +317,10 @@ rules:
   # API bindings with the template's. Nothing is lost by not syncing it — it is fully derived, and
   # `./gradlew syncForkConfig` rebuilds it. (It deliberately does NOT live under demo/: remove-demo.sh
   # deletes every `**/demo/**` package, which silently killed the codegen for any cleaned fork.)
-  # GeneratedDaoBindings — the exact structural twin of GeneratedApiBindings below, and mis-declared
-  # until now: it fell through to the catch-all `core/**` -> owner:template, so a sync BLIND-COPIED
-  # the template's version over a fork's. The file is WHOLE-FILE generated from
-  # app-profile#database.daos, which after the union-by-identity merge contains the FORK's own DAOs —
-  # so the copy silently dropped their Koin bindings until the next `syncForkConfig`. Nothing is lost
-  # by not syncing it; it is fully derived and regenerated on demand.
-  - glob: "**/database/di/GeneratedDaoBindings.kt"
-    owner: fork
+  # GeneratedDaoBindings.kt likewise has NO row: it comes from the SAME `@DbDao` annotation as the
+  # AppDatabase accessor and is emitted beside it under `build/generated/ksp/`. It was `owner: fork`
+  # while syncForkConfig wrote it into committed source — before that it fell through to the
+  # catch-all `core/**` -> template, so a sync BLIND-COPIED the template's bindings over a fork's.
   - glob: "**/network/di/GeneratedApiBindings.kt"
     owner: fork
   - glob: "**/demo/**"

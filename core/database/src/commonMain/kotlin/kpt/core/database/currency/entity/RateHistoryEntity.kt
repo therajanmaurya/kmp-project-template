@@ -10,11 +10,13 @@
 package kpt.core.database.currency.entity
 
 import androidx.room3.Entity
+import kpt.core.base.database.annotation.DbEntity
 
 @Entity(
     tableName = "rate_history",
     primaryKeys = ["fromCurrency", "toCurrency", "startDate", "endDate"],
 )
+@DbEntity
 data class RateHistoryEntity(
     val fromCurrency: String,
     val toCurrency: String,

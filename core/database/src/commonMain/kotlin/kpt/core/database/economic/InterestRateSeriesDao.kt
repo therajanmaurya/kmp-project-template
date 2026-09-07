@@ -14,6 +14,7 @@ import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 
 /**
  * Data-access object for the `interest_rate_series` table.
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
  * Default sort order within each series is newest-first ([InterestRateSeriesEntity.date]
  * descending) so the most recent observation is always the first element.
  */
+@DbDao
 @Dao
 interface InterestRateSeriesDao {
 

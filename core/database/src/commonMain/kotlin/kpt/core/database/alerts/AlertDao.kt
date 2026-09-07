@@ -14,6 +14,7 @@ import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 
 /**
  * Data-access object for the `alerts` table.
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
  * All reads return reactive [Flow]s; all writes are `suspend` one-shots.
  * Natural sort order is newest-first ([AlertEntity.createdAt] descending).
  */
+@DbDao
 @Dao
 interface AlertDao {
 

@@ -13,6 +13,7 @@ import androidx.room3.Dao
 import androidx.room3.Query
 import androidx.room3.Upsert
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 import kpt.core.database.banking.entity.BillReminderEntity
 
 /**
@@ -27,6 +28,7 @@ import kpt.core.database.banking.entity.BillReminderEntity
  * math (today + N days → window of acceptable `dueDay` values) so the DAO
  * stays portable across SQLite engines that lack a `DATE` function.
  */
+@DbDao
 @Dao
 interface BillReminderDao {
 

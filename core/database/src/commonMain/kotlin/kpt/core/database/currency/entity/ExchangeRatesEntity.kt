@@ -11,7 +11,9 @@ package kpt.core.database.currency.entity
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import kpt.core.base.database.annotation.DbEntity
 
+@DbEntity
 @Entity(tableName = "exchange_rates")
 data class ExchangeRatesEntity(
     @PrimaryKey

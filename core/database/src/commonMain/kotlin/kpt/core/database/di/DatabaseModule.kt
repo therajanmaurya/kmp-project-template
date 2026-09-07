@@ -38,10 +38,11 @@ internal val appDatabaseNaming = DatabaseNaming(
  * wiring a fork already stripped.
  */
 val DatabaseModule = module {
-    // Every declared DAO's Koin binding, GENERATED from app-profile#database.daos into the
-    // sibling [GeneratedDaoBindings] (same package — no import, so this file keeps its
-    // zero-domain-reference property and stays blind-copyable on a template sync).
-    includes(GeneratedDaoBindings)
+    // Every DAO's Koin binding (GENERATED from `@DbDao`) and every converter's one-shot install
+    // (GENERATED from `@DbConverters`). Both are emitted into this same package, so this file needs
+    // no import and keeps its zero-domain-reference property — which is what lets a template sync
+    // blind-copy it.
+    includes(GeneratedDaoBindings, GeneratedConverterBindings)
 
     includes(platformModule)
     // infra (framework) — always kept

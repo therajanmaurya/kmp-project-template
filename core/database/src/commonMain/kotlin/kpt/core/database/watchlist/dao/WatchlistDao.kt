@@ -14,6 +14,7 @@ import androidx.room3.Insert
 import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 import kpt.core.database.watchlist.entity.WatchlistEntity
 
 /**
@@ -21,6 +22,7 @@ import kpt.core.database.watchlist.entity.WatchlistEntity
  *
  * Reads are reactive [Flow]s; writes are `suspend`. Standard Room 3 KMP shape.
  */
+@DbDao
 @Dao
 interface WatchlistDao {
 

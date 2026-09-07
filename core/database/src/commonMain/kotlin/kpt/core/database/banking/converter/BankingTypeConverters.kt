@@ -11,6 +11,7 @@ package kpt.core.database.banking.converter
 
 import androidx.room3.ColumnTypeConverter
 import kotlinx.datetime.LocalDate
+import kpt.core.base.database.annotation.DbConverters
 import kpt.core.model.demo.banking.BillCategory
 import kpt.core.model.demo.banking.LoanKind
 import kpt.core.model.demo.banking.Recurrence
@@ -28,6 +29,7 @@ import kpt.core.model.demo.banking.Recurrence
  *
  * Registered on [kpt.core.database.AppDatabase] via `@ColumnTypeConverters`.
  */
+@DbConverters
 class BankingTypeConverters {
 
     // --- LoanKind ---

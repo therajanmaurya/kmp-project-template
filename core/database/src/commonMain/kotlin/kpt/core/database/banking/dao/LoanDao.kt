@@ -14,6 +14,7 @@ import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import androidx.room3.Upsert
 import kotlinx.coroutines.flow.Flow
+import kpt.core.base.database.annotation.DbDao
 import kpt.core.database.banking.entity.LoanEntity
 
 /**
@@ -23,6 +24,7 @@ import kpt.core.database.banking.entity.LoanEntity
  * The natural sort order is by [LoanEntity.nextDueDate] ascending so the
  * dashboard surfaces the most pressing payment first.
  */
+@DbDao
 @Dao
 interface LoanDao {
 

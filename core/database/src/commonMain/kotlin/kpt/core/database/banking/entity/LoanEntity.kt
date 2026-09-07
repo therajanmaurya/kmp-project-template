@@ -12,6 +12,7 @@ package kpt.core.database.banking.entity
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import kotlinx.datetime.LocalDate
+import kpt.core.base.database.annotation.DbEntity
 import kpt.core.model.demo.banking.LoanKind
 
 /**
@@ -23,6 +24,7 @@ import kpt.core.model.demo.banking.LoanKind
  * Type-converters in [kpt.core.database.banking.converter.BankingTypeConverters]
  * handle the [LoanKind] enum (TEXT) and [LocalDate] (ISO-8601 TEXT) columns.
  */
+@DbEntity
 @Entity(tableName = "banking_loans")
 data class LoanEntity(
     @PrimaryKey
