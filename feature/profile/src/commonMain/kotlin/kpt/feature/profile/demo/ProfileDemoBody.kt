@@ -26,7 +26,7 @@ import kpt.core.base.designsystem.component.HeroCard
 import kpt.core.base.ui.screen.ScreenContent
 import kpt.core.designsystem.icon.AppIcons
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 import kpt.feature.profile.demo.ui.ProfileViewModel
 import kpt.feature.profile.generated.resources.Res
 import kpt.feature.profile.generated.resources.screens_profile_local_message

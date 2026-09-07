@@ -44,7 +44,7 @@ import kpt.core.base.designsystem.component.HeroCard
 import kpt.core.common.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.banking.LoanCalcScenario
+import kpt.core.model.banking.LoanCalcScenario
 import kpt.feature.calculators.TestTags
 import kpt.feature.calculators.generated.resources.Res
 import kpt.feature.calculators.generated.resources.screens_calc_wizard_back_cd
@@ -224,7 +224,7 @@ internal fun StepRate(form: LoanCalcScenario, onRateChange: (Double) -> Unit) {
 }
 
 @Composable
-internal fun StepReview(form: LoanCalcScenario, preview: kpt.core.model.demo.emi.EmiResult) {
+internal fun StepReview(form: LoanCalcScenario, preview: kpt.core.model.emi.EmiResult) {
     val sp = MaterialTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(sp.md)) {
         HeroCard {

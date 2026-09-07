@@ -52,7 +52,7 @@ import kpt.core.base.store.submit.SubmitState
 import kpt.core.base.ui.draft.DraftResolutionPrompt
 import kpt.core.base.ui.submit.MutationScreenContent
 import kpt.core.designsystem.component.AmountDisplay
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.LoanKind
 import kpt.feature.loans.generated.resources.Res
 import kpt.feature.loans.generated.resources.screens_loans_add_submit
 import kpt.feature.loans.generated.resources.screens_loans_add_title

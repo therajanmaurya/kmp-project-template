@@ -45,7 +45,7 @@ import kpt.core.common.formatDecimal
 import kpt.core.common.formatTimeAgo
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorKind
 import kpt.feature.macro.generated.resources.Res
 import kpt.feature.macro.generated.resources.screens_macro_back_cd
 import kpt.feature.macro.generated.resources.screens_macro_detail_source_label

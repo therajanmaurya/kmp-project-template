@@ -10,7 +10,7 @@
 package kpt.core.store.cloudtodo.impl
 
 import kpt.core.base.store.infra.ConflictStrategy
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 
 /**
  * The named conflict surface for the cloud-todo MUTABLE archetype (S5-CONFLICT).

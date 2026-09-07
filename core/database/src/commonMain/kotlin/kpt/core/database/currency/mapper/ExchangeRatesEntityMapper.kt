@@ -11,7 +11,7 @@ package kpt.core.database.currency.mapper
 
 import kotlinx.serialization.json.Json
 import kpt.core.database.currency.entity.ExchangeRatesEntity
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.currency.ExchangeRates
 import kotlin.time.Clock
 
 fun ExchangeRates.toEntity(baseCurrency: String): ExchangeRatesEntity = ExchangeRatesEntity(

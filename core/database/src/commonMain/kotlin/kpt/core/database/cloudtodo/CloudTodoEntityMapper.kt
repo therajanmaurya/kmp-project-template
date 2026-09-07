@@ -9,7 +9,7 @@
  */
 package kpt.core.database.cloudtodo
 
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 
 fun CloudTodoEntity.toDomain(): CloudTodo = CloudTodo(id = id, title = title, completed = completed)
 

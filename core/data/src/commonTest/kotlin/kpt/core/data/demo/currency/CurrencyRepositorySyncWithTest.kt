@@ -12,9 +12,9 @@ package kpt.core.data.demo.currency
 import kotlinx.coroutines.test.runTest
 import kpt.core.data.demo.currency.impl.CurrencyRepositoryImpl
 import kpt.core.data.infra.RecordingSynchronizer
-import kpt.core.model.demo.currency.ExchangeRates
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RateHistoryKey
+import kpt.core.model.currency.ExchangeRates
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RateHistoryKey
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import kotlin.test.Test

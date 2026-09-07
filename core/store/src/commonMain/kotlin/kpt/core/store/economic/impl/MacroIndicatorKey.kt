@@ -9,7 +9,7 @@
  */
 package kpt.core.store.economic.impl
 
-import kpt.core.model.demo.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorKind
 
 /**
  * Composite key identifying a single World Bank macro-indicator request.

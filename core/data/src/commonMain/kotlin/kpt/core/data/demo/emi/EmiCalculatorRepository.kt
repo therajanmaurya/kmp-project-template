@@ -11,7 +11,7 @@ package kpt.core.data.demo.emi
 
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import kpt.core.store.emi.impl.EmiParams
 
 /**

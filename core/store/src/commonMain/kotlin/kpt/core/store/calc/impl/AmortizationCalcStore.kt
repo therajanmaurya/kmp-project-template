@@ -11,7 +11,7 @@ package kpt.core.store.calc.impl
 
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.model.demo.calc.AmortizationBreakdown
+import kpt.core.model.calc.AmortizationBreakdown
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.Store
 

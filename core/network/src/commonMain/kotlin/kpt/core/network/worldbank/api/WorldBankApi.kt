@@ -35,7 +35,7 @@ interface WorldBankApi {
      *   `"USA"`). Both work — World Bank accepts either; the toolkit standardises
      *   on alpha-2.
      * @param indicator World Bank indicator code, e.g. `"NY.GDP.MKTP.CD"` for
-     *   GDP. Sourced from [kpt.core.model.demo.economic.IndicatorKind.worldBankCode].
+     *   GDP. Sourced from [kpt.core.model.economic.IndicatorKind.worldBankCode].
      * @param format Response format. Always `"json"` — World Bank defaults to
      *   XML which kotlinx.serialization cannot parse.
      * @param perPage Pagination size. Default 50 is enough for ~50 years of

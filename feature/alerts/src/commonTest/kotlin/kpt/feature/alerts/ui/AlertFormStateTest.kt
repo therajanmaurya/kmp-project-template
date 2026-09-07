@@ -9,7 +9,7 @@
  */
 package kpt.feature.alerts.ui
 
-import kpt.core.model.demo.alerts.AlertDirection
+import kpt.core.model.alerts.AlertDirection
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

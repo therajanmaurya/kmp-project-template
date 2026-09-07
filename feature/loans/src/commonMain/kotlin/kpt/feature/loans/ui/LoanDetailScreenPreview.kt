@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kotlinx.datetime.LocalDate
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.Loan
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.Loan
+import kpt.core.model.banking.LoanKind
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import kotlinx.datetime.LocalDate
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.model.demo.economic.RateObservation
+import kpt.core.model.economic.InterestRateSeries
+import kpt.core.model.economic.RateObservation
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

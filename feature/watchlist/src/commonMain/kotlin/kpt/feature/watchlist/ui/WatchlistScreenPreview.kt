@@ -12,7 +12,7 @@ package kpt.feature.watchlist.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

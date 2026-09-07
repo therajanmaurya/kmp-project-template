@@ -14,9 +14,9 @@ import kotlinx.coroutines.flow.Flow
 import kpt.core.base.data.infra.Syncable
 import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.currency.ExchangeRates
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RateHistoryKey
+import kpt.core.model.currency.ExchangeRates
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RateHistoryKey
 
 /**
  * Repository surface for exchange rates + historical rate data.

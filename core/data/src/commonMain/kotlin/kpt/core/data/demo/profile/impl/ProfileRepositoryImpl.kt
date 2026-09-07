@@ -14,7 +14,7 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.profile.ProfileRepository
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 import org.mobilenativefoundation.store.store5.Store
 
 /**

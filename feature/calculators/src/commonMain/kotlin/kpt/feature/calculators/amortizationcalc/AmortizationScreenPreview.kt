@@ -12,7 +12,7 @@ package kpt.feature.calculators.amortizationcalc
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.AmortizationRow
+import kpt.core.model.banking.AmortizationRow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

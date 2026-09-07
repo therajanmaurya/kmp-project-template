@@ -12,9 +12,9 @@ package kpt.core.database.banking.converter
 import androidx.room3.ColumnTypeConverter
 import kotlinx.datetime.LocalDate
 import kpt.core.base.database.annotation.DbConverters
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.LoanKind
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.LoanKind
+import kpt.core.model.banking.Recurrence
 
 /**
  * Room 3 [TypeConverter] collection for the banking-domain tables

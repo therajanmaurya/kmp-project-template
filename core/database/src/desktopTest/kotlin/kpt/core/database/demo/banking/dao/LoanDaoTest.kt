@@ -18,7 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kpt.core.database.AppDatabase
 import kpt.core.database.banking.entity.LoanEntity
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.LoanKind
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

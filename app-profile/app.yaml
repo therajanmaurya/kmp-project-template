@@ -127,6 +127,39 @@ network:
 # still recorded by hand is schema HISTORY, in `app-profile/migration-ledger.yaml`, because a
 # `from`/`to` edge is a contract with every installed device that no class can carry.
 
+# core/model — PACKAGE OWNERSHIP.
+#
+# The showcase's models used to sit under `kpt/core/model/demo/**` and be deleted by the generic
+# `**/demo/**` sweep. That worked, but it was the ONLY way core/model could be stripped: the module
+# had no declaration, so "which packages does the template own" was a directory-naming convention
+# rather than a fact anything could read. core/store and core/database had already moved off it.
+#
+# Now it is declared like every other module, and `scripts/remove-demo.sh` deletes these by NAME —
+# the same `<module>: packages:` sweep that already enumerates `model:model`. Adding a showcase
+# domain is: write the models in `kpt/core/model/<id>/`, add a row here. Stripping it is automatic.
+#
+# A FORK's own models need NO row. Only the TEMPLATE's packages are declared; anything else under
+# `kpt/core/model/` is the fork's by definition — the strip never names it, and the ownership contract
+# resolves it `fork`. That is what makes the strip clean: one list to delete, everything else stays.
+model:
+  packages:
+    # demo:begin
+    - { id: alerts,    owner: template }   # price-alert models
+    - { id: banking,   owner: template }   # loans, bill reminders, amortization rows
+    - { id: calc,      owner: template }   # amortization breakdown
+    - { id: cloudtodo, owner: template }   # the MUTABLE-store showcase's model
+    - { id: crypto,    owner: template }   # coin market / detail
+    - { id: currency,  owner: template }   # exchange rates, countries
+    - { id: economic,  owner: template }   # FRED series + World Bank indicators
+    - { id: emi,       owner: template }   # EMI result
+    - { id: profile,   owner: template }   # profile info
+    - { id: watchlist, owner: template }   # watchlist items
+    # demo:end
+    # `user` holds the FRAMEWORK models (UserData, ThemeBrand, LanguageConfig, …). Template-authored,
+    # but a clean fork KEEPS them — the framework reads them — which in this two-value vocabulary is
+    # `fork`, the same call as core_store's `prefs`.
+    - { id: user,      owner: fork }
+
 # core/database — PACKAGE OWNERSHIP only.
 #
 # The schema itself is no longer declared here. Entities, DAOs and type-converters are declared by

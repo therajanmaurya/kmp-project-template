@@ -20,7 +20,7 @@ import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.currency.dao.ExchangeRatesDao
 import kpt.core.database.currency.mapper.toDomain
 import kpt.core.database.currency.mapper.toEntity
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.currency.ExchangeRates
 import kpt.core.network.frankfurter.api.FrankfurterApi
 import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher

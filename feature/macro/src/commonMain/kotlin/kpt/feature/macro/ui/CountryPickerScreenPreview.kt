@@ -12,7 +12,7 @@ package kpt.feature.macro.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.economic.Country
+import kpt.core.model.economic.Country
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

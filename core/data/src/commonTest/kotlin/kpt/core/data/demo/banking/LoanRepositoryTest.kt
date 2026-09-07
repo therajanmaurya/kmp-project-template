@@ -19,8 +19,8 @@ import kpt.core.base.store.screen.ScreenStreamContext
 import kpt.core.data.demo.banking.impl.LoanRepositoryImpl
 import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
-import kpt.core.model.demo.banking.Loan
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.Loan
+import kpt.core.model.banking.LoanKind
 import kpt.core.store.banking.impl.provideLoansStore
 import kpt.core.store.banking.impl.provideLoansWriteStore
 import org.koin.core.context.startKoin

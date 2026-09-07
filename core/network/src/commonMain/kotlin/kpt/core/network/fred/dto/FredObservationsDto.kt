@@ -12,8 +12,8 @@ package kpt.core.network.fred.dto
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.model.demo.economic.RateObservation
+import kpt.core.model.economic.InterestRateSeries
+import kpt.core.model.economic.RateObservation
 
 /**
  * Wire-format response from FRED's `fred/series/observations` endpoint.

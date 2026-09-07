@@ -17,7 +17,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.emi.EmiCalculatorRepository
 import kpt.core.domain.demo.emi.calculateEmi
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import kpt.core.store.emi.impl.EmiParams
 
 /**

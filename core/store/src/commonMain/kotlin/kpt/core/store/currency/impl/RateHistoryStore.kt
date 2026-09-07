@@ -24,8 +24,8 @@ import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.currency.dao.RateHistoryDao
 import kpt.core.database.currency.mapper.toDomain
 import kpt.core.database.currency.mapper.toEntity
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RateHistoryKey
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RateHistoryKey
 import kpt.core.network.frankfurter.api.FrankfurterApi
 import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher

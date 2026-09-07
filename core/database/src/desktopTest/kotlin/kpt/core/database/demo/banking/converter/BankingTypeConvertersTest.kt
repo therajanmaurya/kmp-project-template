@@ -10,9 +10,9 @@
 package kpt.core.database.banking.converter
 
 import kotlinx.datetime.LocalDate
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.LoanKind
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.LoanKind
+import kpt.core.model.banking.Recurrence
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.currency
+package kpt.core.model.currency
 
 data class ExchangeRates(
     val base: String,

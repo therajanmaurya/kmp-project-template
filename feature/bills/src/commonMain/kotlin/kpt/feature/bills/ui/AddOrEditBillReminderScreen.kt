@@ -47,8 +47,8 @@ import kpt.core.base.store.submit.SubmitState
 import kpt.core.base.ui.draft.DraftResolutionPrompt
 import kpt.core.base.ui.submit.MutationScreenContent
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.Recurrence
 import kpt.feature.bills.generated.resources.Res
 import kpt.feature.bills.generated.resources.screens_bills_add_title
 import kpt.feature.bills.generated.resources.screens_bills_addedit_amount_label

@@ -17,7 +17,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.watchlist.WatchlistRepository
 import kpt.core.database.watchlist.dao.WatchlistDao
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store

@@ -11,8 +11,8 @@ package kpt.feature.calculators.wizard
 
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.LoanCalcScenario
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.banking.LoanCalcScenario
+import kpt.core.model.emi.EmiResult
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

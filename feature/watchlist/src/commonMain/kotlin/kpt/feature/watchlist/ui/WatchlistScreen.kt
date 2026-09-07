@@ -29,7 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 import kpt.feature.watchlist.generated.resources.Res
 import kpt.feature.watchlist.generated.resources.screens_watchlist_back_cd
 import kpt.feature.watchlist.generated.resources.screens_watchlist_remove_cd

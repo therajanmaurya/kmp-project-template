@@ -22,9 +22,9 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kpt.core.model.demo.economic.IndicatorKind
-import kpt.core.model.demo.economic.IndicatorObservation
-import kpt.core.model.demo.economic.MacroIndicator
+import kpt.core.model.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorObservation
+import kpt.core.model.economic.MacroIndicator
 
 /**
  * Top-level response from World Bank's `v2/country/{c}/indicator/{i}` endpoint.

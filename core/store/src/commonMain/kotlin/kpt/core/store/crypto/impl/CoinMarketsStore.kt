@@ -21,7 +21,7 @@ import kpt.core.base.store.paging.PageKey
 import kpt.core.database.crypto.dao.CoinMarketDao
 import kpt.core.database.crypto.mapper.toDomain
 import kpt.core.database.crypto.mapper.toEntity
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinMarket
 import kpt.core.network.coingecko.api.CoinGeckoApi
 import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher

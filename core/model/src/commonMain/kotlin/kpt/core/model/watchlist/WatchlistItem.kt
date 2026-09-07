@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.watchlist
+package kpt.core.model.watchlist
 
 /**
  * Domain model for a personal-watchlist row (the `read_local_list` demo). Lives in `core/model`

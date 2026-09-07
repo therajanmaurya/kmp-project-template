@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.domain.demo.calc.computeEmi
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 
 /**
  * VM for B6 Loan Comparison.

@@ -18,7 +18,7 @@ import kpt.core.database.cloudtodo.CloudTodoDao
 import kpt.core.database.cloudtodo.CloudTodoEntity
 import kpt.core.database.cloudtodo.toDomain
 import kpt.core.database.cloudtodo.toEntity
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
 import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
 import org.mobilenativefoundation.store.store5.Bookkeeper

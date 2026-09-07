@@ -24,15 +24,15 @@ import org.koin.core.qualifier.named
  * A fork does NOT edit this file: it adds its own qualifiers to `OutboxQualifiers`.
  */
 object DemoOutboxQualifiers {
-    /** `SubmitOutbox<kpt.core.model.demo.banking.Loan>`. */
+    /** `SubmitOutbox<kpt.core.model.banking.Loan>`. */
     val Loan = named("outbox.loan")
 
-    /** `SubmitOutbox<kpt.core.model.demo.banking.BillReminder>`. */
+    /** `SubmitOutbox<kpt.core.model.banking.BillReminder>`. */
     val BillReminder = named("outbox.billReminder")
 
-    /** `SubmitOutbox<kpt.core.model.demo.banking.LoanCalcScenario>`. */
+    /** `SubmitOutbox<kpt.core.model.banking.LoanCalcScenario>`. */
     val LoanCalcScenario = named("outbox.loanCalcScenario")
 
-    /** `SubmitOutbox<kpt.core.model.demo.alerts.PriceAlert>`. */
+    /** `SubmitOutbox<kpt.core.model.alerts.PriceAlert>`. */
     val PriceAlert = named("outbox.priceAlert")
 }

@@ -42,7 +42,7 @@ import kpt.core.base.ui.screen.ScreenContent
 import kpt.core.common.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.banking.AmortizationRow
+import kpt.core.model.banking.AmortizationRow
 import kpt.feature.calculators.TestTags
 import kpt.feature.calculators.generated.resources.Res
 import kpt.feature.calculators.generated.resources.screens_calc_amortization_back_cd

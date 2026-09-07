@@ -9,7 +9,7 @@
  */
 package kpt.core.domain.demo.emi
 
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import kotlin.math.pow
 
 /**

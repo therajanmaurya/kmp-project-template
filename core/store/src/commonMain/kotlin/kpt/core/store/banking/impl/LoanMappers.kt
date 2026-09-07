@@ -10,7 +10,7 @@
 package kpt.core.store.banking.impl
 
 import kpt.core.database.banking.entity.LoanEntity
-import kpt.core.model.demo.banking.Loan
+import kpt.core.model.banking.Loan
 
 /**
  * Entity ⇄ domain mappers for the loans feature. They live in `core/store` (the lowest layer that

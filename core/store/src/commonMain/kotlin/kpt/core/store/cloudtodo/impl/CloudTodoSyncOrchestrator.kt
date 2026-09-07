@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import kpt.core.base.database.infra.dao.BookkeeperDao
 import kpt.core.base.store.submit.RetryOnNetworkStatus
 import kpt.core.base.store.submit.RetryPolicy
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import org.mobilenativefoundation.store.store5.Bookkeeper
 
 /**

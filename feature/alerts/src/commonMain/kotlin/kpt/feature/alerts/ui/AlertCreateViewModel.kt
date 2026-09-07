@@ -18,8 +18,8 @@ import kpt.core.base.store.submit.SubmitOutbox
 import kpt.core.base.ui.viewmodel.BaseMutationViewModel
 import kpt.core.base.ui.viewmodel.MutationMode
 import kpt.core.data.demo.alerts.AlertsRepository
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import kotlin.random.Random
 import kotlin.time.Clock
 

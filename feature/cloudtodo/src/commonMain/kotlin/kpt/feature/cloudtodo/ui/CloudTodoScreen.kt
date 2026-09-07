@@ -29,7 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kpt.core.base.store.mutation.BlockReason
 import kpt.core.base.ui.screen.ScreenContent
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import kpt.core.ui.scaffold.KptScaffold
 import kpt.feature.cloudtodo.generated.resources.Res
 import kpt.feature.cloudtodo.generated.resources.screens_cloudtodo_complete_online_text

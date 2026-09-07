@@ -17,7 +17,7 @@ import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.banking.dao.LoanDao
 import kpt.core.database.banking.entity.LoanEntity
-import kpt.core.model.demo.banking.Loan
+import kpt.core.model.banking.Loan
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store

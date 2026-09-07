@@ -14,7 +14,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorKind
 import kotlin.test.Test
 
 /**

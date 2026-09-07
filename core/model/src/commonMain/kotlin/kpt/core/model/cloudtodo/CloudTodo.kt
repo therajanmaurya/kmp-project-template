@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.cloudtodo
+package kpt.core.model.cloudtodo
 
 /**
  * A cloud-synced todo — the toolkit's MUTABLE (offline-write) Store5 archetype showcase.

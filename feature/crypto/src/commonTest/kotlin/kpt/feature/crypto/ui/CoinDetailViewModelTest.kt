@@ -25,7 +25,7 @@ import kotlinx.coroutines.test.setMain
 import kpt.core.base.store.freshness.FreshnessBand
 import kpt.core.base.store.freshness.FreshnessSignal
 import kpt.core.base.store.screen.ScreenState
-import kpt.core.model.demo.crypto.CoinDetail
+import kpt.core.model.crypto.CoinDetail
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

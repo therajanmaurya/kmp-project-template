@@ -41,10 +41,10 @@ import kpt.core.data.demo.watchlist.WatchlistRepository
 import kpt.core.data.demo.watchlist.impl.WatchlistRepositoryImpl
 import kpt.core.database.cloudtodo.CloudTodoDao
 import kpt.core.database.cloudtodo.toDomain
-import kpt.core.model.demo.alerts.PriceAlert
-import kpt.core.model.demo.banking.BillReminder
-import kpt.core.model.demo.banking.Loan
-import kpt.core.model.demo.banking.LoanCalcScenario
+import kpt.core.model.alerts.PriceAlert
+import kpt.core.model.banking.BillReminder
+import kpt.core.model.banking.Loan
+import kpt.core.model.banking.LoanCalcScenario
 import kpt.core.store.cloudtodo.impl.CLOUD_TODO_KEY_PREFIX
 import kpt.core.store.cloudtodo.impl.CloudTodoKey
 import kpt.core.store.cloudtodo.impl.CloudTodoSyncOrchestrator

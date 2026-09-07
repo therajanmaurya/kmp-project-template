@@ -12,7 +12,7 @@ package kpt.core.data.demo.watchlist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 
 /**
  * User's personal watchlist of coins — purely local persistence, no remote sync.

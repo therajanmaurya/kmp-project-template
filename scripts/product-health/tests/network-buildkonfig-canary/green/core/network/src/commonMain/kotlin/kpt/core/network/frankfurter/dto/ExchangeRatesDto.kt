@@ -10,7 +10,7 @@
 package kpt.core.network.frankfurter.dto
 
 import kotlinx.serialization.Serializable
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.currency.ExchangeRates
 
 @Serializable
 data class ExchangeRatesDto(

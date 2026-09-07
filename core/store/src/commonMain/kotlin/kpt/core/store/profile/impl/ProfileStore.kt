@@ -13,7 +13,7 @@ package kpt.core.store.profile.impl
 
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.Store
 

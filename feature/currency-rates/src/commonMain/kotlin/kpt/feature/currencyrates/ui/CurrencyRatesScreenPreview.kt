@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.currency.ExchangeRates
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

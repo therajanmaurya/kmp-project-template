@@ -17,7 +17,7 @@ import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.watchlist.dao.WatchlistDao
 import kpt.core.database.watchlist.entity.WatchlistEntity
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store

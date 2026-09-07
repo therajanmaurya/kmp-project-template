@@ -12,7 +12,7 @@ package kpt.core.data.demo.banking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.banking.BillReminder
+import kpt.core.model.banking.BillReminder
 
 /**
  * User's bill reminders — purely local persistence, no remote sync.

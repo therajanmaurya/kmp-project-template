@@ -17,7 +17,7 @@ import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.alerts.AlertDao
 import kpt.core.database.alerts.AlertEntity
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.PriceAlert
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store

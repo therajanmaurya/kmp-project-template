@@ -19,7 +19,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.banking.LoanRepository
-import kpt.core.model.demo.banking.Loan
+import kpt.core.model.banking.Loan
 
 /**
  * In-memory fake of [LoanRepository] for wizard tests. Captures upserts so a

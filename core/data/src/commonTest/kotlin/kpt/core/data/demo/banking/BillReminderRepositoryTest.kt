@@ -20,9 +20,9 @@ import kpt.core.base.store.screen.ScreenStreamContext
 import kpt.core.data.demo.banking.impl.BillReminderRepositoryImpl
 import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.BillReminder
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.BillReminder
+import kpt.core.model.banking.Recurrence
 import kpt.core.store.banking.impl.provideBillRemindersStore
 import kpt.core.store.banking.impl.provideBillRemindersWriteStore
 import org.koin.core.context.startKoin

@@ -29,8 +29,8 @@ import kpt.core.data.demo.banking.BillReminderRepository
 import kpt.core.data.demo.banking.LoanRepository
 import kpt.core.data.demo.currency.CurrencyRepository
 import kpt.core.data.demo.economic.EconomicRatesRepository
-import kpt.core.model.demo.banking.BillReminder
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.banking.BillReminder
+import kpt.core.model.currency.ExchangeRates
 import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
@@ -252,7 +252,7 @@ data class LoansSummary(
      * horizontally-scrollable carousel below the totals so users can flip through every loan
      * without leaving the dashboard.
      */
-    val loans: List<kpt.core.model.demo.banking.Loan> = emptyList(),
+    val loans: List<kpt.core.model.banking.Loan> = emptyList(),
 )
 
 /**

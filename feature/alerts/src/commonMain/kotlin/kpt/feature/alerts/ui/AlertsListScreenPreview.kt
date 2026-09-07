@@ -12,8 +12,8 @@ package kpt.feature.alerts.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

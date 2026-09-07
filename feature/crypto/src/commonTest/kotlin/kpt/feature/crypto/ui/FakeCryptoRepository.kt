@@ -32,8 +32,8 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.crypto.CryptoRepository
-import kpt.core.model.demo.crypto.CoinDetail
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinDetail
+import kpt.core.model.crypto.CoinMarket
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import kotlin.time.ExperimentalTime

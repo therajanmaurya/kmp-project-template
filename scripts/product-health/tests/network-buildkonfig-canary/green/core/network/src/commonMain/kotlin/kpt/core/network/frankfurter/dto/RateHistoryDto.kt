@@ -11,8 +11,8 @@ package kpt.core.network.frankfurter.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RatePoint
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RatePoint
 
 @Serializable
 data class RateHistoryDto(

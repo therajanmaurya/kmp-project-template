@@ -12,8 +12,8 @@ package kpt.feature.calculators.di
 import kpt.core.data.demo.di.DemoOutboxQualifiers
 import kpt.core.domain.demo.calc.amortizationSchedule
 import kpt.core.domain.demo.calc.computeEmi
-import kpt.core.model.demo.banking.AmortizationRow
-import kpt.core.model.demo.calc.AmortizationBreakdown
+import kpt.core.model.banking.AmortizationRow
+import kpt.core.model.calc.AmortizationBreakdown
 import kpt.core.store.calc.impl.AmortizationCompute
 import kpt.feature.calculators.affordability.AffordabilityCalculatorViewModel
 import kpt.feature.calculators.amortizationcalc.AmortizationViewModel

@@ -16,7 +16,7 @@ import kpt.core.base.store.mutation.MutationResult
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.cloudtodo.CloudTodoRepository
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import kpt.core.store.cloudtodo.impl.CloudTodoKey
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore

@@ -24,8 +24,8 @@ import kpt.core.base.store.infra.DefaultValidator
 import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.economic.InterestRateSeriesDao
 import kpt.core.database.economic.InterestRateSeriesEntity
-import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.model.demo.economic.RateObservation
+import kpt.core.model.economic.InterestRateSeries
+import kpt.core.model.economic.RateObservation
 import kpt.core.network.fred.api.FredApi
 import kpt.core.network.fred.config.FredApiConfig
 import kpt.core.store.config.AppStoreRegistry

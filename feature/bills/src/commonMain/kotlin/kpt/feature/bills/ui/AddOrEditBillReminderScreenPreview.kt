@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import kpt.core.base.store.error.ErrorCategory
 import kpt.core.base.store.submit.SubmitState
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.Recurrence
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

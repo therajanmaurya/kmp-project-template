@@ -43,7 +43,7 @@ import kpt.core.base.ui.screen.ScreenContent
 import kpt.core.common.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import kpt.feature.emicalculator.generated.resources.Res
 import kpt.feature.emicalculator.generated.resources.screens_emicalculator_back_cd
 import kpt.feature.emicalculator.generated.resources.screens_emicalculator_monthly_emi_label

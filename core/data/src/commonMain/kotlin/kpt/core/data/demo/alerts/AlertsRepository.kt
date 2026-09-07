@@ -11,7 +11,7 @@ package kpt.core.data.demo.alerts
 
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.PriceAlert
 
 /**
  * Repository for the Price Alerts feature.

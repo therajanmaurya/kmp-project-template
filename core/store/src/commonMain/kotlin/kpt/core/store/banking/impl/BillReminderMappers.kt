@@ -10,7 +10,7 @@
 package kpt.core.store.banking.impl
 
 import kpt.core.database.banking.entity.BillReminderEntity
-import kpt.core.model.demo.banking.BillReminder
+import kpt.core.model.banking.BillReminder
 
 /**
  * Entity ⇄ domain mappers for the bill-reminders feature. They live in `core/store` (the lowest

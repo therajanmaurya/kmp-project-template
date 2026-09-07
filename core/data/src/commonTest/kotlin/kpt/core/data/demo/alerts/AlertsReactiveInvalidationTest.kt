@@ -18,8 +18,8 @@ import kpt.core.base.store.screen.ScreenStreamContext
 import kpt.core.data.demo.alerts.impl.AlertsRepositoryImpl
 import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import kpt.core.store.alerts.impl.provideAlertsStore
 import kpt.core.store.alerts.impl.provideAlertsWriteStore
 import org.koin.core.context.startKoin

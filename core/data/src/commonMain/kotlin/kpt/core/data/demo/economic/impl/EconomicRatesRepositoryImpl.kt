@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.economic.EconomicRatesRepository
-import kpt.core.model.demo.economic.InterestRateSeries
+import kpt.core.model.economic.InterestRateSeries
 import kpt.core.store.config.AppCacheKeys
 import kpt.core.store.economic.impl.InterestRateSeriesKey
 import org.mobilenativefoundation.store.store5.Store

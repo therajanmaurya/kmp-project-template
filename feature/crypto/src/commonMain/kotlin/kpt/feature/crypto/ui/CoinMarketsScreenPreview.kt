@@ -11,7 +11,7 @@ package kpt.feature.crypto.ui
 
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinMarket
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

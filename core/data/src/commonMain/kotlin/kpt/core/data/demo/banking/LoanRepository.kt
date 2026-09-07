@@ -12,7 +12,7 @@ package kpt.core.data.demo.banking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.banking.Loan
+import kpt.core.model.banking.Loan
 
 /**
  * User's personal loan portfolio — purely local persistence, no remote sync.

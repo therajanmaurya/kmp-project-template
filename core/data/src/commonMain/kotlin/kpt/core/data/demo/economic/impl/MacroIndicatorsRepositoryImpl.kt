@@ -22,8 +22,8 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.base.store.screen.requireData
 import kpt.core.data.demo.economic.MacroIndicatorsRepository
-import kpt.core.model.demo.economic.IndicatorKind
-import kpt.core.model.demo.economic.MacroIndicator
+import kpt.core.model.economic.IndicatorKind
+import kpt.core.model.economic.MacroIndicator
 import kpt.core.store.config.AppCacheKeys
 import kpt.core.store.economic.impl.MacroIndicatorKey
 import org.mobilenativefoundation.store.store5.Store

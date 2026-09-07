@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.watchlist.WatchlistRepository
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 
 /**
  * Watchlist ViewModel — the canonical `read_local_list` demo. A pure passthrough: it exposes the

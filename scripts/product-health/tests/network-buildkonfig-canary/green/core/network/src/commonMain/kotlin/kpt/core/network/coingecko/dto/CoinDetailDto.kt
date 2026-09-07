@@ -11,7 +11,7 @@ package kpt.core.network.coingecko.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kpt.core.model.demo.crypto.CoinDetail
+import kpt.core.model.crypto.CoinDetail
 
 @Serializable
 data class CoinDetailDto(

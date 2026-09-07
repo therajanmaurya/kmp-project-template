@@ -16,8 +16,8 @@ import kpt.core.base.store.paging.asPagingScreenStream
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.crypto.CryptoRepository
-import kpt.core.model.demo.crypto.CoinDetail
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinDetail
+import kpt.core.model.crypto.CoinMarket
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.Store
 

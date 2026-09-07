@@ -30,8 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import kpt.feature.alerts.generated.resources.Res
 import kpt.feature.alerts.generated.resources.screens_alerts_back_cd
 import kpt.feature.alerts.generated.resources.screens_alerts_create_cd

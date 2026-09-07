@@ -9,7 +9,7 @@
  */
 package kpt.feature.macro.di
 
-import kpt.core.model.demo.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorKind
 import kpt.feature.macro.ui.CountryMacroViewModel
 import kpt.feature.macro.ui.CountryPickerViewModel
 import kpt.feature.macro.ui.MacroIndicatorDetailViewModel

@@ -168,8 +168,13 @@ done < <(find core feature -type d -name demo -not -path '*/build/*' 2>/dev/null
 echo "delete template module packages:"
 while IFS=$'\t' read -r mod id; do
   [ -z "${id:-}" ] && continue
-  for sub in commonMain commonTest androidMain iosMain desktopMain; do
-    d="core/$mod/src/$sub/kotlin/kpt/core/$mod/$id"
+  # ENUMERATE the module's source sets rather than listing them. The list was
+  # `commonMain commonTest androidMain iosMain desktopMain`, which silently missed desktopTest,
+  # nonAndroidMain, wasmJs*/native*/js* — so a declared package could be deleted from commonMain
+  # while its TEST in desktopTest survived, referencing types that no longer exist. That is a
+  # compile break in a supposedly clean fork, and it only shows up for a module that happens to
+  # test in one of the missed source sets (core/model does).
+  for d in "core/$mod"/src/*/kotlin/kpt/core/"$mod"/"$id"; do
     [ -d "$d" ] || continue
     say "rm -rf $d  (core/$mod package '$id', owner: template)"
     [ "$APPLY" -eq 1 ] && rm -rf "$d"

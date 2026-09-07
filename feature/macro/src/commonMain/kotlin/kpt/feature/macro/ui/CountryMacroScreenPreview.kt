@@ -12,9 +12,9 @@ package kpt.feature.macro.ui
 import androidx.compose.runtime.Composable
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.economic.IndicatorKind
-import kpt.core.model.demo.economic.IndicatorObservation
-import kpt.core.model.demo.economic.MacroIndicator
+import kpt.core.model.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorObservation
+import kpt.core.model.economic.MacroIndicator
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

@@ -13,12 +13,12 @@ import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import kotlinx.datetime.LocalDate
 import kpt.core.base.database.annotation.DbEntity
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.LoanKind
 
 /**
  * Persistent row for a personal loan tracked by the user.
  *
- * Mirrors [kpt.core.model.demo.banking.Loan]; mapping lives in the repository
+ * Mirrors [kpt.core.model.banking.Loan]; mapping lives in the repository
  * layer (`core/data/banking/`). Stored locally only — no remote sync.
  *
  * Type-converters in [kpt.core.database.banking.converter.BankingTypeConverters]

@@ -17,8 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kpt.core.database.AppDatabase
 import kpt.core.database.banking.entity.BillReminderEntity
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.Recurrence
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

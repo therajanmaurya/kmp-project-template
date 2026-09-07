@@ -14,8 +14,8 @@ import kpt.core.base.store.error.ErrorCategory
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.submit.SubmitState
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

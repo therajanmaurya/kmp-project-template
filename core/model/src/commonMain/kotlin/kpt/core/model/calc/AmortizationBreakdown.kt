@@ -7,10 +7,10 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.calc
+package kpt.core.model.calc
 
-import kpt.core.model.demo.banking.AmortizationRow
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.banking.AmortizationRow
+import kpt.core.model.emi.EmiResult
 
 /**
  * One amortization calculation: the per-installment [rows] and the [summary] totals.

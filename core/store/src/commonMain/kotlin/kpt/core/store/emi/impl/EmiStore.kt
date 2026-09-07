@@ -11,7 +11,7 @@ package kpt.core.store.emi.impl
 
 import kpt.core.base.store.annotation.StoreProvider
 import kpt.core.base.store.infra.StoreFactory
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.Store
 

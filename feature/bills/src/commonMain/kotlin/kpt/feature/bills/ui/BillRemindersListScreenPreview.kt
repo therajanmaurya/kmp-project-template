@@ -12,9 +12,9 @@ package kpt.feature.bills.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.BillReminder
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.BillReminder
+import kpt.core.model.banking.Recurrence
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

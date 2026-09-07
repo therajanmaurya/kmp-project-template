@@ -12,8 +12,8 @@ package kpt.core.database.currency.mapper
 import kotlinx.serialization.json.Json
 import kpt.core.database.crypto.converter.RatePointPair
 import kpt.core.database.currency.entity.RateHistoryEntity
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RatePoint
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RatePoint
 import kotlin.time.Clock
 
 fun RateHistory.toEntity(): RateHistoryEntity = RateHistoryEntity(

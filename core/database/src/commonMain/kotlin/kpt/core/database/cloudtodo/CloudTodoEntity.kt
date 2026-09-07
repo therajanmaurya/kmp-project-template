@@ -13,7 +13,7 @@ import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import kpt.core.base.database.annotation.DbEntity
 
-/** Room mirror of a [kpt.core.model.demo.cloudtodo.CloudTodo] (the Store5 MutableStore SoT). */
+/** Room mirror of a [kpt.core.model.cloudtodo.CloudTodo] (the Store5 MutableStore SoT). */
 @DbEntity
 @Entity(tableName = "cloud_todos")
 data class CloudTodoEntity(

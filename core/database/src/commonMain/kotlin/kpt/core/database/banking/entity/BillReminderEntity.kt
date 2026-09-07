@@ -12,13 +12,13 @@ package kpt.core.database.banking.entity
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import kpt.core.base.database.annotation.DbEntity
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.Recurrence
 
 /**
  * Persistent row for a recurring (or one-time) bill reminder.
  *
- * Mirrors [kpt.core.model.demo.banking.BillReminder]; mapping lives in
+ * Mirrors [kpt.core.model.banking.BillReminder]; mapping lives in
  * `core/data/banking/`. Stored locally only — no remote sync.
  *
  * Type-converters in [kpt.core.database.banking.converter.BankingTypeConverters]

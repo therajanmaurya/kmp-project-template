@@ -22,9 +22,9 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.base.store.screen.requireData
 import kpt.core.data.demo.currency.CurrencyRepository
-import kpt.core.model.demo.currency.ExchangeRates
-import kpt.core.model.demo.currency.RateHistory
-import kpt.core.model.demo.currency.RateHistoryKey
+import kpt.core.model.currency.ExchangeRates
+import kpt.core.model.currency.RateHistory
+import kpt.core.model.currency.RateHistoryKey
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreReadRequest

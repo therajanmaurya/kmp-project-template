@@ -10,7 +10,7 @@
 package kpt.feature.profile.di
 
 import kpt.core.base.ui.AppInfo
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 import kpt.core.store.profile.impl.ProfileInfoSource
 import kpt.feature.profile.demo.ui.ProfileViewModel
 import org.koin.core.module.dsl.viewModelOf

@@ -10,8 +10,8 @@
 package kpt.core.store.alerts.impl
 
 import kpt.core.database.alerts.AlertEntity
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 
 /**
  * Entity ⇄ domain mappers for the price-alerts feature. They live in `core/store` (the lowest

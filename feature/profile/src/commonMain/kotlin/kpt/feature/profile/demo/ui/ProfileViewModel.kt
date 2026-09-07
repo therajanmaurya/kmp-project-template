@@ -13,7 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.data.demo.profile.ProfileRepository
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 
 /**
  * ViewModel for the profile DEMO body (`feature_profile.combo_id: static_content`).

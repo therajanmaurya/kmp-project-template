@@ -11,7 +11,7 @@ package kpt.feature.loans.ui
 
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.LoanKind
+import kpt.core.model.banking.LoanKind
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

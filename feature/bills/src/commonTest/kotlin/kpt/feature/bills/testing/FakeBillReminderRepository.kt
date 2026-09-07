@@ -19,9 +19,9 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.banking.BillReminderRepository
-import kpt.core.model.demo.banking.BillCategory
-import kpt.core.model.demo.banking.BillReminder
-import kpt.core.model.demo.banking.Recurrence
+import kpt.core.model.banking.BillCategory
+import kpt.core.model.banking.BillReminder
+import kpt.core.model.banking.Recurrence
 
 /**
  * In-memory [BillReminderRepository] for ViewModel-level unit tests.

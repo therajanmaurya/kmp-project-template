@@ -11,7 +11,7 @@ package kpt.core.network.jsonplaceholder.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 
 /** Wire shape for jsonplaceholder `/todos`. */
 @Serializable

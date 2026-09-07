@@ -16,7 +16,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.LoanRepository
 import kpt.core.database.banking.dao.LoanDao
-import kpt.core.model.demo.banking.Loan
+import kpt.core.model.banking.Loan
 import kpt.core.store.banking.impl.provideLoanDetailStore
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore

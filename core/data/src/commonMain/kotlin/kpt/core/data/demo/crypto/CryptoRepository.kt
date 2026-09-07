@@ -12,8 +12,8 @@ package kpt.core.data.demo.crypto
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.paging.PagingScreenStream
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.crypto.CoinDetail
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinDetail
+import kpt.core.model.crypto.CoinMarket
 
 interface CryptoRepository {
     /** Streams the CoinGecko coin-markets list as a paged screen stream. */

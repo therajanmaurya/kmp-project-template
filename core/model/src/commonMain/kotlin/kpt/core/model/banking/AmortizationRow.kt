@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.banking
+package kpt.core.model.banking
 
 /**
  * A single monthly row in a reducing-balance amortization schedule.

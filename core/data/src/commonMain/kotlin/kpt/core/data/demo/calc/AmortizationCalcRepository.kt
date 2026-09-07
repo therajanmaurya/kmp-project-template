@@ -11,7 +11,7 @@ package kpt.core.data.demo.calc
 
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.calc.AmortizationBreakdown
+import kpt.core.model.calc.AmortizationBreakdown
 import kpt.core.store.calc.impl.AmortizationCalcParams
 
 /** Read surface for the amortization calculator (`calculator_multi`, MEMORY_ONLY). */

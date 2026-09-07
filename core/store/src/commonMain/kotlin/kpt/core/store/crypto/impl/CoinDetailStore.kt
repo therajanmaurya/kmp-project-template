@@ -20,7 +20,7 @@ import kpt.core.base.store.infra.StoreFactory
 import kpt.core.database.crypto.dao.CoinDetailDao
 import kpt.core.database.crypto.mapper.toDomain
 import kpt.core.database.crypto.mapper.toEntity
-import kpt.core.model.demo.crypto.CoinDetail
+import kpt.core.model.crypto.CoinDetail
 import kpt.core.network.coingecko.api.CoinGeckoApi
 import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher

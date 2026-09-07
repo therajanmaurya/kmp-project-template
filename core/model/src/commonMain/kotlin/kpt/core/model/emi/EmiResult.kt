@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.emi
+package kpt.core.model.emi
 
 data class EmiResult(
     val emi: Double,

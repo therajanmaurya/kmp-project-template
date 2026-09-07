@@ -11,7 +11,7 @@ package kpt.feature.cloudtodo.ui
 
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

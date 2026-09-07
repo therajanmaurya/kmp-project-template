@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.profile
+package kpt.core.model.profile
 
 /**
  * What the profile screen displays.

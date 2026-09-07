@@ -13,8 +13,8 @@ import androidx.lifecycle.viewModelScope
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.economic.MacroIndicatorsRepository
-import kpt.core.model.demo.economic.IndicatorKind
-import kpt.core.model.demo.economic.MacroIndicator
+import kpt.core.model.economic.IndicatorKind
+import kpt.core.model.economic.MacroIndicator
 import kpt.core.store.economic.impl.MacroIndicatorKey
 
 /**

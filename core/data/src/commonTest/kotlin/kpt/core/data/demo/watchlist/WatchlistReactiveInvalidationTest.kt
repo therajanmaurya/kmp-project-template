@@ -18,7 +18,7 @@ import kpt.core.base.store.screen.ScreenStreamContext
 import kpt.core.data.demo.watchlist.impl.WatchlistRepositoryImpl
 import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
-import kpt.core.model.demo.watchlist.WatchlistItem
+import kpt.core.model.watchlist.WatchlistItem
 import kpt.core.store.watchlist.impl.provideWatchlistStore
 import kpt.core.store.watchlist.impl.provideWatchlistWriteStore
 import org.koin.core.context.startKoin

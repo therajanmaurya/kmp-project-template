@@ -11,7 +11,7 @@ package kpt.core.data.demo.cloudtodo
 
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 
 /**
  * Read + offline-write surface over the cloud-todo [org.mobilenativefoundation.store.store5.MutableStore].

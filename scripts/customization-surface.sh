@@ -500,11 +500,17 @@ cs_require_flip_preconditions() {
   # AppStoreRegistry/AppCacheKeys/GeneratedStoreBindings are KSP build artifacts under
   # build/generated, so there is no committed file to own.
   # The surviving core/store fork seams are these two.
+  # core/model's three-way split. `invoice/` stands for ANY undeclared package — a fork's own model,
+  # which must resolve fork. Before the module catch-all existed it resolved `template` off the
+  # `core/**` blanket, and a sync would have believed it could overwrite it.
+  _cs_expect "core/model/kpt/core/model/invoice/Invoice.kt"        fork
+  _cs_expect "core/model/kpt/core/model/user/UserData.kt"          template
+  _cs_expect "core/model/kpt/core/model/demo/banking/Loan.kt"      demo-showcase
   _cs_expect "core/store/config/ProjectErrorMapper.kt"             fork
   _cs_expect "core/store/config/ProjectScreenStateDefaults.kt"     fork
   _cs_expect "core/store/economic/ExchangeRatesStore.kt"          template
   _cs_expect "core/store/banking/InterestRateSeriesStore.kt"      template
-  [ "$bad" -eq 0 ] && echo "✅ T1 flip preconditions hold (og-images generated · secrets-manifest/keystore + core/store Project* seams fork · gradle.properties merge/properties-3way · tests/core-store-impl template)"
+  [ "$bad" -eq 0 ] && echo "✅ T1 flip preconditions hold (og-images generated · secrets-manifest/keystore + core/store Project* seams fork · core/model undeclared=fork · gradle.properties merge/properties-3way · tests/core-store-impl template)"
   return "$bad"
 }
 

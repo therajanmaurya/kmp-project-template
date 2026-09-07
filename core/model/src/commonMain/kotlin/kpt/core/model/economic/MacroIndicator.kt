@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.economic
+package kpt.core.model.economic
 
 /**
  * Domain representation of a country-level macro indicator sourced from the

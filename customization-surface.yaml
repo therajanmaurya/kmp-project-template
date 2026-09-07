@@ -467,6 +467,59 @@ rules:
     owner: template
   - glob: "core-base/**"
     owner: template
+  # ── core/model — the model layer's ownership, declared rather than inherited from `core/**` ──
+  # `core/model` was the only core module with NO fork-owned surface, so a fork's own
+  # `core/model/invoice/Invoice.kt` fell through to the `core/**` blanket below and resolved
+  # `owner: template` — the contract telling a sync it may overwrite a file the fork owns. That is
+  # the same loss white-label-di-seams WLS-5 exists to prevent, on the sync trigger instead of the
+  # strip trigger.
+  #
+  # Fixed by declaring ONE fork-owned package rather than inverting the blanket: `core/model/** ->
+  # fork` would have been worse, because every NEW template model would then resolve `fork` and
+  # silently stop reaching forks on sync. The template's own packages stay enumerable (`user`,
+  # `demo`) and anything the template adds later still resolves `template` by default.
+  # FRAMEWORK models — read by framework code, so a fork extends behaviour via
+  # ProjectPreferencesRepository (core/datastore) rather than editing these.
+  - glob: "core/model/**/kpt/core/model/user/**"
+    owner: template
+  # The showcase's models — the DISTINCT `demo-showcase` class: template-SHIPPED, updated on sync,
+  # and deleted by `remove-demo.sh` per their `owner: template` row in app-profile#model.packages[].
+  # Listed per package because they no longer live under `demo/`: the module moved onto the same
+  # declared-package model as core/store and core/database, so a directory name is no longer what
+  # decides the lifecycle. Without these rows they would fall to the `core/**` blanket and resolve
+  # `template`, which is the wrong class — a fork that keeps the demo would stop receiving updates
+  # to it, and `--verify`'s coverage audit would not notice because the blanket matches.
+  - glob: "core/model/**/kpt/core/model/alerts/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/banking/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/calc/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/cloudtodo/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/crypto/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/currency/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/economic/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/emi/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/profile/**"
+    owner: demo-showcase
+  - glob: "core/model/**/kpt/core/model/watchlist/**"
+    owner: demo-showcase
+
+  # A FORK's own model packages. Declared as the module's catch-all rather than a named seam: the
+  # TEMPLATE's packages are enumerated above and in app-profile#model.packages[], so "everything else
+  # under core/model" IS the fork's, by definition. Without this the blanket `core/** -> template`
+  # below would claim a fork's own model and tell a sync it may overwrite it.
+  #
+  # The direction is safe BECAUSE the template's list is declared: a new template package must be
+  # added to app-profile for the strip to reach it anyway, and G-MODEL-PKG (MP-1) fails if that row
+  # has no matching ownership rule here — so a template package cannot silently land in this bucket.
+  - glob: "core/model/**"
+    owner: fork
   - glob: "core/**"
     owner: template
   - glob: "deployment/**"

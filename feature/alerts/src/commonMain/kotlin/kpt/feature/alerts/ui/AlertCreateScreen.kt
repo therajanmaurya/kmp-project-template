@@ -36,8 +36,8 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.submit.SubmitState
 import kpt.core.base.ui.draft.DraftResolutionPrompt
 import kpt.core.base.ui.submit.MutationScreenContent
-import kpt.core.model.demo.alerts.AlertDirection
-import kpt.core.model.demo.alerts.PriceAlert
+import kpt.core.model.alerts.AlertDirection
+import kpt.core.model.alerts.PriceAlert
 import kpt.feature.alerts.generated.resources.Res
 import kpt.feature.alerts.generated.resources.screens_alert_create_back_cd
 import kpt.feature.alerts.generated.resources.screens_alert_create_coin_label

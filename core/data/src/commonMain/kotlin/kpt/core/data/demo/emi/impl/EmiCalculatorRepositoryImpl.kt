@@ -14,7 +14,7 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.emi.EmiCalculatorRepository
-import kpt.core.model.demo.emi.EmiResult
+import kpt.core.model.emi.EmiResult
 import kpt.core.store.emi.impl.EmiParams
 import org.mobilenativefoundation.store.store5.Store
 

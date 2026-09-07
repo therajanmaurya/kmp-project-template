@@ -7,12 +7,12 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.economic
+package kpt.core.model.economic
 
 /**
  * Country reference for the Banking Utility Toolkit's macro-indicator screens.
  *
- * Distinct from [kpt.core.model.demo.currency.Country] which is a
+ * Distinct from [kpt.core.model.currency.Country] which is a
  * phone-number-formatting model. The toolkit screens need only the World
  * Bank-accepted ISO 3166-1 alpha-2 code plus a localised display name and a
  * flag emoji — no phone metadata.

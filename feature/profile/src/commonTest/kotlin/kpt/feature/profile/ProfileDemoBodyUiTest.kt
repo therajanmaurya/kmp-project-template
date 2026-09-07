@@ -21,7 +21,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.profile.ProfileRepository
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 import kpt.feature.profile.demo.ProfileDemoBody
 import kpt.feature.profile.demo.ui.ProfileViewModel
 import org.koin.core.context.startKoin

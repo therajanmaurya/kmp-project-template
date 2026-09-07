@@ -9,7 +9,7 @@
  */
 package kpt.core.data.demo.economic
 
-import kpt.core.model.demo.economic.Country
+import kpt.core.model.economic.Country
 
 /**
  * Curated list of countries the Banking Utility Toolkit's macro-snapshot
@@ -20,7 +20,7 @@ import kpt.core.model.demo.economic.Country
  *   are most likely to demo against. This gives the screen a useful default
  *   experience without bundling the full ~250-country World Bank catalogue.
  * - Codes are ISO 3166-1 alpha-2, the form the toolkit standardises on (see
- *   [kpt.core.model.demo.economic.MacroIndicator]). The World Bank API
+ *   [kpt.core.model.economic.MacroIndicator]). The World Bank API
  *   accepts alpha-2 directly.
  *
  * Future enhancement: dynamic loading via the World Bank `/v2/country`

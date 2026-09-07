@@ -11,7 +11,7 @@ package kpt.core.data.demo.profile
 
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
-import kpt.core.model.demo.profile.ProfileInfo
+import kpt.core.model.profile.ProfileInfo
 
 /** Read surface for the profile screen (`static_content`, MEMORY_ONLY). */
 interface ProfileRepository {

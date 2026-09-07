@@ -10,7 +10,7 @@
 package kpt.core.network.worldbank.dto
 
 import kotlinx.serialization.json.Json
-import kpt.core.model.demo.economic.IndicatorKind
+import kpt.core.model.economic.IndicatorKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

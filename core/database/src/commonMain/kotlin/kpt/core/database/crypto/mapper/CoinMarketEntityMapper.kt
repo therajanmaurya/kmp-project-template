@@ -10,7 +10,7 @@
 package kpt.core.database.crypto.mapper
 
 import kpt.core.database.crypto.entity.CoinMarketEntity
-import kpt.core.model.demo.crypto.CoinMarket
+import kpt.core.model.crypto.CoinMarket
 import kotlin.time.Clock
 
 fun CoinMarket.toEntity(page: Int): CoinMarketEntity = CoinMarketEntity(

@@ -19,7 +19,7 @@ import kpt.core.base.store.mutation.MutationResult
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.cloudtodo.CloudTodoRepository
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 
 /**
  * MUTABLE-archetype write-path ViewModel — the reference implementation for driving

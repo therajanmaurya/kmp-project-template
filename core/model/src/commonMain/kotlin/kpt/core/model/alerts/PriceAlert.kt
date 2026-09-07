@@ -7,7 +7,7 @@
  *
  * See See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-package kpt.core.model.demo.alerts
+package kpt.core.model.alerts
 
 import kotlinx.serialization.Serializable
 

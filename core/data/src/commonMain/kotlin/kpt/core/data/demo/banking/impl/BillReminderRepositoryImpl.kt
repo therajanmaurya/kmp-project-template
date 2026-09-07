@@ -23,7 +23,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.BillReminderRepository
 import kpt.core.database.banking.dao.BillReminderDao
-import kpt.core.model.demo.banking.BillReminder
+import kpt.core.model.banking.BillReminder
 import kpt.core.store.banking.impl.provideBillReminderDetailStore
 import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore
