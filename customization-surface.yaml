@@ -236,16 +236,74 @@ rules:
   - glob: "feature/**"
     owner: fork
   # core/store seam — the 4 seam files below are fork-authored (white-label-template-completion E0/T1, LD-2).
-  # The rest of core/store is template architecture (infra/, di aggregators) that MUST receive upstream fixes;
-  # the demo showcase stores under core/store/**/demo/** are fork-owned via the **/demo/** rule below.
-  - glob: "core/store/**/AppScreenStateDefaults.kt"
+  # The rest of core/store is template architecture (infra/, di aggregators) that MUST receive upstream fixes.
+  # The demo showcase stores NO LONGER live under core/store/**/demo/**: they are per-domain packages
+  # declared in app-profile/app.yaml#core_store.packages[], so they need explicit globs below rather
+  # than falling through to the generic `**/demo/**` rule.
+  # core/store fork seams — the `Project*` files a fork edits. The sync never touches them, so a
+  # fork's error copy and branding survive; everything they extend lives in config/ and IS synced.
+  # These were previously the template files themselves (AppErrorMapper / AppScreenStateDefaults
+  # marked owner:fork because each carried a `TODO(fork)` extension point inside it), which meant a
+  # fork that customised one branch stopped receiving upstream fixes to the whole file.
+  - glob: "core/store/**/kpt/core/store/ProjectErrorMapper.kt"
     owner: fork
-  - glob: "core/store/**/AppErrorMapper.kt"
+  - glob: "core/store/**/kpt/core/store/ProjectScreenStateDefaults.kt"
     owner: fork
-  - glob: "core/store/**/AppStoreRegistry.kt"
+  # The template's definition surface — full-copied on a sync so forks get upstream improvements.
+  - glob: "core/store/**/config/AppErrorMapper.kt"
+    owner: template
+  - glob: "core/store/**/config/AppScreenStateDefaults.kt"
+    owner: template
+  # GENERATED whole-file by syncForkConfig from app-profile#core_store.stores — fork-owned for the
+  # same reason GeneratedApiBindings is: a sync must never replace a fork's own store registry and
+  # bindings with the template's. Nothing is lost by not syncing them; they are fully derived and
+  # `./gradlew syncForkConfig` rebuilds both.
+  - glob: "core/store/**/config/AppStoreRegistry.kt"
     owner: fork
+  - glob: "core/store/**/di/GeneratedStoreBindings.kt"
+    owner: fork
+  # StoreModule.kt is TEMPLATE-owned again. It used to be owner:fork because ~30 hand-written store
+  # bindings lived in it, which meant a fork never received upstream fixes to the framework wiring
+  # it also contains (CoreBaseStoreModule, StoreCacheManager, DraftInventory). With the bindings
+  # generated into GeneratedStoreBindings, nothing fork-specific is left and a sync can full-copy it.
   - glob: "core/store/**/di/StoreModule.kt"
+    owner: template
+  # GENERATED whole-file from app-profile#core_store.cache_keys — fork-owned like the other derived
+  # surfaces. It was briefly declared owner:template while its own KDoc told forks to add their keys
+  # to it: a file both sides write to is a merge on every sync, which is what this contract exists to
+  # prevent. Generating it removes the merge rather than arbitrating it.
+  - glob: "core/store/**/config/AppCacheKeys.kt"
     owner: fork
+  # core/store demo showcases — the DISTINCT `demo-showcase` class: template-SHIPPED, demo-only,
+  # updatable on sync, and deleted by `remove-demo.sh --clean` per their `owner: template` row in
+  # app-profile/app.yaml#core_store.packages[]. Listed explicitly because the packages moved out of
+  # `demo/` (an earlier revision removed globs like `core/store/economic/**` as dead — they matched
+  # nothing while the stores sat under demo/; the move makes them live again, and demo-showcase is
+  # the correct class for them, not `template`).
+  - glob: "core/store/**/kpt/core/store/alerts/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/banking/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/calc/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/cloudtodo/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/crypto/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/currency/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/economic/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/emi/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/exchange/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/profile/**"
+    owner: demo-showcase
+  - glob: "core/store/**/kpt/core/store/watchlist/**"
+    owner: demo-showcase
+  # Demo-showcase cache keys — split out of the template-owned AppCacheKeys (E1/C5) and declared
+  # for deletion via app.yaml#core_store.template_files[].
   # White-label registry seams — the fork-owned extension package (cmp.navigation.registry). The
   # template infra (KoinModules, AuthenticatedNavigation, the navbar screen, cmp-shared's initKoin,
   # feature/home's HomeScreen shell) READS these seams; a fork adds/removes features, tabs, the home

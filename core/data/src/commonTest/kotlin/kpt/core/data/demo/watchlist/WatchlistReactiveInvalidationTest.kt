@@ -19,8 +19,8 @@ import kpt.core.data.demo.watchlist.impl.WatchlistRepositoryImpl
 import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
 import kpt.core.model.demo.watchlist.WatchlistItem
-import kpt.core.store.demo.watchlist.impl.provideWatchlistStore
-import kpt.core.store.demo.watchlist.impl.provideWatchlistWriteStore
+import kpt.core.store.watchlist.impl.provideWatchlistStore
+import kpt.core.store.watchlist.impl.provideWatchlistWriteStore
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module

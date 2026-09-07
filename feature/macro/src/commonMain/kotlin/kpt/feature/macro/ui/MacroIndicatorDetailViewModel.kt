@@ -15,7 +15,7 @@ import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.economic.MacroIndicatorsRepository
 import kpt.core.model.demo.economic.IndicatorKind
 import kpt.core.model.demo.economic.MacroIndicator
-import kpt.core.store.demo.economic.impl.MacroIndicatorKey
+import kpt.core.store.economic.impl.MacroIndicatorKey
 
 /**
  * Deep-dive ViewModel for a single (country, indicator) tuple.

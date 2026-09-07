@@ -51,6 +51,15 @@ sed -n '/^network:/,/^org:/p' "$ROOT/app-profile/app.yaml"  > "$SB/app-profile/a
 sed -n '/^database:/,/^org:/p' "$ROOT/app-profile/app.yaml" >> "$SB/app-profile/app.yaml"
 printf '// demo:begin\ninclude(":feature:probe")\n// demo:end\n' > "$SB/settings.gradle.kts"
 
+# A declared `owner: template` module package must actually be DELETED by --apply. The declarations
+# live inside `# demo:begin … # demo:end` fences, and the fence strip runs BEFORE the package sweep,
+# so reading them at sweep time found nothing: --apply printed its heading, deleted ZERO packages and
+# exited 0, leaving every demo store and entity in a supposedly clean fork. Dry-run looked right
+# precisely because it mutates nothing, which is why this needs an --apply assertion.
+PKG_PROBE="core/database/src/commonMain/kotlin/kpt/core/database/alerts"
+mkdir -p "$SB/$PKG_PROBE"
+printf 'package kpt.core.database.alerts\n' > "$SB/$PKG_PROBE/Probe.kt"
+
 echo "── demo strip vs generated bindings (remove-demo.sh) ──"
 before_pts="$(grep -cE '^    - id:' "$SB/app-profile/app.yaml")"
 before_bind="$(grep -c 'restApi(\|supabaseApi(' "$SB/$GEN_REL")"
@@ -67,6 +76,10 @@ if ( cd "$SB" && bash scripts/remove-demo.sh --apply --all --no-format --no-rege
 else
   bad "strip FAILED — every assertion below is measuring a partially-stripped tree"
 fi
+
+[ -d "$SB/$PKG_PROBE" ] \
+  && bad "declared owner:template package '$PKG_PROBE' SURVIVED --apply — the package sweep read app-profile AFTER the fence strip had already removed the declarations" \
+  || ok "declared owner:template module package deleted by --apply"
 
 [ -f "$SB/$GEN_REL" ] \
   && ok "generated bindings SURVIVE the strip (not under demo/)" \

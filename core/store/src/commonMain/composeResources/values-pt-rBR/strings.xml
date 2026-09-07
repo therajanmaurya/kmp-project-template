@@ -23,5 +23,9 @@
     <string name="error_category_auth">Sua sessão expirou. Entre novamente.</string>
     <string name="error_category_ratelimit">Muitas solicitações. Aguarde e tente novamente.</string>
     <string name="error_category_server">Nossos servidores estão instáveis. Tente daqui a pouco.</string>
+    <string name="error_category_timeout_connect">Tempo de conexão esgotado. Verifique sua conexão e tente novamente.</string>
+    <string name="error_category_timeout_read">O servidor demorou muito para responder. Tente novamente em breve.</string>
+    <string name="error_category_quota">Você atingiu sua cota. Faça upgrade ou aguarde para continuar.</string>
+    <string name="error_category_client">A solicitação falhou. Tente novamente.</string>
     <string name="error_category_generic">Algo deu errado</string>
 </resources>

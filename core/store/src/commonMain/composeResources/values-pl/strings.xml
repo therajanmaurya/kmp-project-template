@@ -23,5 +23,9 @@
     <string name="error_category_auth">Sesja wygasła. Zaloguj się ponownie.</string>
     <string name="error_category_ratelimit">Zbyt wiele żądań. Poczekaj i spróbuj ponownie.</string>
     <string name="error_category_server">Nasze serwery mają chwilowy problem. Spróbuj za chwilę.</string>
+    <string name="error_category_timeout_connect">Przekroczono czas połączenia. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="error_category_timeout_read">Serwer odpowiadał zbyt długo. Spróbuj ponownie za chwilę.</string>
+    <string name="error_category_quota">Osiągnięto limit. Ulepsz plan lub poczekaj, aby kontynuować.</string>
+    <string name="error_category_client">Żądanie nie powiodło się. Spróbuj ponownie.</string>
     <string name="error_category_generic">Coś poszło nie tak</string>
 </resources>

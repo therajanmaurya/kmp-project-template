@@ -17,8 +17,8 @@ import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.LoanRepository
 import kpt.core.database.banking.dao.LoanDao
 import kpt.core.model.demo.banking.Loan
-import kpt.core.store.demo.DemoCacheKeys
-import kpt.core.store.demo.banking.impl.provideLoanDetailStore
+import kpt.core.store.banking.LoansKeys
+import kpt.core.store.banking.impl.provideLoanDetailStore
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreWriteRequest
@@ -27,7 +27,7 @@ import org.mobilenativefoundation.store.store5.StoreWriteRequest
  * Local-only impl of [LoanRepository].
  *
  * Read-path contract: [loansStream] builds the offline-local [ScreenDataStream] (CACHE_ONLY) over
- * the domain-emitting [kpt.core.store.demo.banking.impl.provideLoansStore]; read screens consume
+ * the domain-emitting [kpt.core.store.banking.impl.provideLoansStore]; read screens consume
  * `.state`. Direct-DAO `Flow` reads (`observeById`, the dashboard aggregates) are wrapped with
  * [daoFlow] and writes with [notifyingWrite] so the wasmJs target's long-lived collectors re-emit
  * after writes even when Room 3 alpha05's async InvalidationTracker fails to fan out (no-op on
@@ -42,7 +42,7 @@ internal class LoanRepositoryImpl(
     override fun loansStream(scope: CoroutineScope): ScreenDataStream<List<Loan>> =
         loansStore.asScreenStream(
             key = Unit,
-            cacheKey = DemoCacheKeys.LOANS,
+            cacheKey = LoansKeys.LIST,
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
             isEmpty = { it.isEmpty() },
@@ -54,7 +54,7 @@ internal class LoanRepositoryImpl(
     override fun loanDetailStream(id: String, scope: CoroutineScope): ScreenDataStream<Loan> =
         loanDetailStore.asScreenStream(
             key = id,
-            cacheKey = DemoCacheKeys.loan(id),
+            cacheKey = LoansKeys.item(id),
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
         )

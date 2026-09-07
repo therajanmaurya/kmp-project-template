@@ -21,8 +21,8 @@ import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
 import kpt.core.model.demo.banking.Loan
 import kpt.core.model.demo.banking.LoanKind
-import kpt.core.store.demo.banking.impl.provideLoansStore
-import kpt.core.store.demo.banking.impl.provideLoansWriteStore
+import kpt.core.store.banking.impl.provideLoansStore
+import kpt.core.store.banking.impl.provideLoansWriteStore
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module

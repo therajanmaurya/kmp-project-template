@@ -18,7 +18,7 @@ import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.emi.EmiCalculatorRepository
 import kpt.core.domain.demo.emi.calculateEmi
 import kpt.core.model.demo.emi.EmiResult
-import kpt.core.store.demo.emi.impl.EmiParams
+import kpt.core.store.emi.impl.EmiParams
 
 /**
  * Fakes [EmiCalculatorRepository] at the [ScreenDataStream] seam.

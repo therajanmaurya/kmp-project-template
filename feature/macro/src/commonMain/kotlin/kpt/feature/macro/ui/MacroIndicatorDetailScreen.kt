@@ -67,7 +67,7 @@ import kotlin.time.Instant
  * it, a table of year/value rows for users who want exact numbers. The
  * dashboard's per-card sparkline is a 10-year hint; this screen surfaces
  * the entire range the toolkit fetches (25 years by default — see
- * [kpt.core.store.demo.economic.impl.MacroIndicatorKey.years]).
+ * [kpt.core.store.economic.impl.MacroIndicatorKey.years]).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

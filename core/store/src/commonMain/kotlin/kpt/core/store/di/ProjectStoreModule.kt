@@ -21,10 +21,15 @@ import org.koin.dsl.module
  *
  * Register the fork's Store5 factories + their logout purge here:
  * ```
- * single(AppStoreRegistry.MyThing) { provideMyThingStore(get(), get()) }
+ * single(MyThingKeys.Qualifier) { provideMyThingStore(get(), get()) }
  * ```
- * Remember to add each new store to the `StoreCacheManager` logout registration so its cache is
- * wiped on sign-out — an unregistered store leaks the previous user's data across accounts.
+ * Prefer DECLARING the store in `app-profile/app.yaml#core_store.stores` — codegen then writes its
+ * `<Store>Keys` object, its binding, and its logout purge, and the three cannot disagree. Hand-wire
+ * here only for something a declaration cannot express.
+ *
+ * If you do hand-wire, add the store to the `StoreCacheManager` logout registration yourself — an
+ * unregistered store leaks the previous user's cached rows into the next session on a shared device.
+ * `store-logout-purge.sh` (LP-1) checks this file for exactly that.
  */
 val ProjectStoreModule = module {
     // Intentionally empty on the template — a fork adds its own Store5 factories here.

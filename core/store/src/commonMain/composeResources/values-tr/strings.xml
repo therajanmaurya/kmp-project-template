@@ -23,5 +23,9 @@
     <string name="error_category_auth">Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın.</string>
     <string name="error_category_ratelimit">Çok fazla istek. Lütfen bekleyip tekrar deneyin.</string>
     <string name="error_category_server">Sunucularımızda geçici bir sorun var. Biraz sonra deneyin.</string>
+    <string name="error_category_timeout_connect">Bağlantı zaman aşımına uğradı. Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="error_category_timeout_read">Sunucu yanıt vermekte çok gecikti. Kısa süre sonra tekrar deneyin.</string>
+    <string name="error_category_quota">Kotanıza ulaştınız. Devam etmek için yükseltin veya bekleyin.</string>
+    <string name="error_category_client">İstek başarısız oldu. Lütfen tekrar deneyin.</string>
     <string name="error_category_generic">Bir sorun oluştu</string>
 </resources>

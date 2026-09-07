@@ -191,6 +191,232 @@ database:
     - kpt.core.database.banking.converter.BankingTypeConverters
     # demo:end
 
+# core/store — Store5 package ownership.
+#
+# Keyed `core_store` rather than `store` because `store:` below is the APP-STORE LISTING (title,
+# subtitle, description) — a different concept that ships to Play/App Store and is read by
+# deployment/_shared/config.rb. Renaming that fork-facing key to free up `store` would be a breaking
+# change for every fork, so the module block takes the explicit name instead.
+#
+# Same contract as `database.packages[]`: `owner: template` means the showcase ships it and a clean
+# fork must not, so `remove-demo.sh --clean` deletes `core/store/src/*/kotlin/kpt/core/store/<id>/`.
+# `owner: fork` survives the strip. This replaces the previous `**/demo/**` PATH convention — what a
+# cleaned fork keeps is now declared, not inferred from where a file sits, which is the same move
+# `network.access_points` and `database.packages` already made.
+core_store:
+  packages:
+    # demo:begin
+    - { id: alerts,    owner: template }   # OFFLINE_LOCAL_ONLY showcase
+    - { id: banking,   owner: template }   # OFFLINE_LOCAL_ONLY showcase (loans + bill reminders)
+    - { id: calc,      owner: template }   # MEMORY_ONLY showcase (amortization)
+    - { id: cloudtodo, owner: template }   # MUTABLE showcase (write store + conflict resolver)
+    - { id: crypto,    owner: template }   # NETWORK_WITH_CACHE showcase
+    - { id: currency,  owner: template }   # NETWORK_WITH_CACHE showcase
+    - { id: economic,  owner: template }   # NETWORK_WITH_CACHE showcase (FRED + World Bank)
+    - { id: emi,       owner: template }   # MEMORY_ONLY showcase
+    - { id: exchange,  owner: template }   # NETWORK_ONLY showcase
+    - { id: profile,   owner: template }   # MEMORY_ONLY showcase
+    - { id: watchlist, owner: template }   # OFFLINE_LOCAL_ONLY showcase
+    # demo:end
+    # `prefs` backs UserDataStore, which the template's settings/profile surfaces depend on. It is
+    # template-authored but a clean fork KEEPS it, which under this two-value vocabulary is `fork`.
+    - { id: prefs,     owner: fork }
+
+  # ── Store5 stores — the SINGLE declaration behind three generated surfaces ────────────────
+  #
+  # `./gradlew syncForkConfig` derives ALL of the following from these rows; none is hand-written:
+  #   1. config/AppStoreRegistry.kt      — the qualifier per store + its TTL
+  #   2. di/GeneratedStoreBindings.kt    — the Koin `single(qualifier) { provider(...) }`
+  #   3. the StoreCacheManager logout registration inside that same generated module
+  #
+  # (3) is why this is worth generating rather than hand-wiring. Registering a store for logout
+  # purge was a SECOND hand-maintained list, and forgetting it leaks the previous user's cached rows
+  # into the next session on a shared device. `store-logout-purge.sh` (LP-1) exists precisely because
+  # that could be forgotten; deriving both lists from one row makes the drift impossible rather than
+  # merely detected.
+  #
+  # deps: the provider's PARAMETER NAMES, emitted as named arguments (`provider(api = get(), ...)`).
+  #   Named rather than positional so a provider gaining a parameter fails to compile loudly instead
+  #   of silently binding the wrong dependency to the wrong slot.
+  # logout: false for `*Mutable` stores — Store5 5.1's MutableStore is not a `Store` subtype, so
+  #   StoreCacheManagerImpl.register cannot take one. Their DATA is still purged: each shares a Room
+  #   table with its read store, whose deleteAll wipes it.
+  # owner: template = demo showcase (stripped by remove-demo.sh) · fork = survives a clean.
+  stores:
+    # demo:begin
+    - id: exchangeRates
+      qualifier: ExchangeRates
+      owner: template
+      provider: kpt.core.store.currency.impl.provideExchangeRatesStore
+      deps: [api, networkMonitor, dao]
+      ttl: 5m
+      logout: true
+      cache_keys:
+        - { fn: of, key: "currency:exchangeRates:{baseCurrency}", params: [{ name: baseCurrency, type: String }] }
+    - id: rateHistory
+      qualifier: RateHistory
+      owner: template
+      provider: kpt.core.store.currency.impl.provideRateHistoryStore
+      deps: [api, networkMonitor, dao]
+      ttl: 1h
+      logout: true
+      cache_keys:
+        - { fn: of, key: "currency:rateHistory:{from}-{to}-{days}d", params: [{ name: from, type: String }, { name: to, type: String }, { name: days, type: Int }] }
+    - id: coinMarkets
+      qualifier: CoinMarkets
+      owner: template
+      provider: kpt.core.store.crypto.impl.provideCoinMarketsStore
+      deps: [api, networkMonitor, dao]
+      ttl: 2m
+      logout: true
+      cache_keys:
+      cache_keys:
+        - { name: LIST, key: "crypto:coinMarkets" }
+    - id: coinDetail
+      qualifier: CoinDetail
+      owner: template
+      provider: kpt.core.store.crypto.impl.provideCoinDetailStore
+      deps: [api, networkMonitor, dao]
+      ttl: 5m
+      logout: true
+      cache_keys:
+        - { fn: item, key: "crypto:coinDetail:{coinId}", params: [{ name: coinId, type: String }] }
+    - id: cloudTodo
+      qualifier: CloudTodo
+      owner: template
+      provider: kpt.core.store.cloudtodo.impl.provideCloudTodoReadStore
+      deps: [api, dao]
+      logout: true
+      cache_keys:
+        - { fn: item, key: "cloudTodo:{id}", params: [{ name: id, type: Int }] }
+    - id: cloudTodoMutable
+      qualifier: CloudTodoMutable
+      owner: template
+      provider: kpt.core.store.cloudtodo.impl.provideCloudTodoStore
+      deps: [api, dao, bookkeeper]
+      logout: false
+    - id: interestRateSeries
+      qualifier: InterestRateSeries
+      owner: template
+      provider: kpt.core.store.economic.impl.provideInterestRateSeriesStore
+      deps: [api, config, networkMonitor, dao]
+      ttl: 24h
+      logout: true
+      cache_keys:
+        - { fn: of, key: "economic:rates:{seriesId}:{days}d", params: [{ name: seriesId, type: String }, { name: days, type: Int }] }
+    - id: macroIndicator
+      qualifier: MacroIndicator
+      owner: template
+      provider: kpt.core.store.economic.impl.provideMacroIndicatorStore
+      deps: [api, networkMonitor]
+      ttl: 7d
+      logout: true
+      cache_keys:
+        - { fn: of, key: "economic:macro:{countryCode}:{indicator}:{years}y", params: [{ name: countryCode, type: String }, { name: indicator, type: String }, { name: years, type: Int }] }
+    - id: spotRate
+      qualifier: SpotRate
+      owner: template
+      provider: kpt.core.store.exchange.impl.provideSpotRateLookupStore
+      deps: [api, networkMonitor, dao]
+      logout: true
+      cache_keys:
+        - { fn: of, key: "currency:spotRate:{baseCurrency}", params: [{ name: baseCurrency, type: String }] }
+    - id: alerts
+      qualifier: Alerts
+      owner: template
+      provider: kpt.core.store.alerts.impl.provideAlertsStore
+      deps: [dao]
+      logout: true
+      cache_keys:
+      cache_keys:
+        - { name: LIST, key: "alerts" }
+    - id: alertsMutable
+      qualifier: AlertsMutable
+      owner: template
+      provider: kpt.core.store.alerts.impl.provideAlertsWriteStore
+      deps: [dao]
+      logout: false
+    - id: watchlist
+      qualifier: Watchlist
+      owner: template
+      provider: kpt.core.store.watchlist.impl.provideWatchlistStore
+      deps: [dao]
+      logout: true
+      cache_keys:
+      cache_keys:
+        - { name: LIST, key: "watchlist" }
+    - id: watchlistMutable
+      qualifier: WatchlistMutable
+      owner: template
+      provider: kpt.core.store.watchlist.impl.provideWatchlistWriteStore
+      deps: [dao]
+      logout: false
+    - id: loans
+      qualifier: Loans
+      owner: template
+      provider: kpt.core.store.banking.impl.provideLoansStore
+      deps: [dao]
+      logout: true
+      cache_keys:
+      cache_keys:
+        - { name: LIST, key: "loans" }
+        - { fn: item, key: "loan:{id}", params: [{ name: id, type: String }] }
+    - id: loansMutable
+      qualifier: LoansMutable
+      owner: template
+      provider: kpt.core.store.banking.impl.provideLoansWriteStore
+      deps: [dao]
+      logout: false
+    - id: billReminders
+      qualifier: BillReminders
+      owner: template
+      provider: kpt.core.store.banking.impl.provideBillRemindersStore
+      deps: [dao]
+      logout: true
+      cache_keys:
+      cache_keys:
+        - { name: LIST, key: "billReminders" }
+        - { fn: item, key: "billReminder:{id}", params: [{ name: id, type: String }] }
+    - id: billRemindersMutable
+      qualifier: BillRemindersMutable
+      owner: template
+      provider: kpt.core.store.banking.impl.provideBillRemindersWriteStore
+      deps: [dao]
+      logout: false
+    - id: emi
+      qualifier: Emi
+      owner: template
+      provider: kpt.core.store.emi.impl.provideEmiStore
+      deps: [compute]
+      logout: true
+    - id: profile
+      qualifier: Profile
+      owner: template
+      provider: kpt.core.store.profile.impl.provideProfileStore
+      deps: [source]
+      logout: true
+    - id: amortizationCalc
+      qualifier: AmortizationCalc
+      owner: template
+      provider: kpt.core.store.calc.impl.provideAmortizationCalcStore
+      deps: [compute]
+      logout: true
+    # demo:end
+    # FRAMEWORK — survives a clean. Its binding used to sit INSIDE the demo fence while its
+    # `prefs/` package sat outside one, so a cleaned fork kept UserDataStore.kt with no binding.
+    - id: userData
+      qualifier: UserData
+      owner: fork
+      provider: kpt.core.store.prefs.impl.provideUserDataStore
+      deps: [source]
+      logout: true
+  # Template-shipped FILES (not whole packages) that a clean fork must not keep. Declared rather
+  # than pattern-matched, so nothing is deleted because of where it happens to sit.
+  #
+  # (DemoCacheKeys.kt used to be listed here. It no longer exists: its keys are rows in `cache_keys`
+  # above, inside the demo fence, so a clean fork simply regenerates AppCacheKeys without them.)
+  template_files: []
+
 org:
   name: Mifos Initiative
   email: team@mifos.org

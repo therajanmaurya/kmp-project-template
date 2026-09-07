@@ -25,6 +25,7 @@ import kpt.core.base.store.screen.emptyIfContent
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.currency.CurrencyRepository
 import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.store.exchange.SpotRateKeys
 
 /**
  * **Archetype showcase: CACHE_ONLY + NETWORK_ONLY**
@@ -35,7 +36,7 @@ import kpt.core.model.demo.currency.ExchangeRates
  * - Offline → [FetchPolicy.CACHE_ONLY]    (read cached value, never call API)
  *
  * The [spotConversionRate] property is the canonical reference implementation for
- * this archetype pattern. See [AppStoreRegistry.SpotRate] for the store registration.
+ * this archetype pattern. See [SpotRateKeys.Qualifier] for the store registration.
  */
 class CurrencyRatesViewModel(
     private val currencyRepository: CurrencyRepository,

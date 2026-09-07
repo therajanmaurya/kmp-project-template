@@ -27,7 +27,7 @@ import kpt.core.data.demo.banking.LoanRepository
 import kpt.core.data.demo.calc.AmortizationCalcRepository
 import kpt.core.model.demo.banking.Loan
 import kpt.core.model.demo.calc.AmortizationBreakdown
-import kpt.core.store.demo.calc.impl.AmortizationCalcParams
+import kpt.core.store.calc.impl.AmortizationCalcParams
 
 /**
  * VM for B3 Amortization Schedule.

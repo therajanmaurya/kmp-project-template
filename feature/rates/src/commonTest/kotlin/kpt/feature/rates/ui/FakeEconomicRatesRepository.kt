@@ -19,7 +19,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.demo.economic.EconomicRatesRepository
 import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.store.demo.economic.impl.InterestRateSeriesKey
+import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
  * Test double for [EconomicRatesRepository] that drives [InterestRateDetailViewModel]

@@ -23,5 +23,9 @@
     <string name="error_category_auth">เซสชันของคุณหมดอายุ โปรดลงชื่อเข้าใช้อีกครั้ง</string>
     <string name="error_category_ratelimit">มีคำขอมากเกินไป โปรดรอแล้วลองใหม่</string>
     <string name="error_category_server">เซิร์ฟเวอร์ของเรามีปัญหาชั่วคราว ลองอีกครั้งในอีกสักครู่</string>
+    <string name="error_category_timeout_connect">หมดเวลาเชื่อมต่อ ตรวจสอบการเชื่อมต่อแล้วลองใหม่</string>
+    <string name="error_category_timeout_read">เซิร์ฟเวอร์ตอบสนองช้าเกินไป โปรดลองใหม่ในอีกสักครู่</string>
+    <string name="error_category_quota">คุณใช้โควตาครบแล้ว อัปเกรดหรือรอเพื่อดำเนินการต่อ</string>
+    <string name="error_category_client">คำขอล้มเหลว โปรดลองใหม่</string>
     <string name="error_category_generic">เกิดข้อผิดพลาด</string>
 </resources>

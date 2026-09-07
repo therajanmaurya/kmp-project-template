@@ -16,7 +16,7 @@ import kpt.core.base.store.freshness.FreshnessSignal
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.data.demo.economic.EconomicRatesRepository
 import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.store.demo.economic.impl.InterestRateSeriesKey
+import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
  * Per-series stream + refresh seam used by [InterestRatesViewModel].

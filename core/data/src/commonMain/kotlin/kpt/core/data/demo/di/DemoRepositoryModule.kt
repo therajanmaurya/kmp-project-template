@@ -45,10 +45,29 @@ import kpt.core.model.demo.alerts.PriceAlert
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.model.demo.banking.Loan
 import kpt.core.model.demo.banking.LoanCalcScenario
-import kpt.core.store.AppStoreRegistry
-import kpt.core.store.demo.cloudtodo.impl.CLOUD_TODO_KEY_PREFIX
-import kpt.core.store.demo.cloudtodo.impl.CloudTodoKey
-import kpt.core.store.demo.cloudtodo.impl.CloudTodoSyncOrchestrator
+import kpt.core.store.alerts.AlertsKeys
+import kpt.core.store.alerts.AlertsMutableKeys
+import kpt.core.store.banking.BillRemindersKeys
+import kpt.core.store.banking.BillRemindersMutableKeys
+import kpt.core.store.banking.LoansKeys
+import kpt.core.store.banking.LoansMutableKeys
+import kpt.core.store.calc.AmortizationCalcKeys
+import kpt.core.store.cloudtodo.CloudTodoKeys
+import kpt.core.store.cloudtodo.CloudTodoMutableKeys
+import kpt.core.store.cloudtodo.impl.CLOUD_TODO_KEY_PREFIX
+import kpt.core.store.cloudtodo.impl.CloudTodoKey
+import kpt.core.store.cloudtodo.impl.CloudTodoSyncOrchestrator
+import kpt.core.store.crypto.CoinDetailKeys
+import kpt.core.store.crypto.CoinMarketsKeys
+import kpt.core.store.currency.ExchangeRatesKeys
+import kpt.core.store.currency.RateHistoryKeys
+import kpt.core.store.economic.InterestRateSeriesKeys
+import kpt.core.store.economic.MacroIndicatorKeys
+import kpt.core.store.emi.EmiKeys
+import kpt.core.store.exchange.SpotRateKeys
+import kpt.core.store.profile.ProfileKeys
+import kpt.core.store.watchlist.WatchlistKeys
+import kpt.core.store.watchlist.WatchlistMutableKeys
 import org.koin.dsl.module
 import org.mobilenativefoundation.store.store5.Bookkeeper
 
@@ -71,8 +90,8 @@ val DemoRepositoryModule = module {
     // Personal watchlist — local-only persistence for the SubmitHandler showcase.
     single<WatchlistRepository> {
         WatchlistRepositoryImpl(
-            watchlistStore = get(AppStoreRegistry.Watchlist),
-            watchlistWriteStore = get(AppStoreRegistry.WatchlistMutable),
+            watchlistStore = get(WatchlistKeys.Qualifier),
+            watchlistWriteStore = get(WatchlistMutableKeys.Qualifier),
             dao = get(),
         )
     }
@@ -82,15 +101,15 @@ val DemoRepositoryModule = module {
     // polish (saving badge, retry on failure) for a local commit "submit".
     single<LoanRepository> {
         LoanRepositoryImpl(
-            loansStore = get(AppStoreRegistry.Loans),
-            loansWriteStore = get(AppStoreRegistry.LoansMutable),
+            loansStore = get(LoansKeys.Qualifier),
+            loansWriteStore = get(LoansMutableKeys.Qualifier),
             loanDao = get(),
         )
     }
     single<BillReminderRepository> {
         BillReminderRepositoryImpl(
-            billRemindersStore = get(AppStoreRegistry.BillReminders),
-            billRemindersWriteStore = get(AppStoreRegistry.BillRemindersMutable),
+            billRemindersStore = get(BillRemindersKeys.Qualifier),
+            billRemindersWriteStore = get(BillRemindersMutableKeys.Qualifier),
             billReminderDao = get(),
         )
     }
@@ -151,15 +170,15 @@ val DemoRepositoryModule = module {
     // Fintech Repositories
     single<CurrencyRepository> {
         CurrencyRepositoryImpl(
-            exchangeRatesStore = get(AppStoreRegistry.ExchangeRates),
-            rateHistoryStore = get(AppStoreRegistry.RateHistory),
-            spotRateStore = get(AppStoreRegistry.SpotRate),
+            exchangeRatesStore = get(ExchangeRatesKeys.Qualifier),
+            rateHistoryStore = get(RateHistoryKeys.Qualifier),
+            spotRateStore = get(SpotRateKeys.Qualifier),
         )
     }
     single<CryptoRepository> {
         CryptoRepositoryImpl(
-            coinMarketsStore = get(AppStoreRegistry.CoinMarkets),
-            coinDetailStore = get(AppStoreRegistry.CoinDetail),
+            coinMarketsStore = get(CoinMarketsKeys.Qualifier),
+            coinDetailStore = get(CoinDetailKeys.Qualifier),
         )
     }
 
@@ -169,21 +188,21 @@ val DemoRepositoryModule = module {
         RoomBookkeeper(dao = get(), keySerializer = { "$CLOUD_TODO_KEY_PREFIX${it.id}" })
     }
     single<AmortizationCalcRepository> {
-        AmortizationCalcRepositoryImpl(store = get(AppStoreRegistry.AmortizationCalc))
+        AmortizationCalcRepositoryImpl(store = get(AmortizationCalcKeys.Qualifier))
     }
 
     single<ProfileRepository> {
-        ProfileRepositoryImpl(profileStore = get(AppStoreRegistry.Profile))
+        ProfileRepositoryImpl(profileStore = get(ProfileKeys.Qualifier))
     }
 
     single<EmiCalculatorRepository> {
-        EmiCalculatorRepositoryImpl(emiStore = get(AppStoreRegistry.Emi))
+        EmiCalculatorRepositoryImpl(emiStore = get(EmiKeys.Qualifier))
     }
 
     single<CloudTodoRepository> {
         CloudTodoRepositoryImpl(
-            readStore = get(AppStoreRegistry.CloudTodo),
-            writeStore = get(AppStoreRegistry.CloudTodoMutable),
+            readStore = get(CloudTodoKeys.Qualifier),
+            writeStore = get(CloudTodoMutableKeys.Qualifier),
             gateway = get(),
         )
     }
@@ -210,12 +229,12 @@ val DemoRepositoryModule = module {
     // Economic Repositories (Banking Utility Toolkit — FRED + World Bank)
     single<EconomicRatesRepository> {
         EconomicRatesRepositoryImpl(
-            interestRateSeriesStore = get(AppStoreRegistry.InterestRateSeries),
+            interestRateSeriesStore = get(InterestRateSeriesKeys.Qualifier),
         )
     }
     single<MacroIndicatorsRepository> {
         MacroIndicatorsRepositoryImpl(
-            macroIndicatorStore = get(AppStoreRegistry.MacroIndicator),
+            macroIndicatorStore = get(MacroIndicatorKeys.Qualifier),
         )
     }
 
@@ -223,8 +242,8 @@ val DemoRepositoryModule = module {
     // AlertsStore is the source of truth; AlertDao is the write target.
     single<AlertsRepository> {
         AlertsRepositoryImpl(
-            alertsStore = get(AppStoreRegistry.Alerts),
-            alertsWriteStore = get(AppStoreRegistry.AlertsMutable),
+            alertsStore = get(AlertsKeys.Qualifier),
+            alertsWriteStore = get(AlertsMutableKeys.Qualifier),
         )
     }
 

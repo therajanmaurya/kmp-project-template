@@ -15,7 +15,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.alerts.AlertsRepository
 import kpt.core.model.demo.alerts.PriceAlert
-import kpt.core.store.demo.DemoCacheKeys
+import kpt.core.store.alerts.AlertsKeys
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreWriteRequest
@@ -37,7 +37,7 @@ internal class AlertsRepositoryImpl(
     override fun alertsStream(scope: CoroutineScope): ScreenDataStream<List<PriceAlert>> =
         alertsStore.asScreenStream(
             key = Unit,
-            cacheKey = DemoCacheKeys.ALERTS,
+            cacheKey = AlertsKeys.LIST,
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
             isEmpty = { it.isEmpty() },

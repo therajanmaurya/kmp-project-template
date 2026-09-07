@@ -31,7 +31,7 @@ import kpt.core.data.demo.currency.CurrencyRepository
 import kpt.core.data.demo.economic.EconomicRatesRepository
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.model.demo.currency.ExchangeRates
-import kpt.core.store.demo.economic.impl.InterestRateSeriesKey
+import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
  * **Home dashboard ViewModel.**

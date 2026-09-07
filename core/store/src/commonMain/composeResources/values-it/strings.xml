@@ -23,5 +23,9 @@
     <string name="error_category_auth">La tua sessione è scaduta. Accedi di nuovo.</string>
     <string name="error_category_ratelimit">Troppe richieste. Attendi e riprova.</string>
     <string name="error_category_server">I nostri server hanno un problema momentaneo. Riprova tra poco.</string>
+    <string name="error_category_timeout_connect">Timeout di connessione. Controlla la connessione e riprova.</string>
+    <string name="error_category_timeout_read">Il server ha impiegato troppo tempo a rispondere. Riprova a breve.</string>
+    <string name="error_category_quota">Hai raggiunto la quota. Esegui l\'upgrade o attendi per continuare.</string>
+    <string name="error_category_client">Richiesta non riuscita. Riprova.</string>
     <string name="error_category_generic">Qualcosa è andato storto</string>
 </resources>

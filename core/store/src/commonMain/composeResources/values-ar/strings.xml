@@ -23,5 +23,9 @@
     <string name="error_category_auth">انتهت جلستك. يُرجى تسجيل الدخول مرة أخرى.</string>
     <string name="error_category_ratelimit">طلبات كثيرة جدًا. يُرجى الانتظار ثم المحاولة.</string>
     <string name="error_category_server">خوادمنا تواجه مشكلة مؤقتة. حاول بعد قليل.</string>
+    <string name="error_category_timeout_connect">انتهت مهلة الاتصال. تحقّق من اتصالك وحاول مجددًا.</string>
+    <string name="error_category_timeout_read">استغرق الخادم وقتًا طويلاً للرد. حاول مجددًا بعد قليل.</string>
+    <string name="error_category_quota">لقد بلغت الحد المسموح. قم بالترقية أو انتظر للمتابعة.</string>
+    <string name="error_category_client">فشل الطلب. يُرجى المحاولة مرة أخرى.</string>
     <string name="error_category_generic">حدث خطأ ما</string>
 </resources>

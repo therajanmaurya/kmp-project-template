@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.store.demo.economic.impl.InterestRateSeriesKey
+import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
  * Repository surface for FRED-sourced interest-rate time series.

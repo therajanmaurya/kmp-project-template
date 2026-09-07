@@ -12,7 +12,7 @@ package kpt.core.data.demo.emi
 import kotlinx.coroutines.CoroutineScope
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.model.demo.emi.EmiResult
-import kpt.core.store.demo.emi.impl.EmiParams
+import kpt.core.store.emi.impl.EmiParams
 
 /**
  * Read surface for the EMI calculator (`calculator_pure`, MEMORY_ONLY).

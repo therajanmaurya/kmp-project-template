@@ -23,7 +23,7 @@ import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.emi.EmiCalculatorRepository
 import kpt.core.model.demo.emi.EmiResult
-import kpt.core.store.demo.emi.impl.EmiParams
+import kpt.core.store.emi.impl.EmiParams
 
 /**
  * EMI calculator — the `calculator_pure` combo on the DYNAMIC-KEY read shape.

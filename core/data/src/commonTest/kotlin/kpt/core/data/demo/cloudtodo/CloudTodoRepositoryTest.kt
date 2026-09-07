@@ -21,9 +21,9 @@ import kpt.core.database.cloudtodo.CloudTodoEntity
 import kpt.core.model.demo.cloudtodo.CloudTodo
 import kpt.core.network.jsonplaceholder.api.JsonPlaceholderApi
 import kpt.core.network.jsonplaceholder.dto.CloudTodoDto
-import kpt.core.store.demo.cloudtodo.impl.CloudTodoKey
-import kpt.core.store.demo.cloudtodo.impl.provideCloudTodoReadStore
-import kpt.core.store.demo.cloudtodo.impl.provideCloudTodoStore
+import kpt.core.store.cloudtodo.impl.CloudTodoKey
+import kpt.core.store.cloudtodo.impl.provideCloudTodoReadStore
+import kpt.core.store.cloudtodo.impl.provideCloudTodoStore
 import org.mobilenativefoundation.store.store5.Bookkeeper
 import kotlin.test.Test
 import kotlin.test.assertEquals

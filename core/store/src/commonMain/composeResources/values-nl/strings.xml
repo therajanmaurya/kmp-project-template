@@ -23,5 +23,9 @@
     <string name="error_category_auth">Je sessie is verlopen. Meld je opnieuw aan.</string>
     <string name="error_category_ratelimit">Te veel verzoeken. Wacht even en probeer het opnieuw.</string>
     <string name="error_category_server">Onze servers hebben even een probleem. Probeer het zo weer.</string>
+    <string name="error_category_timeout_connect">Verbindingstime-out. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="error_category_timeout_read">De server deed er te lang over om te antwoorden. Probeer het zo opnieuw.</string>
+    <string name="error_category_quota">Je quotum is bereikt. Upgrade of wacht om door te gaan.</string>
+    <string name="error_category_client">Verzoek mislukt. Probeer het opnieuw.</string>
     <string name="error_category_generic">Er is iets misgegaan</string>
 </resources>

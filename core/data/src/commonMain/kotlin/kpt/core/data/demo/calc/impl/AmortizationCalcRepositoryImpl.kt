@@ -15,7 +15,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.calc.AmortizationCalcRepository
 import kpt.core.model.demo.calc.AmortizationBreakdown
-import kpt.core.store.demo.calc.impl.AmortizationCalcParams
+import kpt.core.store.calc.impl.AmortizationCalcParams
 import org.mobilenativefoundation.store.store5.Store
 
 /**

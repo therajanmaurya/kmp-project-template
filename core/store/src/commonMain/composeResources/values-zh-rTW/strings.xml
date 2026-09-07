@@ -23,5 +23,9 @@
     <string name="error_category_auth">您的工作階段已過期，請重新登入。</string>
     <string name="error_category_ratelimit">請求過於頻繁，請稍候再試。</string>
     <string name="error_category_server">我們的伺服器暫時異常，請稍後再試。</string>
+    <string name="error_category_timeout_connect">連線逾時。請檢查網路後重試。</string>
+    <string name="error_category_timeout_read">伺服器回應時間過長。請稍後再試。</string>
+    <string name="error_category_quota">已達配額上限。請升級或稍候繼續。</string>
+    <string name="error_category_client">請求失敗。請重試。</string>
     <string name="error_category_generic">發生錯誤</string>
 </resources>

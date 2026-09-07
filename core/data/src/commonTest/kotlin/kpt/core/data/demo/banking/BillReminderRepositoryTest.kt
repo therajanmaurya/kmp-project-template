@@ -23,8 +23,8 @@ import kpt.core.data.infra.onlineNetworkMonitor
 import kpt.core.model.demo.banking.BillCategory
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.model.demo.banking.Recurrence
-import kpt.core.store.demo.banking.impl.provideBillRemindersStore
-import kpt.core.store.demo.banking.impl.provideBillRemindersWriteStore
+import kpt.core.store.banking.impl.provideBillRemindersStore
+import kpt.core.store.banking.impl.provideBillRemindersWriteStore
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module

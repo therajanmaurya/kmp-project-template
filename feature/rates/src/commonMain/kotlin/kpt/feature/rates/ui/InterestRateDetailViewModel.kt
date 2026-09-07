@@ -18,7 +18,7 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.ui.viewmodel.BaseViewModel
 import kpt.core.data.demo.economic.EconomicRatesRepository
 import kpt.core.model.demo.economic.InterestRateSeries
-import kpt.core.store.demo.economic.impl.InterestRateSeriesKey
+import kpt.core.store.economic.impl.InterestRateSeriesKey
 
 /**
  * ViewModel for the per-series detail screen. Streams the full 365-day window

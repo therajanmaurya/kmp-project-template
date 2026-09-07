@@ -226,15 +226,21 @@ CS_PLACEHOLDER_RE='(^|[[:space:]])#[[:space:]]*PLACEHOLDER|com\.example\.app|App
 #                  (any key the fork lacks is inherited from the template schema).
 #   fork wins:     any AppProfile::MAP identity/org/store scalar whose fork value is
 #                  NON-placeholder (classified via the MAP key set + CS_PLACEHOLDER_RE);
-#                  plus a fork's own network.access_points[] entries win by `id`, while
-#                  template-only demo access-points are appended (union-by-id).
+#                  plus a fork's own rows in any UNION LIST win by identity, while template-only
+#                  rows are appended (union-by-identity). Union lists + their identity field:
+#                  network.access_points/id · core_store.stores/id · core_store.packages/id ·
+#                  core_store.cache_keys/name|fn · database.daos/name · database.type_converters/*.
+#                  This was `access_points` ONLY: every other list came from the template wholesale,
+#                  so a fork that declared its own store, cache key, DAO or package silently LOST it
+#                  on the next sync — and the generated Kotlin then faithfully regenerated without it,
+#                  with no merge conflict to notice.
 # TRUE 3-WAY (diff3): the template supplies the schema/keys/defaults (THEIRS, emitted as the
 # structure), and the fork WINS every leaf it changed from the BASE — the template state the fork
 # LAST SYNCED FROM (.template-version#template_sha). That is: identity scalars (MAP) win as before,
 # AND any other key the fork customized (OURS[path] != BASE[path]) is PRESERVED, while keys the fork
 # left at the template default follow the template. So a fork's NON-identity customization survives a
 # sync (the 2-way overlay used to revert it to the new template default). `base` absent → falls back
-# to the identity-only 2-way (a never-synced fork has no ancestor). access_points union-by-id unchanged.
+# to the identity-only 2-way (a never-synced fork has no ancestor). Union-by-identity unchanged.
 #   cs_merge_yaml_schema <ours=fork> <base> <theirs=template> [<out>]
 #   returns 0 merged-clean · 2 error
 cs_merge_yaml_schema() {
@@ -279,8 +285,8 @@ cs_merge_yaml_schema() {
 
   local tmp; tmp="$(mktemp)"
   # Two-file awk: FIRST pass indexes the fork (scalar leaves by dotted path + its
-  # access_points block); SECOND pass emits the template as the schema base, overlaying
-  # fork-won scalars and unioning access_points by id.
+  # union lists); SECOND pass emits the template as the schema base, overlaying fork-won
+  # scalars and unioning every declared list by its identity field.
   awk -v mapf="$mapfile" -v ph="$CS_PLACEHOLDER_RE" '
     function spaces(n,   s){ s=""; while(n-->0) s=s" "; return s }
     function lead(s,   n){ n=0; while(substr(s,n+1,1)==" ") n++; return n }
@@ -293,11 +299,40 @@ cs_merge_yaml_schema() {
       p=skey[1]; for (i=2;i<=sp;i++) p=p"."skey[i]
       return p
     }
-    # flush the currently-buffered TEMPLATE access_point item, emitting it ONLY when its
-    # id is not already provided by the fork (template-only demo access-points win).
+    # Identity field per union list. NOT every list keys on `id`: daos are {name,type}, cache_keys
+    # are either a constant (`name`) or a builder (`fn`), and type_converters are bare FQN strings
+    # with no field at all ("*" = the whole value is the identity).
+    function union_spec(k){
+      if (k=="access_points") return "id"
+      if (k=="stores")        return "id"
+      if (k=="packages")      return "id"
+      if (k=="cache_keys")    return "name|fn"
+      if (k=="daos")          return "name"
+      if (k=="type_converters") return "*"
+      return ""
+    }
+    # Row identity, for BOTH yaml shapes this file mixes: block rows (`- id: main`, as
+    # access_points use) and inline maps (`- { id: alerts, owner: template }`, as every list added
+    # later uses). Matching only the block form is why generalising by key name alone is not enough.
+    function rowid(c, spec,   n, arr, i, f, v){
+      if (spec=="*") { v=c; sub(/^-[ ]*/,"",v); return stripc(v) }
+      n=split(spec, arr, "|")
+      for (i=1;i<=n;i++) {
+        f=arr[i]
+        if (match(c, "[{,][ ]*" f "[ ]*:[ ]*[^,}]+")) {          # inline map
+          v=substr(c, RSTART, RLENGTH); sub("^[{,][ ]*" f "[ ]*:[ ]*", "", v); return stripc(v)
+        }
+        if (match(c, "^-?[ ]*" f "[ ]*:")) {                      # block row / continuation
+          v=c; sub("^-?[ ]*" f "[ ]*:[ ]*", "", v); return stripc(v)
+        }
+      }
+      return ""
+    }
+    # flush the currently-buffered TEMPLATE list item, emitting it ONLY when its identity is not
+    # already provided by the fork (so template-only rows are appended, fork rows win).
     function ap_flush(   i){
       if (nib>0) {
-        if (!(curid in forkid)) for (i=1;i<=nib;i++) print ap_itembuf[i]
+        if (!((apkey SUBSEP curid) in forkid)) for (i=1;i<=nib;i++) print ap_itembuf[i]
         nib=0; curid=""
       }
     }
@@ -310,18 +345,18 @@ cs_merge_yaml_schema() {
       if (line ~ /^[ ]*#/ || line ~ /^[ ]*$/) next
       ind=lead(line); content=line; sub(/^[ ]+/,"",content)
       if (ap) {
-        if (ind<=ap_ind) { ap=0 }              # dedent → end of fork access_points
+        if (ind<=ap_ind) { ap=0 }              # dedent → end of this fork list
         else {
-          apforkbuf[++nfb]=line                # preserve the fork endpoint verbatim
-          if (content ~ /^-[ ]+id:/)     { idv=content; sub(/^-[ ]+id:[ ]*/,"",idv); forkid[stripc(idv)]=1 }
-          else if (content ~ /^id:/)     { idv=content; sub(/^id:[ ]*/,"",idv);      forkid[stripc(idv)]=1 }
+          forkbuf[apkey, ++nfb[apkey]]=line    # preserve the fork row verbatim
+          idv=rowid(content, union_spec(apkey))
+          if (idv!="") forkid[apkey, idv]=1
           next
         }
       }
       if (content ~ /^- /) next
       if (content ~ /:/) {
         k=keyof(line); r=restof(line); p=pathpush(ind,k)
-        if (k=="access_points") { ap=1; ap_ind=ind; next }
+        if (union_spec(k)!="") { ap=1; ap_ind=ind; apkey=k; next }
         if (r!="" && r !~ /^[|>]/) {           # scalar leaf
           forkval[p]=stripc(r)
           forkph[p]=(line ~ ph) ? 1 : 0
@@ -336,24 +371,24 @@ cs_merge_yaml_schema() {
       if (line ~ /^[ ]*#/ || line ~ /^[ ]*$/) { if (ap) next; print line; next }
       ind=lead(line); content=line; sub(/^[ ]+/,"",content)
       if (ap) {
-        if (ind<=ap_ind) { ap_flush(); ap=0 }  # end of template access_points → fall through
+        if (ind<=ap_ind) { ap_flush(); ap=0 }  # end of template list → fall through
         else {
           if (content ~ /^- /) {
             ap_flush(); ap_itembuf[++nib]=line
-            if (content ~ /^-[ ]+id:/) { curid=content; sub(/^-[ ]+id:[ ]*/,"",curid); curid=stripc(curid) }
+            idv=rowid(content, union_spec(apkey)); if (idv!="") curid=idv
           } else {
             ap_itembuf[++nib]=line
-            if (content ~ /^id:/) { curid=content; sub(/^id:[ ]*/,"",curid); curid=stripc(curid) }
+            idv=rowid(content, union_spec(apkey)); if (idv!="") curid=idv
           }
           next
         }
       }
       if (content ~ /:/) {
         k=keyof(line); r=restof(line); p=pathpush(ind,k)
-        if (k=="access_points") {
-          print line                            # the access_points: header
-          for (i=1;i<=nfb;i++) print apforkbuf[i]   # fork endpoints preserved (win by id)
-          ap=1; ap_ind=ind; nib=0; curid=""
+        if (union_spec(k)!="") {
+          print line                            # the list header
+          for (i=1;i<=nfb[k];i++) print forkbuf[k, i]   # fork rows preserved (win by identity)
+          ap=1; ap_ind=ind; apkey=k; nib=0; curid=""
           next
         }
         if (r!="" && r !~ /^[|>]/ && (p in forkwins) && (p in forkval) && forkph[p]==0) {

@@ -28,8 +28,8 @@ archetypes:
     factory: createStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/currency/impl/ExchangeRatesStore.kt
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/economic/impl/InterestRateSeriesStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/currency/impl/ExchangeRatesStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/economic/impl/InterestRateSeriesStore.kt
 
   NETWORK_ONLY:
     factory: createStore
@@ -39,23 +39,23 @@ archetypes:
       network-first via `fresh(fallBackToSourceOfTruth = true)`; the cache is a failure fallback
       only. Deliberate — do not "fix" to CACHE_FIRST_SWR, that deletes this archetype's showcase.
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/exchange/impl/SpotRateLookupStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/exchange/impl/SpotRateLookupStore.kt
 
   CACHE_ONLY:
     factory: createOfflineStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/banking/impl/LoansStore.kt
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/banking/impl/BillRemindersStore.kt
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/alerts/impl/AlertsStore.kt
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/watchlist/impl/WatchlistStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/banking/impl/LoansStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/banking/impl/BillRemindersStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/alerts/impl/AlertsStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/watchlist/impl/WatchlistStore.kt
 
   OFFLINE_LOCAL_ONLY:
     factory: createOfflineMutableStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/alerts/impl/AlertsStore.kt
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/banking/impl/LoansStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/alerts/impl/AlertsStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/banking/impl/LoansStore.kt
 
   MEMORY_ONLY:
     factory: createMemoryStore
@@ -66,22 +66,22 @@ archetypes:
       TTL with an annual publishing cadence. Deliberate — converting this to Room deletes the only
       MEMORY_ONLY showcase in the template.
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/economic/impl/MacroIndicatorStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/economic/impl/MacroIndicatorStore.kt
 
   PERIODIC:
     factory: createStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/currency/impl/ExchangeRatesStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/currency/impl/ExchangeRatesStore.kt
 
   LOAD_ONCE:
     factory: createOfflineStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/banking/impl/LoansStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/banking/impl/LoansStore.kt
 
   MUTABLE:
     factory: createMutableStore
     cache_first: true
     showcases:
-      - core/store/src/commonMain/kotlin/kpt/core/store/demo/cloudtodo/impl/CloudTodoStore.kt
+      - core/store/src/commonMain/kotlin/kpt/core/store/cloudtodo/impl/CloudTodoStore.kt

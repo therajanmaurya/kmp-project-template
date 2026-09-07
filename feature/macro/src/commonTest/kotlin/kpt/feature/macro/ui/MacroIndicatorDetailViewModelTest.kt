@@ -30,7 +30,7 @@ import kpt.core.data.demo.economic.MacroIndicatorsRepository
 import kpt.core.model.demo.economic.IndicatorKind
 import kpt.core.model.demo.economic.IndicatorObservation
 import kpt.core.model.demo.economic.MacroIndicator
-import kpt.core.store.demo.economic.impl.MacroIndicatorKey
+import kpt.core.store.economic.impl.MacroIndicatorKey
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

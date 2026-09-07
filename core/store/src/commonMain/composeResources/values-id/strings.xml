@@ -23,5 +23,9 @@
     <string name="error_category_auth">Sesi Anda berakhir. Silakan masuk lagi.</string>
     <string name="error_category_ratelimit">Terlalu banyak permintaan. Harap tunggu dan coba lagi.</string>
     <string name="error_category_server">Server kami sedang bermasalah. Coba lagi sebentar lagi.</string>
+    <string name="error_category_timeout_connect">Waktu koneksi habis. Periksa koneksi Anda dan coba lagi.</string>
+    <string name="error_category_timeout_read">Server terlalu lama merespons. Coba lagi sebentar lagi.</string>
+    <string name="error_category_quota">Kuota Anda telah habis. Tingkatkan paket atau tunggu untuk melanjutkan.</string>
+    <string name="error_category_client">Permintaan gagal. Silakan coba lagi.</string>
     <string name="error_category_generic">Terjadi kesalahan</string>
 </resources>

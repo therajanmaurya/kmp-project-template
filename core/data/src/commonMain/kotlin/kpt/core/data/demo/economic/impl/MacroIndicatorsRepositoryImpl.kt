@@ -24,8 +24,8 @@ import kpt.core.base.store.screen.requireData
 import kpt.core.data.demo.economic.MacroIndicatorsRepository
 import kpt.core.model.demo.economic.IndicatorKind
 import kpt.core.model.demo.economic.MacroIndicator
-import kpt.core.store.demo.DemoCacheKeys
-import kpt.core.store.demo.economic.impl.MacroIndicatorKey
+import kpt.core.store.economic.MacroIndicatorKeys
+import kpt.core.store.economic.impl.MacroIndicatorKey
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.StoreReadResponse
@@ -50,7 +50,7 @@ class MacroIndicatorsRepositoryImpl(
         fetchPolicy: FetchPolicy,
     ): ScreenDataStream<MacroIndicator> = macroIndicatorStore.asScreenStream(
         key = key,
-        cacheKey = DemoCacheKeys.macroIndicator(key.countryCode, key.indicator.name, key.years),
+        cacheKey = MacroIndicatorKeys.of(key.countryCode, key.indicator.name, key.years),
         scope = scope,
         fetchPolicy = fetchPolicy,
     )

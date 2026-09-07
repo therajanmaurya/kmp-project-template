@@ -20,8 +20,8 @@ import kpt.core.data.infra.InMemoryFetchedAtRepository
 import kpt.core.data.infra.onlineNetworkMonitor
 import kpt.core.model.demo.alerts.AlertDirection
 import kpt.core.model.demo.alerts.PriceAlert
-import kpt.core.store.demo.alerts.impl.provideAlertsStore
-import kpt.core.store.demo.alerts.impl.provideAlertsWriteStore
+import kpt.core.store.alerts.impl.provideAlertsStore
+import kpt.core.store.alerts.impl.provideAlertsWriteStore
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module

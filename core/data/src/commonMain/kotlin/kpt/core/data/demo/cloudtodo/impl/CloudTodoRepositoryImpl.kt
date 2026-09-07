@@ -17,8 +17,8 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.cloudtodo.CloudTodoRepository
 import kpt.core.model.demo.cloudtodo.CloudTodo
-import kpt.core.store.demo.DemoCacheKeys
-import kpt.core.store.demo.cloudtodo.impl.CloudTodoKey
+import kpt.core.store.cloudtodo.CloudTodoKeys
+import kpt.core.store.cloudtodo.impl.CloudTodoKey
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreWriteRequest
@@ -37,7 +37,7 @@ class CloudTodoRepositoryImpl(
     override fun todoStream(id: Int, scope: CoroutineScope): ScreenDataStream<CloudTodo> =
         readStore.asScreenStream(
             key = CloudTodoKey(id),
-            cacheKey = DemoCacheKeys.cloudTodo(id),
+            cacheKey = CloudTodoKeys.item(id),
             scope = scope,
         )
 
