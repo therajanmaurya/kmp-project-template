@@ -29,7 +29,7 @@ import org.mobilenativefoundation.store.store5.Store
  * Build a network-backed [Store] for spot (current) exchange-rate lookups.
  *
  * This store is architecturally identical to the main exchange-rates store but
- * is registered under [kpt.core.store.config.SpotRateKeys.Qualifier] so that
+ * is registered under [kpt.core.store.config.AppStoreRegistry.SpotRate] so that
  * consumers can apply a [kpt.core.base.store.screen.FetchPolicy.NETWORK_ONLY]
  * at the stream callsite — forcing a fresh fetch for point-in-time rate queries
  * (e.g., transaction conversion preview) rather than serving cached data.

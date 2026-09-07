@@ -28,7 +28,7 @@ import kpt.core.model.demo.economic.InterestRateSeries
 import kpt.core.model.demo.economic.RateObservation
 import kpt.core.network.fred.api.FredApi
 import kpt.core.network.fred.config.FredApiConfig
-import kpt.core.store.economic.InterestRateSeriesKeys
+import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
@@ -54,7 +54,7 @@ fun provideInterestRateSeriesStore(
     networkMonitor: NetworkMonitor,
     dao: InterestRateSeriesDao,
 ): Store<InterestRateSeriesKey, InterestRateSeries> {
-    val validator = DefaultValidator.withTtl<InterestRateSeries>(InterestRateSeriesKeys.TTL)
+    val validator = DefaultValidator.withTtl<InterestRateSeries>(AppStoreRegistry.Ttl.INTEREST_RATE_SERIES)
     return StoreFactory.createStore(
         fetcher = Fetcher.of { key: InterestRateSeriesKey ->
             val apiKey = config.apiKey

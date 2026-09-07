@@ -26,7 +26,7 @@ import kpt.core.database.di.DatabaseModule
 import kpt.core.datastore.UserPreferencesRepository
 import kpt.core.datastore.di.DatastoreModule
 import kpt.core.network.di.NetworkModule
-import kpt.core.store.prefs.UserDataKeys
+import kpt.core.store.config.AppStoreRegistry
 import kpt.core.store.prefs.impl.UserDataSource
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -51,7 +51,7 @@ val DataModule = module {
     single<UserDataRepository> {
         UserDataRepositoryImpl(
             preferencesRepository = get(),
-            userDataStore = get(UserDataKeys.Qualifier),
+            userDataStore = get(AppStoreRegistry.UserData),
         )
     }
 

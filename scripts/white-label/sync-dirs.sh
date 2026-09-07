@@ -275,7 +275,8 @@ is_excluded() {
         */demo)                         return 0 ;;  # a demo/ dir itself
         core/store/*AppScreenStateDefaults.kt) return 0 ;;  # fork seam (D8)
         core/store/*AppErrorMapper.kt)         return 0 ;;
-        core/store/*AppStoreRegistry.kt)       return 0 ;;
+        core/store/*ProjectErrorMapper.kt)      return 0 ;;
+        core/store/*ProjectScreenStateDefaults.kt) return 0 ;;
         core/store/*StoreModule.kt)            return 0 ;;
         */schemas/*)                    return 0 ;;  # Room schema-export snapshots (per-fork
             # migration/version history — every fork's AppDatabase.VERSION + entity set diverges

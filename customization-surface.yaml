@@ -245,35 +245,27 @@ rules:
   # These were previously the template files themselves (AppErrorMapper / AppScreenStateDefaults
   # marked owner:fork because each carried a `TODO(fork)` extension point inside it), which meant a
   # fork that customised one branch stopped receiving upstream fixes to the whole file.
-  - glob: "core/store/**/kpt/core/store/ProjectErrorMapper.kt"
+  - glob: "core/store/**/ProjectErrorMapper.kt"
     owner: fork
-  - glob: "core/store/**/kpt/core/store/ProjectScreenStateDefaults.kt"
+  - glob: "core/store/**/ProjectScreenStateDefaults.kt"
     owner: fork
   # The template's definition surface — full-copied on a sync so forks get upstream improvements.
   - glob: "core/store/**/config/AppErrorMapper.kt"
     owner: template
   - glob: "core/store/**/config/AppScreenStateDefaults.kt"
     owner: template
-  # GENERATED whole-file by syncForkConfig from app-profile#core_store.stores — fork-owned for the
-  # same reason GeneratedApiBindings is: a sync must never replace a fork's own store registry and
-  # bindings with the template's. Nothing is lost by not syncing them; they are fully derived and
-  # `./gradlew syncForkConfig` rebuilds both.
-  - glob: "core/store/**/config/AppStoreRegistry.kt"
-    owner: fork
-  - glob: "core/store/**/di/GeneratedStoreBindings.kt"
-    owner: fork
+  # AppStoreRegistry.kt / AppCacheKeys.kt / GeneratedStoreBindings.kt have NO row — deliberately.
+  # They were `owner: fork` while syncForkConfig wrote them into committed source. They are now KSP
+  # BUILD ARTIFACTS emitted from the `@StoreProvider` / `@CacheKey` annotations into
+  # `core/store/build/generated/ksp/…`, so there is no committed file for a sync to copy, merge, or
+  # own. Re-adding a row would be a dead glob (`--verify` zero-match) — the declaration IS the
+  # annotation on the provider fn, and that provider file is already covered by the rows below.
   # StoreModule.kt is TEMPLATE-owned again. It used to be owner:fork because ~30 hand-written store
   # bindings lived in it, which meant a fork never received upstream fixes to the framework wiring
   # it also contains (CoreBaseStoreModule, StoreCacheManager, DraftInventory). With the bindings
   # generated into GeneratedStoreBindings, nothing fork-specific is left and a sync can full-copy it.
   - glob: "core/store/**/di/StoreModule.kt"
     owner: template
-  # GENERATED whole-file from app-profile#core_store.cache_keys — fork-owned like the other derived
-  # surfaces. It was briefly declared owner:template while its own KDoc told forks to add their keys
-  # to it: a file both sides write to is a merge on every sync, which is what this contract exists to
-  # prevent. Generating it removes the merge rather than arbitrating it.
-  - glob: "core/store/**/config/AppCacheKeys.kt"
-    owner: fork
   # core/store demo showcases — the DISTINCT `demo-showcase` class: template-SHIPPED, demo-only,
   # updatable on sync, and deleted by `remove-demo.sh --clean` per their `owner: template` row in
   # app-profile/app.yaml#core_store.packages[]. Listed explicitly because the packages moved out of
@@ -337,6 +329,14 @@ rules:
   # API bindings with the template's. Nothing is lost by not syncing it — it is fully derived, and
   # `./gradlew syncForkConfig` rebuilds it. (It deliberately does NOT live under demo/: remove-demo.sh
   # deletes every `**/demo/**` package, which silently killed the codegen for any cleaned fork.)
+  # GeneratedDaoBindings — the exact structural twin of GeneratedApiBindings below, and mis-declared
+  # until now: it fell through to the catch-all `core/**` -> owner:template, so a sync BLIND-COPIED
+  # the template's version over a fork's. The file is WHOLE-FILE generated from
+  # app-profile#database.daos, which after the union-by-identity merge contains the FORK's own DAOs —
+  # so the copy silently dropped their Koin bindings until the next `syncForkConfig`. Nothing is lost
+  # by not syncing it; it is fully derived and regenerated on demand.
+  - glob: "**/database/di/GeneratedDaoBindings.kt"
+    owner: fork
   - glob: "**/network/di/GeneratedApiBindings.kt"
     owner: fork
   - glob: "**/demo/**"

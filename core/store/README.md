@@ -13,9 +13,9 @@ This is the consumer customization seam: edit freely in a fork.
 - **`AppScreenStateDefaults`** — brand your loading / empty / error / no-network visuals in one place.
 - **`AppErrorMapper`** — domain-error → user-message mapping (`categorize()`).
 - **`@StoreProvider` / `@CacheKey`** on each `provide*Store` — the ONLY store declaration. Generates
-  `<Store>Keys` (qualifier + TTL + cache keys) and the binding. Deps come from the signature.
+  `AppStoreRegistry` (qualifiers + `Ttl`), `AppCacheKeys`, and the binding. Deps come from the signature.
 - **`AppCacheKeys`** — the single source of truth for every `asScreenStream` cacheKey; constants for
-  whole-list streams, typed builders (`AppCacheKeys.myThing(id)`) for per-key streams. Never inline a
+  whole-list streams, typed builders (`AppCacheKeys.MyThing.item(id)`) for per-key streams. Never inline a
   cacheKey string at a call site.
 - **`MutationGateway`** — the single write door. A repository never calls a DAO write directly; see
   [STORE_ARCHITECTURE.md §4](../../docs/architecture/STORE_ARCHITECTURE.md#4-write-path--store-as-the-single-write-sot).

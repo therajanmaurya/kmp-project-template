@@ -45,29 +45,10 @@ import kpt.core.model.demo.alerts.PriceAlert
 import kpt.core.model.demo.banking.BillReminder
 import kpt.core.model.demo.banking.Loan
 import kpt.core.model.demo.banking.LoanCalcScenario
-import kpt.core.store.alerts.AlertsKeys
-import kpt.core.store.alerts.AlertsMutableKeys
-import kpt.core.store.banking.BillRemindersKeys
-import kpt.core.store.banking.BillRemindersMutableKeys
-import kpt.core.store.banking.LoansKeys
-import kpt.core.store.banking.LoansMutableKeys
-import kpt.core.store.calc.AmortizationCalcKeys
-import kpt.core.store.cloudtodo.CloudTodoKeys
-import kpt.core.store.cloudtodo.CloudTodoMutableKeys
 import kpt.core.store.cloudtodo.impl.CLOUD_TODO_KEY_PREFIX
 import kpt.core.store.cloudtodo.impl.CloudTodoKey
 import kpt.core.store.cloudtodo.impl.CloudTodoSyncOrchestrator
-import kpt.core.store.crypto.CoinDetailKeys
-import kpt.core.store.crypto.CoinMarketsKeys
-import kpt.core.store.currency.ExchangeRatesKeys
-import kpt.core.store.currency.RateHistoryKeys
-import kpt.core.store.economic.InterestRateSeriesKeys
-import kpt.core.store.economic.MacroIndicatorKeys
-import kpt.core.store.emi.EmiKeys
-import kpt.core.store.exchange.SpotRateKeys
-import kpt.core.store.profile.ProfileKeys
-import kpt.core.store.watchlist.WatchlistKeys
-import kpt.core.store.watchlist.WatchlistMutableKeys
+import kpt.core.store.config.AppStoreRegistry
 import org.koin.dsl.module
 import org.mobilenativefoundation.store.store5.Bookkeeper
 
@@ -90,8 +71,8 @@ val DemoRepositoryModule = module {
     // Personal watchlist — local-only persistence for the SubmitHandler showcase.
     single<WatchlistRepository> {
         WatchlistRepositoryImpl(
-            watchlistStore = get(WatchlistKeys.Qualifier),
-            watchlistWriteStore = get(WatchlistMutableKeys.Qualifier),
+            watchlistStore = get(AppStoreRegistry.Watchlist),
+            watchlistWriteStore = get(AppStoreRegistry.WatchlistMutable),
             dao = get(),
         )
     }
@@ -101,15 +82,15 @@ val DemoRepositoryModule = module {
     // polish (saving badge, retry on failure) for a local commit "submit".
     single<LoanRepository> {
         LoanRepositoryImpl(
-            loansStore = get(LoansKeys.Qualifier),
-            loansWriteStore = get(LoansMutableKeys.Qualifier),
+            loansStore = get(AppStoreRegistry.Loans),
+            loansWriteStore = get(AppStoreRegistry.LoansMutable),
             loanDao = get(),
         )
     }
     single<BillReminderRepository> {
         BillReminderRepositoryImpl(
-            billRemindersStore = get(BillRemindersKeys.Qualifier),
-            billRemindersWriteStore = get(BillRemindersMutableKeys.Qualifier),
+            billRemindersStore = get(AppStoreRegistry.BillReminders),
+            billRemindersWriteStore = get(AppStoreRegistry.BillRemindersMutable),
             billReminderDao = get(),
         )
     }
@@ -170,15 +151,15 @@ val DemoRepositoryModule = module {
     // Fintech Repositories
     single<CurrencyRepository> {
         CurrencyRepositoryImpl(
-            exchangeRatesStore = get(ExchangeRatesKeys.Qualifier),
-            rateHistoryStore = get(RateHistoryKeys.Qualifier),
-            spotRateStore = get(SpotRateKeys.Qualifier),
+            exchangeRatesStore = get(AppStoreRegistry.ExchangeRates),
+            rateHistoryStore = get(AppStoreRegistry.RateHistory),
+            spotRateStore = get(AppStoreRegistry.SpotRate),
         )
     }
     single<CryptoRepository> {
         CryptoRepositoryImpl(
-            coinMarketsStore = get(CoinMarketsKeys.Qualifier),
-            coinDetailStore = get(CoinDetailKeys.Qualifier),
+            coinMarketsStore = get(AppStoreRegistry.CoinMarkets),
+            coinDetailStore = get(AppStoreRegistry.CoinDetail),
         )
     }
 
@@ -188,21 +169,21 @@ val DemoRepositoryModule = module {
         RoomBookkeeper(dao = get(), keySerializer = { "$CLOUD_TODO_KEY_PREFIX${it.id}" })
     }
     single<AmortizationCalcRepository> {
-        AmortizationCalcRepositoryImpl(store = get(AmortizationCalcKeys.Qualifier))
+        AmortizationCalcRepositoryImpl(store = get(AppStoreRegistry.AmortizationCalc))
     }
 
     single<ProfileRepository> {
-        ProfileRepositoryImpl(profileStore = get(ProfileKeys.Qualifier))
+        ProfileRepositoryImpl(profileStore = get(AppStoreRegistry.Profile))
     }
 
     single<EmiCalculatorRepository> {
-        EmiCalculatorRepositoryImpl(emiStore = get(EmiKeys.Qualifier))
+        EmiCalculatorRepositoryImpl(emiStore = get(AppStoreRegistry.Emi))
     }
 
     single<CloudTodoRepository> {
         CloudTodoRepositoryImpl(
-            readStore = get(CloudTodoKeys.Qualifier),
-            writeStore = get(CloudTodoMutableKeys.Qualifier),
+            readStore = get(AppStoreRegistry.CloudTodo),
+            writeStore = get(AppStoreRegistry.CloudTodoMutable),
             gateway = get(),
         )
     }
@@ -229,12 +210,12 @@ val DemoRepositoryModule = module {
     // Economic Repositories (Banking Utility Toolkit — FRED + World Bank)
     single<EconomicRatesRepository> {
         EconomicRatesRepositoryImpl(
-            interestRateSeriesStore = get(InterestRateSeriesKeys.Qualifier),
+            interestRateSeriesStore = get(AppStoreRegistry.InterestRateSeries),
         )
     }
     single<MacroIndicatorsRepository> {
         MacroIndicatorsRepositoryImpl(
-            macroIndicatorStore = get(MacroIndicatorKeys.Qualifier),
+            macroIndicatorStore = get(AppStoreRegistry.MacroIndicator),
         )
     }
 
@@ -242,8 +223,8 @@ val DemoRepositoryModule = module {
     // AlertsStore is the source of truth; AlertDao is the write target.
     single<AlertsRepository> {
         AlertsRepositoryImpl(
-            alertsStore = get(AlertsKeys.Qualifier),
-            alertsWriteStore = get(AlertsMutableKeys.Qualifier),
+            alertsStore = get(AppStoreRegistry.Alerts),
+            alertsWriteStore = get(AppStoreRegistry.AlertsMutable),
         )
     }
 

@@ -24,8 +24,8 @@ import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.BillReminderRepository
 import kpt.core.database.banking.dao.BillReminderDao
 import kpt.core.model.demo.banking.BillReminder
-import kpt.core.store.banking.BillRemindersKeys
 import kpt.core.store.banking.impl.provideBillReminderDetailStore
+import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreReadRequest
@@ -53,7 +53,7 @@ internal class BillReminderRepositoryImpl(
     override fun billRemindersStream(scope: CoroutineScope): ScreenDataStream<List<BillReminder>> =
         billRemindersStore.asScreenStream(
             key = Unit,
-            cacheKey = BillRemindersKeys.LIST,
+            cacheKey = AppCacheKeys.BillReminders.LIST,
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
             isEmpty = { it.isEmpty() },
@@ -104,7 +104,7 @@ internal class BillReminderRepositoryImpl(
     override fun billReminderDetailStream(id: String, scope: CoroutineScope): ScreenDataStream<BillReminder> =
         detailStore.asScreenStream(
             key = id,
-            cacheKey = BillRemindersKeys.item(id),
+            cacheKey = AppCacheKeys.BillReminders.item(id),
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
         )

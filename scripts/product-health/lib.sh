@@ -102,6 +102,26 @@ wl_example_load() {
   ' "$WL_PLACEHOLDERS_YAML"
 }
 
+# wl_identity_is_reference <app_id> <org_name> — return 0 when BOTH still carry the template's
+# COMMITTED Mifos reference identity, i.e. this checkout looks like the upstream template rather
+# than a rebranded fork.
+#
+# Deliberately NOT a mode switch. Mode is decided ONLY by TEMPLATE_SELF_BUILD (set explicitly by
+# quality-gate.yml from `github.repository`), because the safe default for anything that is not
+# provably the upstream repo is FORK mode — that is the direction that TELLS a fork to rebrand.
+# Inferring template mode locally would hand a real fork a silent pass on exactly the checks it
+# needs most. This predicate exists solely so product-health.sh can print an actionable hint when
+# a LOCAL run in the template checkout trips the directional identity checks.
+#
+# Requires BOTH fields: a half-rebranded fork (own appId, org.name still "Mifos Initiative") is a
+# genuine finding, and must not be talked out of its failure by the hint.
+wl_identity_is_reference() {
+  local app_id="$1" org_name="$2"
+  wl_matches_example "$app_id" bundle_id || return 1
+  wl_matches_example "$org_name" org_name || return 1
+  return 0
+}
+
 # wl_matches_example <value> <category> — return 0 if value IS the declared reference identity.
 wl_matches_example() {
   local val="$1" cat="$2" pat

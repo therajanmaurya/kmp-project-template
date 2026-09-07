@@ -23,7 +23,7 @@ import kpt.core.database.crypto.mapper.toDomain
 import kpt.core.database.crypto.mapper.toEntity
 import kpt.core.model.demo.crypto.CoinMarket
 import kpt.core.network.coingecko.api.CoinGeckoApi
-import kpt.core.store.crypto.CoinMarketsKeys
+import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
@@ -35,7 +35,7 @@ fun provideCoinMarketsStore(
     networkMonitor: NetworkMonitor,
     dao: CoinMarketDao,
 ): Store<PageKey, List<CoinMarket>> {
-    val validator = DefaultValidator.withTtl<List<CoinMarket>>(CoinMarketsKeys.TTL)
+    val validator = DefaultValidator.withTtl<List<CoinMarket>>(AppStoreRegistry.Ttl.COIN_MARKETS)
     return StoreFactory.createStore(
         fetcher = Fetcher.of { key: PageKey ->
             networkMonitor.executeWithRetry(

@@ -135,12 +135,17 @@ into.
 fun provideLoansStore(dao: LoanDao): Store<Unit, List<Loan>> = StoreFactory.createOfflineStore(…)
 ```
 
-generates, into the provider's OWN package plus `di/`:
+generates three files — two aggregates in `config/` plus the DI module:
 
 | Generated | Carries |
 |---|---|
-| `<Qualifier>Keys` (e.g. `banking/LoansKeys`) | the Koin qualifier, `TTL`, and the cache keys |
-| `GeneratedStoreBindings` | `single(LoansKeys.Qualifier) { provideLoansStore(dao = get()) }` **and** the `StoreCacheManager` logout registration |
+| `config/AppStoreRegistry` | every Koin qualifier flat (`AppStoreRegistry.Loans`) + a nested `Ttl` object (`AppStoreRegistry.Ttl.COIN_MARKETS`) |
+| `config/AppCacheKeys` | the cache keys, nested one object per store (`AppCacheKeys.Loans.LIST`, `AppCacheKeys.Loans.item(id)`) |
+| `di/GeneratedStoreBindings` | `single(AppStoreRegistry.Loans) { provideLoansStore(dao = get()) }` **and** the `StoreCacheManager` logout registration |
+
+Cache keys nest per store because the annotations name them by ROLE (`LIST`, `item`, `of`) and those
+roles repeat across stores — flat would collide, nested cannot. Qualifiers and TTLs are unique by
+construction (the processor errors on a duplicate `id`/`qualifier`), so they stay flat.
 
 **Dependencies come from the function signature.** Never restate them — that is the whole reason
 this is an annotation rather than a declaration file.

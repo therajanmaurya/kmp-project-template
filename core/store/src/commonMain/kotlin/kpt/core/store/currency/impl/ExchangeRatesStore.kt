@@ -22,7 +22,7 @@ import kpt.core.database.currency.mapper.toDomain
 import kpt.core.database.currency.mapper.toEntity
 import kpt.core.model.demo.currency.ExchangeRates
 import kpt.core.network.frankfurter.api.FrankfurterApi
-import kpt.core.store.currency.ExchangeRatesKeys
+import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
@@ -34,7 +34,7 @@ fun provideExchangeRatesStore(
     networkMonitor: NetworkMonitor,
     dao: ExchangeRatesDao,
 ): Store<String, ExchangeRates> {
-    val validator = DefaultValidator.withTtl<ExchangeRates>(ExchangeRatesKeys.TTL)
+    val validator = DefaultValidator.withTtl<ExchangeRates>(AppStoreRegistry.Ttl.EXCHANGE_RATES)
     return StoreFactory.createStore(
         fetcher = Fetcher.of { baseCurrency: String ->
             networkMonitor.executeWithRetry(

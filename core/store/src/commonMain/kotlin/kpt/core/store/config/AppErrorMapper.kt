@@ -23,8 +23,23 @@ import kpt.core.store.generated.resources.error_category_ratelimit
 import kpt.core.store.generated.resources.error_category_server
 import kpt.core.store.generated.resources.error_category_timeout_connect
 import kpt.core.store.generated.resources.error_category_timeout_read
-import kpt.core.store.projectErrorMessage
 import org.jetbrains.compose.resources.stringResource
+
+/**
+ * The fork's error-copy extension point, declared HERE so it is TEMPLATE-owned and full-copied by
+ * every sync. [ProjectErrorMapper] implements it and is the only fork-owned half.
+ *
+ * The default returns null — "I do not handle this" — so the framework's categorised copy below
+ * stays reachable. That default is the reason this is an interface rather than a top-level function
+ * the fork's file must declare: when the template adds a NEW hook here, it ships with a default body
+ * and every existing fork keeps compiling. A top-level function cannot do that — the template's call
+ * site would reference a function that does not exist in the fork-owned file, and the fork would
+ * break on the very sync that was supposed to hand it the improvement.
+ */
+interface ErrorMessageOverrides {
+    /** Fork copy for [error], or null to fall through to the framework's categorised message. */
+    fun message(error: Throwable): String? = null
+}
 
 /**
  * Application-level error → user-facing message mapper.
@@ -42,9 +57,9 @@ import org.jetbrains.compose.resources.stringResource
  * be rendered by mistake.
  *
  * TEMPLATE-OWNED — a sync full-copies this file, so a fork receives every improvement to the
- * framework branches below. Fork-specific errors go in [kpt.core.store.projectErrorMessage], which
- * both entry points consult FIRST; this file falls through to the categorised copy when it returns
- * null. Do not add fork branches here — they would be overwritten on the next sync.
+ * framework branches below. Fork-specific errors go in [ProjectErrorMapper], which implements
+ * [ErrorMessageOverrides] and is consulted FIRST; this file falls through to the categorised copy
+ * when it returns null. Do not add fork branches here — they would be overwritten on the next sync.
  */
 fun errorCategoryToken(error: Throwable): String = when (val cat = categorize(error)) {
     ErrorCategory.Network -> "network"
@@ -77,7 +92,7 @@ fun rememberAppErrorMessageFor(): (Throwable) -> String {
     val serverCopy = stringResource(Res.string.error_category_server)
     val clientCopy = stringResource(Res.string.error_category_client)
     val genericCopy = stringResource(Res.string.error_category_generic)
-    val projectCopy = ::projectErrorMessage
+    val projectCopy = ProjectErrorMapper::message
     return remember(
         networkCopy,
         connectTimeoutCopy,

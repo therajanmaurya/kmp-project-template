@@ -493,10 +493,15 @@ cs_require_flip_preconditions() {
   _cs_expect "secrets-manifest.yaml"                               fork
   _cs_expect "secrets/live/keystore.jks"                           fork
   _cs_expect "tests/anything.sh"                                   template
-  _cs_expect "core/store/AppStoreRegistry.kt"                      fork
+  # AppStoreRegistry.kt is GONE — stores are declared with @StoreProvider, and the generated
+  # AppStoreRegistry/AppCacheKeys/GeneratedStoreBindings are KSP build artifacts under
+  # build/generated, so there is no committed file to own.
+  # The surviving core/store fork seams are these two.
+  _cs_expect "core/store/config/ProjectErrorMapper.kt"             fork
+  _cs_expect "core/store/config/ProjectScreenStateDefaults.kt"     fork
   _cs_expect "core/store/economic/ExchangeRatesStore.kt"          template
   _cs_expect "core/store/banking/InterestRateSeriesStore.kt"      template
-  [ "$bad" -eq 0 ] && echo "✅ T1 flip preconditions hold (og-images generated · secrets-manifest/keystore + core/store seam fork · gradle.properties merge/properties-3way · tests/core-store-impl template)"
+  [ "$bad" -eq 0 ] && echo "✅ T1 flip preconditions hold (og-images generated · secrets-manifest/keystore + core/store Project* seams fork · gradle.properties merge/properties-3way · tests/core-store-impl template)"
   return "$bad"
 }
 

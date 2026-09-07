@@ -22,6 +22,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 private const val PROVIDER = "kpt.core.base.store.annotation.StoreProvider"
 private const val BINDINGS_PKG = "kpt.core.store.di"
+private const val CONFIG_PKG = "kpt.core.store.config"
 private val TTL_RE = Regex("^(\\d+)(m|h|d)$")
 private val PLACEHOLDER_RE = Regex("\\{([A-Za-z0-9_]+)}")
 
@@ -73,8 +74,14 @@ class StoreProviderProcessor(
         if (specs.size != fns.size) return emptyList() // a spec failed validation; error already logged
         if (!validateGlobally(specs)) return emptyList()
 
-        specs.forEach { emitKeys(it, fns) }
-        emitBindings(specs, fns)
+        // Sorted so the generated files are byte-stable across builds: KSP hands symbols back in
+        // an order that depends on how the compiler walked the sources, which would otherwise
+        // reshuffle the output on unrelated edits.
+        val ordered = specs.sortedBy { it.qualifier }
+
+        emitRegistry(ordered, fns)
+        emitCacheKeys(ordered, fns)
+        emitBindings(ordered, fns)
         emitted = true
         return emptyList()
     }
@@ -181,6 +188,10 @@ class StoreProviderProcessor(
         return out
     }
 
+    /** `interestRateSeries` -> `INTEREST_RATE_SERIES`, the shape the store factories already read. */
+    private fun screamingSnake(id: String): String =
+        id.replace(Regex("([a-z0-9])([A-Z])"), "$1_$2").uppercase()
+
     private fun ttlExpr(ttl: String): String {
         val m = TTL_RE.find(ttl)!!
         return m.groupValues[1] + when (m.groupValues[2]) { "m" -> ".minutes"; "h" -> ".hours"; else -> ".days" }
@@ -191,31 +202,76 @@ class StoreProviderProcessor(
         sb.append("// artifact, not committed source. Change the annotation on the provider instead.\n\n")
     }
 
-    private fun emitKeys(s: StoreSpec, fns: List<KSFunctionDeclaration>) {
+    /**
+     * `config/AppStoreRegistry.kt` — every store's Koin qualifier plus the TTL constants.
+     *
+     * Qualifiers are flat (`AppStoreRegistry.Loans`) because the processor already guarantees they
+     * are globally unique. TTLs sit in a nested `Ttl` object keyed by the store id in
+     * SCREAMING_SNAKE, which is the shape the store factories already read.
+     */
+    private fun emitRegistry(specs: List<StoreSpec>, fns: List<KSFunctionDeclaration>) {
+        val withTtl = specs.filter { it.ttl.isNotEmpty() }
         val sb = StringBuilder()
         header(sb)
-        sb.append("package ${s.pkg}\n\n")
+        sb.append("package $CONFIG_PKG\n\n")
         sb.append("import kpt.core.base.store.infra.StoreRegistry\n")
-        if (s.ttl.isNotEmpty()) {
-            sb.append("import kotlin.time.Duration.Companion.")
-                .append(if (s.ttl.endsWith("d")) "days" else if (s.ttl.endsWith("h")) "hours" else "minutes")
-                .append("\n")
-        }
-        sb.append("\n/** Everything addressing the `${s.id}` store. */\n")
-        sb.append("object ${s.qualifier}Keys : StoreRegistry() {\n")
-        sb.append("    val Qualifier = store(\"${s.id}\")\n")
-        if (s.ttl.isNotEmpty()) sb.append("\n    val TTL = ${ttlExpr(s.ttl)}\n")
-        val consts = s.keys.filter { it.name.isNotBlank() }
-        val builders = s.keys.filter { it.fn.isNotBlank() }
-        if (consts.isNotEmpty() || builders.isNotEmpty()) sb.append("\n")
-        consts.forEach { sb.append("    const val ${it.name} = \"${it.key}\"\n") }
-        if (consts.isNotEmpty() && builders.isNotEmpty()) sb.append("\n")
-        builders.forEach { k ->
-            val sig = k.params.joinToString(", ") { "${it.first}: ${it.second}" }
-            sb.append("    fun ${k.fn}($sig): String = \"${interpolate(k.key, k.params.map { it.first })}\"\n")
+        if (withTtl.any { it.ttl.endsWith("d") }) sb.append("import kotlin.time.Duration.Companion.days\n")
+        if (withTtl.any { it.ttl.endsWith("h") }) sb.append("import kotlin.time.Duration.Companion.hours\n")
+        if (withTtl.any { it.ttl.endsWith("m") }) sb.append("import kotlin.time.Duration.Companion.minutes\n")
+        sb.append("\n/**\n")
+        sb.append(" * Every Store5 qualifier the app exposes, and the freshness window of each store that\n")
+        sb.append(" * declares one. Derived from `@StoreProvider`.\n")
+        sb.append(" */\n")
+        sb.append("object AppStoreRegistry : StoreRegistry() {\n")
+        specs.forEach { sb.append("    val ").append(it.qualifier).append(" = store(\"").append(it.id).append("\")\n") }
+        if (withTtl.isNotEmpty()) {
+            sb.append("\n    /** Freshness windows, declared as `@StoreProvider(ttl = …)`. */\n")
+            sb.append("    object Ttl {\n")
+            withTtl.forEach { sb.append("        val ").append(screamingSnake(it.id)).append(" = ").append(ttlExpr(it.ttl)).append("\n") }
+            sb.append("    }\n")
         }
         sb.append("}\n")
-        write(sb.toString(), s.pkg, "${s.qualifier}Keys", fns)
+        write(sb.toString(), CONFIG_PKG, "AppStoreRegistry", fns)
+    }
+
+    /**
+     * `config/AppCacheKeys.kt` — every stream cache key, NESTED per store.
+     *
+     * Nested rather than flat because the keys are named by ROLE (`LIST`, `item`, `of`), which is
+     * unique within a store but not across them — three stores each declaring `LIST` would collide in
+     * a flat object. Nesting keeps the annotations as written and makes the collision impossible
+     * rather than something the author has to avoid by hand.
+     */
+    private fun emitCacheKeys(specs: List<StoreSpec>, fns: List<KSFunctionDeclaration>) {
+        val withKeys = specs.filter { it.keys.isNotEmpty() }
+        val sb = StringBuilder()
+        header(sb)
+        sb.append("package $CONFIG_PKG\n\n")
+        sb.append("/**\n")
+        sb.append(" * Stream cache keys — the strings that key per-stream freshness tracking, grouped by store.\n")
+        sb.append(" *\n")
+        sb.append(" * A repository references `AppCacheKeys.Loans.LIST` or `AppCacheKeys.Loans.item(id)` and never\n")
+        sb.append(" * spells the format at the call site. Derived from `@CacheKey`.\n")
+        sb.append(" */\n")
+        sb.append("object AppCacheKeys {\n")
+        if (withKeys.isEmpty()) {
+            sb.append("    // No store declares a @CacheKey yet.\n")
+        }
+        withKeys.forEachIndexed { i, spec ->
+            if (i > 0) sb.append("\n")
+            sb.append("    object ").append(spec.qualifier).append(" {\n")
+            spec.keys.filter { it.name.isNotBlank() }.forEach { k ->
+                sb.append("        const val ").append(k.name).append(" = \"").append(k.key).append("\"\n")
+            }
+            spec.keys.filter { it.fn.isNotBlank() }.forEach { k ->
+                val sig = k.params.joinToString(", ") { "${it.first}: ${it.second}" }
+                sb.append("        fun ").append(k.fn).append("(").append(sig).append("): String = \"")
+                  .append(interpolate(k.key, k.params.map { it.first })).append("\"\n")
+            }
+            sb.append("    }\n")
+        }
+        sb.append("}\n")
+        write(sb.toString(), CONFIG_PKG, "AppCacheKeys", fns)
     }
 
     private fun emitBindings(specs: List<StoreSpec>, fns: List<KSFunctionDeclaration>) {
@@ -224,7 +280,7 @@ class StoreProviderProcessor(
             add("kpt.core.base.store.infra.StoreCacheManager")
             add("kpt.core.base.store.infra.impl.StoreCacheManagerImpl")
             addAll(specs.map { it.providerFqn })
-            addAll(specs.map { "${it.pkg}.${it.qualifier}Keys" })
+            add("$CONFIG_PKG.AppStoreRegistry")
             add("org.koin.core.module.Module")
             add("org.koin.dsl.module")
         }.filter { it.isNotBlank() }.distinct().sorted()
@@ -245,12 +301,12 @@ class StoreProviderProcessor(
         sb.append("val GeneratedStoreBindings: Module = module {\n")
         specs.forEach { s ->
             val args = s.deps.joinToString(", ") { "$it = get()" }
-            sb.append("    single(${s.qualifier}Keys.Qualifier) { ${s.providerName}($args) }\n")
+            sb.append("    single(AppStoreRegistry.${s.qualifier}) { ${s.providerName}($args) }\n")
         }
         if (purged.isNotEmpty()) {
             sb.append("\n    single(createdAtStart = true) {\n")
             sb.append("        val mgr = get<StoreCacheManager>() as StoreCacheManagerImpl\n")
-            purged.forEach { sb.append("        mgr.register(get(${it.qualifier}Keys.Qualifier))\n") }
+            purged.forEach { sb.append("        mgr.register(get(AppStoreRegistry.${it.qualifier}))\n") }
             sb.append("    }\n")
         }
         sb.append("}\n")

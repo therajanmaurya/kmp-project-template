@@ -17,8 +17,8 @@ import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.demo.banking.LoanRepository
 import kpt.core.database.banking.dao.LoanDao
 import kpt.core.model.demo.banking.Loan
-import kpt.core.store.banking.LoansKeys
 import kpt.core.store.banking.impl.provideLoanDetailStore
+import kpt.core.store.config.AppCacheKeys
 import org.mobilenativefoundation.store.store5.MutableStore
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreWriteRequest
@@ -42,7 +42,7 @@ internal class LoanRepositoryImpl(
     override fun loansStream(scope: CoroutineScope): ScreenDataStream<List<Loan>> =
         loansStore.asScreenStream(
             key = Unit,
-            cacheKey = LoansKeys.LIST,
+            cacheKey = AppCacheKeys.Loans.LIST,
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
             isEmpty = { it.isEmpty() },
@@ -54,7 +54,7 @@ internal class LoanRepositoryImpl(
     override fun loanDetailStream(id: String, scope: CoroutineScope): ScreenDataStream<Loan> =
         loanDetailStore.asScreenStream(
             key = id,
-            cacheKey = LoansKeys.item(id),
+            cacheKey = AppCacheKeys.Loans.item(id),
             scope = scope,
             fetchPolicy = FetchPolicy.CACHE_ONLY,
         )

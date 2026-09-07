@@ -207,7 +207,7 @@ class LoanRepositoryImpl(
     private val screen: ScreenStreamContext,
 ) {
     fun loan(id: LoanId, scope: CoroutineScope) =
-        store.asScreenStream(id, screen, DemoCacheKeys.loan(id.value), scope)
+        store.asScreenStream(id, screen, AppCacheKeys.Loans.item(id.value), scope)
 }
 ```
 

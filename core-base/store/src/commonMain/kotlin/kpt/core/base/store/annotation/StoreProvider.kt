@@ -11,8 +11,9 @@ package kpt.core.base.store.annotation
 
 /**
  * Marks a Store5 provider function. `store-ksp` derives the store's entire addressing surface from
- * it: a `<Qualifier>Keys` object in the provider's own package (Koin qualifier, TTL, cache keys) and
- * an entry in `GeneratedStoreBindings` (the binding AND its logout purge).
+ * it: a row in `config/AppStoreRegistry` (Koin qualifier, plus a `Ttl` entry), one in
+ * `config/AppCacheKeys` (its cache keys, nested under the store's own object), and an entry in
+ * `di/GeneratedStoreBindings` (the binding AND its logout purge).
  *
  * ## Why an annotation rather than a declaration file
  * The dependencies come from the FUNCTION SIGNATURE. An `app-profile` row had to restate them —
@@ -28,7 +29,8 @@ package kpt.core.base.store.annotation
  * `owner:` per package. A store inherits its package's lifecycle rather than declaring its own.
  *
  * @param id       Koin qualifier name and the store's stable identity.
- * @param qualifier Object name prefix; defaults to `id` capitalised (`loans` -> `LoansKeys`).
+ * @param qualifier Registry member name; defaults to `id` capitalised (`loans` ->
+ *                 `AppStoreRegistry.Loans` / `AppCacheKeys.Loans`).
  * @param ttl      Freshness window — `5m` / `1h` / `7d`. Empty means the store declares none.
  * @param logout   Register with StoreCacheManager for logout purge. MUST be false for a
  *                 MutableStore: Store5 5.1 does not make it a `Store` subtype, so `register`
@@ -46,8 +48,8 @@ annotation class StoreProvider(
 /**
  * A stream cache key for the annotated store — the string that keys per-stream freshness tracking.
  *
- * Emitted into the store's `<Qualifier>Keys` object, so a repository writes
- * `LoansKeys.LIST` / `LoansKeys.item(id)` and never spells the format at the call site.
+ * Emitted into the store's own object inside `AppCacheKeys`, so a repository writes
+ * `AppCacheKeys.Loans.LIST` / `AppCacheKeys.Loans.item(id)` and never spells the format at the call site.
  *
  * Exactly one of [name] (a constant) or [fn] (a typed builder) must be set. Placeholders in [key]
  * bind to [params] by name; a mismatch is a BUILD ERROR from the processor rather than something a

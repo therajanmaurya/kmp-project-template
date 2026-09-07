@@ -27,7 +27,7 @@ import kpt.core.database.currency.mapper.toEntity
 import kpt.core.model.demo.currency.RateHistory
 import kpt.core.model.demo.currency.RateHistoryKey
 import kpt.core.network.frankfurter.api.FrankfurterApi
-import kpt.core.store.currency.RateHistoryKeys
+import kpt.core.store.config.AppStoreRegistry
 import org.mobilenativefoundation.store.store5.Fetcher
 import org.mobilenativefoundation.store.store5.SourceOfTruth
 import org.mobilenativefoundation.store.store5.Store
@@ -40,7 +40,7 @@ fun provideRateHistoryStore(
     networkMonitor: NetworkMonitor,
     dao: RateHistoryDao,
 ): Store<RateHistoryKey, RateHistory> {
-    val validator = DefaultValidator.withTtl<RateHistory>(RateHistoryKeys.TTL)
+    val validator = DefaultValidator.withTtl<RateHistory>(AppStoreRegistry.Ttl.RATE_HISTORY)
     return StoreFactory.createStore(
         fetcher = Fetcher.of { key: RateHistoryKey ->
             val today = Clock.System.todayIn(TimeZone.UTC)
