@@ -123,3 +123,34 @@ compose.resources {
     generateResClass = always
     packageOfResClass = "cmp.shared.generated.resources"
 }
+
+// ── XCFramework output hygiene ────────────────────────────────────────────────────────────────
+// `xcodebuild -create-xcframework` REFUSES to write into a slice directory that already exists:
+//     "ComposeApp.framework" couldn't be copied to "ios-arm64" because an item with the
+//      same name already exists.        (xcodebuild exit 70 → task FAILED)
+//
+// Observed once on 2026-09-08 while bumping KmpToolkit, when the task re-ran (inputs changed)
+// against an XCFramework left by a previous build. It did NOT reproduce afterwards — neither a
+// plain re-run nor `--rerun` against a populated output dir failed — so the exact trigger is
+// still unknown (most likely an output left behind by an interrupted assemble, which is a state
+// the up-to-date check cannot see).
+//
+// Rather than leave that to chance, clear the slice directory before the task builds it. This is
+// a `doFirst`, so it runs ONLY when the task actually executes — an UP-TO-DATE task keeps its
+// output untouched and the incremental build stays fast (RULE-BUILD-WARMTH-001). The delete
+// target is resolved as a Provider at configuration time, so it is configuration-cache safe.
+run {
+    val xcfRoot = layout.buildDirectory.dir("XCFrameworks")
+    tasks.matching { it.name.matches(Regex("assembleComposeApp(Debug|Release)XCFramework")) }
+        .configureEach {
+            val slice = name.removePrefix("assembleComposeApp").removeSuffix("XCFramework").lowercase()
+            val stale = xcfRoot.map { it.dir(slice).file("ComposeApp.xcframework") }
+            doFirst {
+                val f = stale.get().asFile
+                if (f.exists()) {
+                    logger.lifecycle("[xcframework] clearing stale output before -create-xcframework: $f")
+                    f.deleteRecursively()
+                }
+            }
+        }
+}

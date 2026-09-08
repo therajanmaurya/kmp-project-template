@@ -80,7 +80,7 @@ moduleGraph = "2.9.0"
 typesafeConventions = "0.5.0"
 
 # Kotlin KMP Dependencies
-kotlin = "2.4.0"
+kotlin = "2.4.20"
 kover = "0.9.8"
 kotlinInject = "0.9.0"
 kotlinxBrowser = "0.5.0"
@@ -103,11 +103,15 @@ koinAnnotationsVersion = "4.2.2"
 
 
 # KMP Toolkit Libraries
-# 3.5.11: cmp-firebase analytics+crashlytics engine + cmp-firebase-compose companion (KmpToolkit dev).
-kmptoolkit = "3.5.11"
+# 3.5.21: cmp-firebase on GitLive 3.0.0-alpha02 (Firebase BoM 34.18.0) — wasmJs PROMOTED from the
+#         Measurement-Protocol tier to the native Firebase tier, so wasmJs now reads FirebaseConfig.web
+#         (the same `web` entry as js) and needs applicationId/apiKey/projectId/authDomain populated.
+#         Also: cmp-share direct-to-app share (ShareOptions.targetPackage) + file:// → FileProvider
+#         content:// resolution; cmp-remote-config min/max app-version gate.
+kmptoolkit = "3.5.21"
 
 # CMP Libraries
-compose-plugin = "1.11.1"
+compose-plugin = "1.12.0"
 coil = "3.5.0"
 backHandlerVersion = "2.5.0"
 constraintLayout = "0.8.0"
