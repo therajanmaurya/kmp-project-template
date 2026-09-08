@@ -90,12 +90,42 @@ class KMPFlavorsConventionPlugin : Plugin<Project> {
                 iosBundleIdBaseExpr.set("\$(APP_BUNDLE_ID)")
                 iosDevelopmentTeamExpr.set("\$(TEAM_ID)")
 
-                // E6 (SwiftPM/XCFramework) — OFF, and it must stay off. When true the
-                // generator appends an optional `#include? "../Pods/…"` to every generated
-                // xcconfig. `#include?` never errors on a missing file, so the dead Pods
-                // wiring would survive silently in every fork that syncs this template.
-                // Enforced by G-IOS-SWIFTPM (IOS-7 flag / IOS-6 generated output).
-                iosCocoapodsIntegration.set(false)
+                // OFF, and it must stay off. When true the generator appends an optional
+                // `#include? "../Pods/…"` to every generated xcconfig. `#include?` never errors on
+                // a missing file, so dead Pods wiring would survive silently in every fork that
+                // syncs this template. Enforced by G-IOS-SWIFTPM (IOS-7 flag / IOS-6 output).
+                //
+                // Renamed in kmp-product-flavors 2.9.0 from `iosCocoapodsIntegration`, whose name
+                // oversold it: the flag applies no CocoaPods plugin, generates no podspec and runs
+                // no `pod install` — it only emits that one optional Pods xcconfig include, for a
+                // brownfield app taking the KMP framework via SPM while still using CocoaPods for
+                // OTHER native SDKs. Not our case. The old name survives as a deprecated alias;
+                // using it would leave a CocoaPods word in a build that has no CocoaPods.
+                iosIncludePodsXcconfig.set(false)
+
+                // SwiftPM distribution (kmp-product-flavors 2.9).
+                //
+                // 2.9 flipped `spm.generateManifest` to default TRUE. This convention plugin is
+                // applied to EVERY KMP module and only `cmp-shared` exports an XCFramework, so the
+                // new `requireXcframework` check fired 45 times per build — once per library module
+                // that has an iOS target but publishes klibs rather than a framework. The check is a
+                // good one; it simply does not apply to a library.
+                //
+                // OFF because this repo OWNS its manifest: `cmp-ios/Package.swift` is hand-written,
+                // reviewed and already referenced by the Xcode project. Two manifests in one tree,
+                // with nothing stating which one Xcode resolves, is worse than one we maintain.
+                // Adopting the generated manifest is a real option but an Xcode-side migration
+                // (project references + the embed Run Script), not a flag flip.
+                spm {
+                    generateManifest.set(false)
+                    // Named for the day that flag flips: our aggregator is XCFramework("ComposeApp"),
+                    // not the plugin's "Shared" default, so the resolver would otherwise look for
+                    // `assembleShared{BuildType}XCFramework` and find nothing.
+                    xcframeworkName.set("ComposeApp")
+                    // We ship our own reviewed embed script (flavor-aware, stages the SDK-matching
+                    // slice, referenced by the Xcode Run Script phase).
+                    generateEmbedScript.set(false)
+                }
 
                 flavorDimensions {
                     register("contentType") { priority.set(0) }
