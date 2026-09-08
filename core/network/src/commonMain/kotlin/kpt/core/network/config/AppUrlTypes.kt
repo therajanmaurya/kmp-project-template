@@ -53,6 +53,9 @@ object AppUrlTypes {
     /** `fred` — REST access point. */
     val FRED: UrlType = UrlType("FRED")
 
+    /** `fineract` — REST access point. */
+    val FINERACT: UrlType = UrlType("FINERACT")
+
     /** `worldbank` — REST access point. */
     val WORLDBANK: UrlType = UrlType("WORLDBANK")
 
@@ -65,6 +68,7 @@ object AppUrlTypes {
         FRANKFURTER,
         COINGECKO,
         FRED,
+        FINERACT,
         WORLDBANK,
     )
     // syncForkConfig:url-types:end

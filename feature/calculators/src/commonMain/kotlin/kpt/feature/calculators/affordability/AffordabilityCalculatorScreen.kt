@@ -38,10 +38,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kpt.core.base.designsystem.component.AppCard
 import kpt.core.base.designsystem.component.HeroCard
-import kpt.core.common.formatGrouped
+import kpt.core.common.format.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing
-import kpt.core.domain.demo.calc.AffordabilityResult
+import kpt.core.domain.calc.AffordabilityResult
 import kpt.feature.calculators.TestTags
 import kpt.feature.calculators.generated.resources.Res
 import kpt.feature.calculators.generated.resources.screens_calc_affordability_back_cd

@@ -49,7 +49,7 @@ DEMO_FEATURES=$(awk '/demo:begin/{s=1;next} /demo:end/{s=0} s' settings.gradle.k
                   | grep -oE 'feature:[A-Za-z0-9_-]+' | sed 's/feature://' || true)
 
 # ── 1b. TEMPLATE-owned ACCESS-POINT ids (declared, not inferred) ──────────────────────────────────
-#     Every access point in app-profile carries `owner: fork|template`. `template` means the showcase
+#     Every access point carries `owner: fork|template|demo`. Only `demo` is the showcase
 #     ships it and a clean fork must not: the entry AND its `kpt/core/network/<id>/` package go.
 #
 #     This used to be inferred by awk-ing between `# demo:begin`/`# demo:end` in app.yaml, which is
@@ -58,7 +58,7 @@ DEMO_FEATURES=$(awk '/demo:begin/{s=1;next} /demo:end/{s=0} s' settings.gradle.k
 #     declared field per entry replaces both parsers and cannot drift from what it describes.
 TEMPLATE_POINTS=$(awk '
   /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/ { id=$0; sub(/.*id:[[:space:]]*/,"",id); sub(/[[:space:]].*$/,"",id); owner="" ; next }
-  /^[[:space:]]*owner:[[:space:]]*/ { o=$0; sub(/.*owner:[[:space:]]*/,"",o); sub(/[[:space:]].*$/,"",o); if (id != "" && o == "template") { print id; id="" } }
+  /^[[:space:]]*owner:[[:space:]]*/ { o=$0; sub(/.*owner:[[:space:]]*/,"",o); sub(/[[:space:]].*$/,"",o); if (id != "" && o == "demo") { print id; id="" } }
 ' app-profile/app.yaml 2>/dev/null || true)
 
 # ── 2. Marked files to strip (convention-discovered) ──────────────────────────────────
@@ -67,8 +67,15 @@ TEMPLATE_POINTS=$(awk '
 # demo fences (wls3-seam-fenced, wls4-demo-loose, network-buildkonfig). Stripping them turns every
 # RED fixture green, silently disabling the gates that verify the white-label machinery — the strip
 # would quietly break its own safety net.
+#
+# `core/*/module-packages.yaml` is excluded for a different reason: its demo rows must SURVIVE the
+# strip so each can be stamped `status: removed`. Deleting the row instead deletes the RECORD — and
+# the record is the whole point, because `/kmp-project-template-sync` then cannot tell a package the
+# customizer removed on purpose from one that went missing, and "restore it" is right in exactly one
+# of those cases. The rows stay; only their status changes.
 MARKED_FILES=$(grep -rl 'demo:begin' --include='*.kt' --include='*.kts' --include='*.yaml' . 2>/dev/null \
-  | grep -v '/build/' | grep -v '/product-health/tests/' || true)
+  | grep -v '/build/' | grep -v '/product-health/tests/' \
+  | grep -v '/module-packages\.yaml$' || true)
 
 echo "remove-demo ($MODE): demo features = ${DEMO_FEATURES//$'\n'/ }"
 echo "remove-demo ($MODE): template access points = ${TEMPLATE_POINTS//$'\n'/ }"
@@ -79,23 +86,38 @@ echo "remove-demo ($MODE): template access points = ${TEMPLATE_POINTS//$'\n'/ }"
 #     sweep silently deleted zero packages while still printing its heading, so a "clean" fork kept
 #     every demo store and entity. (Dry-run looked correct precisely because it mutates nothing.)
 #     `TEMPLATE_POINTS` above already had to be captured early for the same reason; these now are too.
-TEMPLATE_MODULE_PKGS=$(for pair in database:database data:data model:model core_store:store domain:domain network:network \
-            ui:ui designsystem:designsystem common:common platform:platform datastore:datastore \
-            firebase:firebase; do
-  key="${pair%%:*}"; mod="${pair##*:}"
-  awk -v m="$key" -v mod="$mod" '
-    $0 ~ "^" m ":[[:space:]]*$" { inmod=1; next }
-    /^[a-z_]+:[[:space:]]*$/    { inmod=0 }
-    inmod && /^[[:space:]]*packages:[[:space:]]*$/ { inpkg=1; next }
-    inmod && inpkg && /^[[:space:]]*-[[:space:]]*\{/ {
-      line=$0
-      if (line ~ /owner:[[:space:]]*template/) {
-        id=line; sub(/.*id:[[:space:]]*/,"",id); sub(/[,}[:space:]].*$/,"",id); print mod "\t" id
-      }
-      next
+# Each module declares its own packages in `core/<module>/module-packages.yaml` (three-value
+# vocabulary: demo | template | fork). ONLY `owner: demo` is deleted — `template` is framework code a
+# clean fork keeps, and `fork` is the fork's own. The two-value scheme this replaced used
+# `owner: template` to mean "delete me", which read as the opposite of the truth for every framework
+# package and is exactly the confusion the third value removes.
+TEMPLATE_MODULE_PKGS=$(for f in core/*/module-packages.yaml; do
+  [ -f "$f" ] || continue
+  mod="${f#core/}"; mod="${mod%/module-packages.yaml}"
+  awk -v mod="$mod" '
+    /^demo:[[:space:]]*$/                 { sec="demo"; next }
+    /^(template|fork):[[:space:]]*$/      { sec=""; next }
+    /^[a-z_]+:/                           { sec="" }
+    sec == "demo" && /^[[:space:]]*-[[:space:]]*\{/ {
+      id=$0; sub(/.*id:[[:space:]]*/,"",id); sub(/[,}[:space:]].*$/,"",id); print mod "\t" id
     }
-    inmod && inpkg && /^[[:space:]]*[a-z_]+:/ { inpkg=0 }
-  ' app-profile/app.yaml 2>/dev/null || true
+  ' "$f" 2>/dev/null || true
+done)
+
+# EVERY declared row (id + owner), captured for the SAME reason TEMPLATE_MODULE_PKGS is: the demo
+# rows live inside a `# demo:begin/end` fence that the fence strip removes, so reading these files
+# after it runs finds only the kept packages and the ledger would report zero removals.
+ALL_MODULE_PKGS=$(for f in core/*/module-packages.yaml; do
+  [ -f "$f" ] || continue
+  mod="${f#core/}"; mod="${mod%/module-packages.yaml}"
+  awk -v mod="$mod" '
+    /^(demo|template|fork):[[:space:]]*$/ { sec=$0; sub(/:.*/,"",sec); next }
+    /^[a-z_]+:/                           { sec="" }
+    sec != "" && /^[[:space:]]*-[[:space:]]*\{/ {
+      id=$0; sub(/.*id:[[:space:]]*/,"",id); sub(/[,}[:space:]].*$/,"",id)
+      print mod "\t" id "\t" sec
+    }
+  ' "$f" 2>/dev/null || true
 done)
 
 TEMPLATE_MODULE_FILES=$(for pair in database:database data:data model:model core_store:store domain:domain network:network \
@@ -176,7 +198,7 @@ while IFS=$'\t' read -r mod id; do
   # test in one of the missed source sets (core/model does).
   for d in "core/$mod"/src/*/kotlin/kpt/core/"$mod"/"$id"; do
     [ -d "$d" ] || continue
-    say "rm -rf $d  (core/$mod package '$id', owner: template)"
+    say "rm -rf $d  (core/$mod package '$id', owner: demo)"
     [ "$APPLY" -eq 1 ] && rm -rf "$d"
   done
 done <<< "$TEMPLATE_MODULE_PKGS"
@@ -275,6 +297,69 @@ fi
 #     4b2 deletes the demo packages, which takes their annotations with them, so the next build simply
 #     generates a smaller database. There is no committed output that can outlive its classes, and no
 #     way to leave an AutoMigration pointing past the version we just reset to.
+
+# ── 4b3. Stamp `status:` on every declared package row ───────────────────────────────────────
+#     The sync otherwise has to GUESS why a declared package is missing: a fork that deliberately
+#     stripped the crypto showcase looks identical to one whose crypto package was lost, and
+#     "restore it" is right in exactly one of those cases.
+#
+#     Written back into core/<module>/module-packages.yaml, beside the owner it belongs to. The
+#     value is DERIVED FROM DISK, so a template sync full-copying this file cannot corrupt it — the
+#     next customizer run (or `--refresh-status`) recomputes it from what is actually there. That is
+#     why a status field is safe here while a hand-maintained one would not be.
+echo "stamp package status:"
+if [ "$APPLY" -eq 1 ]; then
+  for f in core/*/module-packages.yaml; do
+    [ -f "$f" ] || continue
+    m="${f#core/}"; m="${m%/module-packages.yaml}"
+    tmp="$f.tmp"; sec=""
+    : > "$tmp"
+    while IFS= read -r line; do
+      case "$line" in
+        demo:|template:|fork:) sec="${line%:}" ;;
+      esac
+      case "$line" in
+        *"{ id: "*"status: "*)
+          id="${line#*id: }"; id="${id%%,*}"; id="${id%% *}"
+          on_disk=0
+          for d in "core/$m"/src/*/kotlin/kpt/core/"$m"/"$id"; do
+            if [ -d "$d" ]; then on_disk=1; break; fi
+          done
+          if [ "$on_disk" -eq 1 ]; then st="exists"
+          elif [ "$sec" = "demo" ]; then st="removed"
+          else st="missing"; fi
+          printf '%s\n' "$line" | sed -E "s/status: [a-z]+/status: $st/" >> "$tmp"
+          ;;
+        *) printf '%s\n' "$line" >> "$tmp" ;;
+      esac
+    done < "$f"
+    mv "$tmp" "$f"
+  done
+  # the feature/ registry: one row per MODULE, stamped the same way
+  if [ -f feature/module-packages.yaml ]; then
+    tmp="feature/module-packages.yaml.tmp"; sec=""; : > "$tmp"
+    while IFS= read -r line; do
+      case "$line" in demo:|template:|fork:) sec="${line%:}" ;; esac
+      case "$line" in
+        *"{ id: "*"status: "*)
+          id="${line#*id: }"; id="${id%%,*}"; id="${id%% *}"
+          if [ -d "feature/$id" ]; then st="exists"
+          elif [ "$sec" = "demo" ]; then st="removed"
+          else st="missing"; fi
+          printf '%s\n' "$line" | sed -E "s/status: [a-z]+/status: $st/" >> "$tmp"
+          ;;
+        *) printf '%s\n' "$line" >> "$tmp" ;;
+      esac
+    done < feature/module-packages.yaml
+    mv "$tmp" feature/module-packages.yaml
+  fi
+  n_ex=$(grep -h -o 'status: exists'  core/*/module-packages.yaml feature/module-packages.yaml 2>/dev/null | wc -l | tr -d ' ' || true)
+  n_rm=$(grep -h -o 'status: removed' core/*/module-packages.yaml feature/module-packages.yaml 2>/dev/null | wc -l | tr -d ' ' || true)
+  n_ms=$(grep -h -o 'status: missing' core/*/module-packages.yaml feature/module-packages.yaml 2>/dev/null | wc -l | tr -d ' ' || true)
+  say "stamped status (${n_ex:-0} exists, ${n_rm:-0} removed, ${n_ms:-0} missing)"
+else
+  say "stamp status: on every core/*/module-packages.yaml row"
+fi
 
 SCHEMAS="core/database/schemas"
 if [ -d "$SCHEMAS" ]; then

@@ -10,12 +10,15 @@
 package kpt.core.network.di
 
 import kpt.core.base.network.AccessPointRegistry
+import kpt.core.base.network.DefaultHeaderProvider
 import kpt.core.base.network.MultiUrlConfigProvider
+import kpt.core.base.network.RuntimeHeaderStore
 import kpt.core.base.network.SupabaseClientFactory
 import kpt.core.base.network.SupabaseConfigClient
 import kpt.core.network.config.AppAccessPoints
 import kpt.core.network.config.AppMultiUrlConfigProvider
 import kpt.core.network.config.AppSupabaseAnonKeys
+import kpt.core.network.config.ProjectNetworkHeaders
 import org.koin.dsl.module
 
 // NOTE: Backend base URLs are NOT hardcoded here or in config classes anymore — every server is a
@@ -43,6 +46,14 @@ import org.koin.dsl.module
 // non-derivable single goes in the fork-owned [ProjectNetworkModule]. So this aggregator carries no
 // endpoint-specific reference at all and a template sync can blind-copy it.
 val NetworkModule = module {
+    // Runtime header values — written at login (Basic / OAuth), read on EVERY request. A singleton,
+    // because the whole point is that a value set after the clients were built still reaches them.
+    single { RuntimeHeaderStore() }
+
+    // Default request headers, from the fork-owned ProjectNetworkHeaders seam. Every REST client
+    // built by `restApi(...)` resolves this, so a fork adds an app-wide header without hand-building
+    // a Ktorfit and giving up the generated @ApiBinding wiring. Neutral on the template.
+    single<DefaultHeaderProvider> { ProjectNetworkHeaders }
 
     // Every declared endpoint's Koin binding, GENERATED from app-profile#network.access_points into
     // the sibling [GeneratedApiBindings] (same package — no import, so this file keeps its zero-demo

@@ -59,8 +59,8 @@ import kpt.core.base.ui.dashboard.DashboardProgressBar
 import kpt.core.base.ui.dashboard.toDashboardProgressState
 import kpt.core.base.ui.freshness.FreshnessIndicator
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.common.formatDecimal
-import kpt.core.common.formatGrouped
+import kpt.core.common.format.formatDecimal
+import kpt.core.common.format.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.component.MoneyText
 import kpt.core.designsystem.component.MoneyTone

@@ -11,9 +11,9 @@ package kpt.core.datastore.di
 
 import com.russhwolf.settings.Settings
 import kpt.core.base.common.manager.DispatcherManager
-import kpt.core.datastore.ProjectPreferencesRepository
-import kpt.core.datastore.ProjectPreferencesRepositoryImpl
-import kpt.core.datastore.UserPreferencesRepository
+import kpt.core.datastore.prefs.ProjectPreferencesRepository
+import kpt.core.datastore.prefs.ProjectPreferencesRepositoryImpl
+import kpt.core.datastore.prefs.UserPreferencesRepository
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 

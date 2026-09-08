@@ -111,7 +111,7 @@ fi
 
 # DSC-4 — a surviving fence means the strip skipped a file it was supposed to process.
 fences="$(grep -rl 'demo:begin' "$SB" --include='*.kt' --include='*.kts' --include='*.yaml' 2>/dev/null \
-  | grep -v '/build/' | grep -v '/product-health/tests/' | sed "s#^$SB/##" || true)"
+  | grep -v '/build/' | grep -v '/product-health/tests/' | grep -v '/module-packages\.yaml$' | sed "s#^$SB/##" || true)"
 if [ -z "$fences" ]; then
   ok "DSC-4 no demo fence survives outside test fixtures"
 else

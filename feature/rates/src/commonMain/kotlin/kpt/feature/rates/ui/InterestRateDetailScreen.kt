@@ -41,7 +41,7 @@ import kpt.core.base.designsystem.component.AppCard
 import kpt.core.base.designsystem.component.HeroCard
 import kpt.core.base.ui.freshness.FreshnessIndicator
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.common.formatDecimal
+import kpt.core.common.format.formatDecimal
 import kpt.core.designsystem.chart.KptAreaChart
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.theme.spacing

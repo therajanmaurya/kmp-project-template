@@ -46,8 +46,8 @@ import kpt.core.base.store.freshness.FreshnessBand
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.freshness.FreshnessIndicator
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.common.formatDecimal
-import kpt.core.common.formatTimeAgo
+import kpt.core.common.format.formatDecimal
+import kpt.core.common.format.formatTimeAgo
 import kpt.core.designsystem.theme.spacing
 import kpt.feature.currencyrates.generated.resources.Res
 import kpt.feature.currencyrates.generated.resources.screens_currencyrates_history_back_cd

@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kpt.core.base.designsystem.component.AppCard
 import kpt.core.base.designsystem.component.HeroCard
-import kpt.core.common.formatGrouped
+import kpt.core.common.format.formatGrouped
 import kpt.core.designsystem.component.AmountDisplay
 import kpt.core.designsystem.component.StatusChip
 import kpt.core.designsystem.component.StatusChipIntent

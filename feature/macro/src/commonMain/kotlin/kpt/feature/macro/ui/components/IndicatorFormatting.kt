@@ -9,7 +9,7 @@
  */
 package kpt.feature.macro.ui.components
 
-import kpt.core.common.formatDecimal
+import kpt.core.common.format.formatDecimal
 import kpt.core.model.economic.IndicatorKind
 import kpt.core.model.economic.MacroIndicator
 

@@ -21,8 +21,8 @@ import kpt.core.data.user.UserLogoutManager
 import kpt.core.data.user.impl.UserLogoutManagerImpl
 import kpt.core.database.AppDatabase
 import kpt.core.database.di.DatabaseModule
-import kpt.core.datastore.UserPreferencesRepository
 import kpt.core.datastore.di.DatastoreModule
+import kpt.core.datastore.prefs.UserPreferencesRepository
 import kpt.core.network.di.NetworkModule
 import kpt.core.store.prefs.impl.UserDataSource
 import org.koin.core.module.Module

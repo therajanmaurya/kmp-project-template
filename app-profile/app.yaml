@@ -39,7 +39,13 @@ network:
   # Per-entry fields:
   #   id             stable key referenced by restApi("<id>") / supabaseApi("<id>").
   #   type           rest | supabase  → AccessPointKind.
-  #   base_url       transport base URL (REST) or project URL (Supabase).
+  #   base_url       ORIGIN only — scheme + host, ending at the first `/`
+  #                  (`https://sandbox.mifos.community/`). For Supabase, the project URL.
+  #   base_path      optional — the API path under that origin (`fineract-provider/api/v1/`). Split
+  #                  from base_url because they change for different reasons: the ORIGIN is what a
+  #                  fork repoints (sandbox -> production, per-flavour host) and what
+  #                  DynamicBaseUrlPlugin rewrites at runtime, while the PATH belongs to the API and
+  #                  travels with the endpoint. Joined as origin + "/" + path + "/".
   #   loggable_host  host enabled for HTTP logging.
   #   proxied_host   optional — route via the platform proxy (CORS-blocked hosts).
   #   secret_alias   optional — vault alias for a REQUEST-time key (e.g. FRED's @Query api_key).
@@ -49,6 +55,13 @@ network:
   #                    supabase  → `supabaseApi("<id>") { <Simple>(it) }`     (single-arg ctor taking
   #                                SupabaseConfigClient)
   #                  An endpoint declared here with no annotated class is simply not wired yet.
+  #   headers        optional — headers sent on EVERY request to this point. Two kinds:
+  #                    - { name: X, value: literal }   static, baked into AppAccessPoints
+  #                    - { name: X, runtime: some.key } value supplied at RUNTIME via
+  #                      RuntimeHeaderStore["some.key"] — set it at login (Basic / OAuth), clear it on
+  #                      sign-out. Declared here by NAME so "which header does this API need" is a
+  #                      property of the endpoint, not something a ViewModel invents; only the VALUE
+  #                      is runtime. An unset runtime header is OMITTED, never sent empty.
   #   anon_key_env   supabase only — env / local.properties key holding the anon key. Generated into
   #                  AppSupabaseAnonKeys as a BuildKonfig read, so no key is ever committed. Omit and
   #                  the point resolves to an empty key (client stays inert, isConfigured == false).
@@ -59,7 +72,9 @@ network:
   # Every access point declares `owner:` — the ONE field that decides its lifecycle:
   #
   #   owner: fork      the CONSUMER's endpoint. Kept by the customizer, never touched by a sync.
-  #   owner: template  the template's own showcase. `scripts/remove-demo.sh` DELETES the entry AND
+  #   owner: template  shipped to EVERY fork and KEPT by the customizer — `project` (Supabase) is the
+  #                    one: a fork gets a working backend access point by default.
+  #   owner: demo      the template's own showcase. `scripts/remove-demo.sh` DELETES the entry AND
   #                    its `kpt/core/network/<id>/` package, so "forking = starting clean" is a
   #                    declared property of each endpoint rather than a positional comment fence the
   #                    strip has to parse (such a fence could not express `project`, whose point
@@ -89,30 +104,43 @@ network:
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
       # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
-      owner: template
+      owner: demo
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
     - id: frankfurter                # FX / currency exchange rates
-      owner: template
+      owner: demo
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
     - id: coingecko                  # crypto market data
-      owner: template
+      owner: demo
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
     - id: fred                       # US Federal Reserve economic data
-      owner: template
+      owner: demo
       type: rest
       base_url: https://api.stlouisfed.org/
       loggable_host: api.stlouisfed.org
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
+    - id: fineract                   # Mifos Fineract — the auth-bearing REST showcase
+      type: rest
+      owner: demo
+      base_url: https://sandbox.mifos.community/
+      base_path: fineract-provider/api/v1/
+      loggable_host: sandbox.mifos.community
+      # The public Fineract sandbox. Every call needs a tenant id, and every non-public call needs a
+      # credential that only exists AFTER sign-in — which is exactly why `headers` distinguishes the
+      # two: the tenant is a build-time constant, the Authorization is written to the runtime store
+      # by the login flow and read again on each request.
+      headers:
+        - { name: Fineract-Platform-TenantId, value: default }
+        - { name: Authorization, runtime: fineract.auth }
     - id: worldbank                  # World Bank macro indicators
-      owner: template
+      owner: demo
       type: rest
       base_url: https://api.worldbank.org/
       loggable_host: api.worldbank.org
@@ -127,139 +155,37 @@ network:
 # still recorded by hand is schema HISTORY, in `app-profile/migration-ledger.yaml`, because a
 # `from`/`to` edge is a contract with every installed device that no class can carry.
 
-# core/data — PACKAGE OWNERSHIP.
-#
-# Same declared-package contract as core/model: the TEMPLATE's showcase domains are named here and
-# `scripts/remove-demo.sh` deletes them by name; a FORK's own repository package needs no row and is
-# resolved `fork` by the module catch-all in customization-surface.yaml.
-#
-# `demo/di/` is deliberately NOT a package row. DemoRepositoryModule + DemoOutboxQualifiers stay
-# under `demo/` because their lifecycle is governed by the DI-seam contract instead
-# (white-label-di-seams WLS-2/WLS-4: a Demo*Module must sit under demo/ and be listed INSIDE
-# FeatureRegistry's demo fence, so the strip removes both the module and its registration). Moving
-# them out would delete the module without unregistering it.
-data:
-  packages:
-    # demo:begin
-    - { id: alerts,    owner: template }   # price-alert repository (+ its submit outbox)
-    - { id: banking,   owner: template }   # loan + bill-reminder repositories
-    - { id: calc,      owner: template }   # amortization calculator repository
-    - { id: cloudtodo, owner: template }   # MUTABLE-store repository + sync orchestrator
-    - { id: crypto,    owner: template }   # coin market / detail repository
-    - { id: currency,  owner: template }   # exchange-rate + rate-history repository
-    - { id: economic,  owner: template }   # FRED + World Bank repositories
-    - { id: emi,       owner: template }   # EMI calculator repository
-    - { id: profile,   owner: template }   # profile repository
-    - { id: watchlist, owner: template }   # watchlist repository
-    # demo:end
-    # FRAMEWORK packages a clean fork KEEPS — `user` (UserDataRepository, logout manager) and `util`
-    # are read by the framework, so `owner: fork` in the STRIP vocabulary (kept), even though the
-    # sync full-copies them as template-authored code. Same two-axis call as core_store's `prefs`.
-    - { id: user,      owner: fork }
-    - { id: util,      owner: fork }
 
-# core/model — PACKAGE OWNERSHIP.
+# ── Module package ownership ────────────────────────────────────────────────────────────────────
 #
-# The showcase's models used to sit under `kpt/core/model/demo/**` and be deleted by the generic
-# `**/demo/**` sweep. That worked, but it was the ONLY way core/model could be stripped: the module
-# had no declaration, so "which packages does the template own" was a directory-naming convention
-# rather than a fact anything could read. core/store and core/database had already moved off it.
+# Each module declares its own packages in `core/<module>/module-packages.yaml`, next to the code it
+# describes, using the three-value vocabulary `demo | template | fork`. They are NOT inlined here.
 #
-# Now it is declared like every other module, and `scripts/remove-demo.sh` deletes these by NAME —
-# the same `<module>: packages:` sweep that already enumerates `model:model`. Adding a showcase
-# domain is: write the models in `kpt/core/model/<id>/`, add a row here. Stripping it is automatic.
+# Why not here: this file is `owner: merge` — it carries template AND fork declarations, so a
+# template edit landing beside a fork edit is a 3-way merge waiting to happen. A per-module file is
+# TEMPLATE-ONLY and full-copies, the same split that took Room's `migration-units.yaml` out of this
+# file. The module that gains a package is now the module whose file changes.
 #
-# A FORK's own models need NO row. Only the TEMPLATE's packages are declared; anything else under
-# `kpt/core/model/` is the fork's by definition — the strip never names it, and the ownership contract
-# resolves it `fork`. That is what makes the strip clean: one list to delete, everything else stays.
-model:
-  packages:
-    # demo:begin
-    - { id: alerts,    owner: template }   # price-alert models
-    - { id: banking,   owner: template }   # loans, bill reminders, amortization rows
-    - { id: calc,      owner: template }   # amortization breakdown
-    - { id: cloudtodo, owner: template }   # the MUTABLE-store showcase's model
-    - { id: crypto,    owner: template }   # coin market / detail
-    - { id: currency,  owner: template }   # exchange rates, countries
-    - { id: economic,  owner: template }   # FRED series + World Bank indicators
-    - { id: emi,       owner: template }   # EMI result
-    - { id: profile,   owner: template }   # profile info
-    - { id: watchlist, owner: template }   # watchlist items
-    # demo:end
-    # `user` holds the FRAMEWORK models (UserData, ThemeBrand, LanguageConfig, …). Template-authored,
-    # but a clean fork KEEPS them — the framework reads them — which in this two-value vocabulary is
-    # `fork`, the same call as core_store's `prefs`.
-    - { id: user,      owner: fork }
+# `module_packages` below is the CONNECTION: the modules whose declarations make up this app. It is
+# what tells a reader (and `/kmp-project-template-sync`) where to look, and it is asserted against
+# what is on disk by G-CORE-PKG, so a module cannot be added here without its file — or the reverse.
+module_packages:
+  - core/common/module-packages.yaml
+  - core/data/module-packages.yaml
+  - core/database/module-packages.yaml
+  - core/datastore/module-packages.yaml
+  - core/designsystem/module-packages.yaml
+  - core/domain/module-packages.yaml
+  - core/firebase/module-packages.yaml
+  - core/model/module-packages.yaml
+  - core/network/module-packages.yaml
+  - core/store/module-packages.yaml
+  - core/ui/module-packages.yaml
+  - feature/module-packages.yaml
 
-# core/database — PACKAGE OWNERSHIP only.
-#
-# The schema itself is no longer declared here. Entities, DAOs and type-converters are declared by
-# ANNOTATION on the classes themselves (`@DbEntity` / `@DbDao` / `@DbConverters`), and
-# `tools/database-ksp` derives AppDatabase + GeneratedDaoBindings from them. The three lists that
-# used to live here restated what each class already said, in a second file, by hand.
-#
-# What remains is the ownership map `remove-demo.sh` reads to decide which packages a cleaned fork
-# deletes. Deleting a package takes its annotations with it, so the database simply regenerates
-# smaller — there is nothing to reset and no way to strand a reference to a table that is gone.
-database:
-  packages:
-    # demo:begin
-    - { id: alerts,     owner: template }
-    - { id: banking,    owner: template }
-    - { id: cloudtodo,  owner: template }
-    - { id: crypto,     owner: template }
-    - { id: currency,   owner: template }
-    - { id: economic,   owner: template }
-    - { id: watchlist,  owner: template }
-    - { id: migrations, owner: template }   # the template's own schema-history specs
-    # demo:end
-
-# core/store — Store5 package ownership.
-#
-# Keyed `core_store` rather than `store` because `store:` below is the APP-STORE LISTING (title,
-# subtitle, description) — a different concept that ships to Play/App Store and is read by
-# deployment/_shared/config.rb. Renaming that fork-facing key to free up `store` would be a breaking
-# change for every fork, so the module block takes the explicit name instead.
-#
-# Same contract as `database.packages[]`: `owner: template` means the showcase ships it and a clean
-# fork must not, so `remove-demo.sh --clean` deletes `core/store/src/*/kotlin/kpt/core/store/<id>/`.
-# `owner: fork` survives the strip. This replaces the previous `**/demo/**` PATH convention — what a
-# cleaned fork keeps is now declared, not inferred from where a file sits, which is the same move
-# `network.access_points` and `database.packages` already made.
-core_store:
-  packages:
-    # demo:begin
-    - { id: alerts,    owner: template }   # OFFLINE_LOCAL_ONLY showcase
-    - { id: banking,   owner: template }   # OFFLINE_LOCAL_ONLY showcase (loans + bill reminders)
-    - { id: calc,      owner: template }   # MEMORY_ONLY showcase (amortization)
-    - { id: cloudtodo, owner: template }   # MUTABLE showcase (write store + conflict resolver)
-    - { id: crypto,    owner: template }   # NETWORK_WITH_CACHE showcase
-    - { id: currency,  owner: template }   # NETWORK_WITH_CACHE showcase
-    - { id: economic,  owner: template }   # NETWORK_WITH_CACHE showcase (FRED + World Bank)
-    - { id: emi,       owner: template }   # MEMORY_ONLY showcase
-    - { id: exchange,  owner: template }   # NETWORK_ONLY showcase
-    - { id: profile,   owner: template }   # MEMORY_ONLY showcase
-    - { id: watchlist, owner: template }   # OFFLINE_LOCAL_ONLY showcase
-    # demo:end
-    # `prefs` backs UserDataStore, which the template's settings/profile surfaces depend on. It is
-    # template-authored but a clean fork KEEPS it, which under this two-value vocabulary is `fork`.
-    - { id: prefs,     owner: fork }
-
-  # Store5 stores are NOT declared here. Each provider carries `@StoreProvider` /`@CacheKey` and
-  # `tools/store-ksp` derives its Koin qualifier, TTL, cache keys, binding and logout purge from the
-  # annotation plus the FUNCTION SIGNATURE. A row here had to restate the signature
-  # (`deps: [api, networkMonitor, dao]` beside `provideCoinMarketsStore(api:, networkMonitor:, dao:)`)
-  # — the same fact in two files, maintained by hand.
-  #
-  # `packages:` above STAYS: it is what `remove-demo.sh` reads to strip a demo domain, and ownership
-  # belongs to the package, not to each store inside it. A store inherits its package's lifecycle.
-
-  # Template-shipped FILES (not whole packages) that a clean fork must not keep. Declared rather
-  # than pattern-matched, so nothing is deleted because of where it happens to sit.
-  #
-  # (DemoCacheKeys.kt used to be listed here. It no longer exists: its keys are rows in `cache_keys`
-  # above, inside the demo fence, so a clean fork simply regenerates AppCacheKeys without them.)
-  template_files: []
+# The FORK's answer to those files is `app-profile/package-ledger.yaml` (owner: fork, never synced):
+# what the customizer actually did to each declared package — `removed` | `kept` | `absent`. A sync
+# reads it so it never has to guess whether a missing package was stripped on purpose or lost.
 
 org:
   name: Mifos Initiative

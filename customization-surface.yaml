@@ -100,6 +100,11 @@ rules:
   # they are `@DbEntity`-annotated classes, which is why this file has no fork counterpart.
   - glob: "core-base/database/module-schema.yaml"
     owner: template
+  # Per-module package lifecycle, declared next to the code it describes. TEMPLATE-ONLY and
+  # full-copying — the same split that took migration-units.yaml out of the `owner: merge` app.yaml,
+  # so a template package addition is never a 3-way merge against a fork's edit.
+  - glob: "core/*/module-packages.yaml"
+    owner: template
   - glob: "core/database/migration-units.yaml"
     owner: template
   - glob: "app-profile/migration-ledger.yaml"
@@ -215,12 +220,34 @@ rules:
   # `feature/<x>` a fork authors is consumer-owned and falls through to the blanket `feature/** → fork`.
   - glob: "feature/**/demo/**"
     owner: demo-showcase
+  # ── BACKBONE STARTERS — fork-owned, so a fork can redesign them freely ────────────────────────
+  # home / profile / settings ship as a WORKING starting point and the fork owns them outright: it
+  # redesigns the screens in place, using the shipped code as the base, and a sync never overwrites
+  # that work. (They were `owner: template` with `BackboneRegistry`'s homeBody/settingsBody/
+  # profileBody as the only sanctioned edit point. That kept upstream fixes flowing, but it meant a
+  # fork editing HomeScreen.kt directly — the obvious thing to do — silently lost the change on the
+  # next sync. Ownership now matches what a fork actually does.)
+  #
+  # The seams still exist and still work; they are simply no longer the ONLY way in.
+  #
+  # THE TRADE, stated plainly: these modules no longer receive upstream fixes. That is the cost of
+  # owning them, and it is deliberate.
+  #
+  # The ONE carve-out is `Platform.*.kt` — the expect/actual shims (commonMain expect + android /
+  # desktop / native / js / wasmJs actuals). Nobody redesigns a platform shim, and if the template
+  # adds a KMP target the fork's module would have no `actual` for it and simply stop compiling.
+  # Keeping these template-owned means new-target support keeps flowing while every screen stays the
+  # fork's. Declared FIRST — first match wins.
+  - glob: "feature/settings/**/Platform.kt"
+    owner: template
+  - glob: "feature/settings/**/Platform.*.kt"
+    owner: template
   - glob: "feature/home/**"
-    owner: template
+    owner: fork
   - glob: "feature/profile/**"
-    owner: template
+    owner: fork
   - glob: "feature/settings/**"
-    owner: template
+    owner: fork
   - glob: "feature/**"
     owner: fork
   # core/store seam — the 4 seam files below are fork-authored (white-label-template-completion E0/T1, LD-2).
@@ -293,10 +320,13 @@ rules:
   # The whole package is the seam — same pattern as the core/store block above. (E1/T7, 2026-08-11)
   #
   # Base-feature INNER-content seam (WS01 / epic AC7): BackboneRegistry carries the fork-owned
-  # `homeBody` / `settingsBody` / `profileBody` `val`s — the settings/profile inner content lives HERE,
-  # in this fork-owned backbone-seam file, NOT in the template-owned `feature/{settings,profile}/**`
-  # shells above. Declared explicitly (more-specific-first) so the base-feature seam is self-documenting;
-  # it resolves the same `fork` as the enclosing `registry/**` rule (mirrors the shipped homeBody carve-out).
+  # `homeBody` / `settingsBody` / `profileBody` `val`s. These remain a supported way to supply the
+  # backbone's inner content WITHOUT touching the module — useful when a fork wants the shipped shell
+  # to keep evolving around its own body.
+  #
+  # It is no longer the ONLY way in: `feature/{home,profile,settings}/**` is now `owner: fork`, so a
+  # fork may equally redesign those screens in place. The seam suits a fork that wants to swap content
+  # and leave the shell alone; direct ownership suits a fork that wants the whole surface.
   - glob: "cmp-navigation/**/registry/BackboneRegistry.kt"
     owner: fork
   - glob: "cmp-navigation/**/registry/**"
@@ -467,6 +497,97 @@ rules:
     owner: template
   - glob: "core-base/**"
     owner: template
+  # ── module catch-alls for the remaining declared modules ──────────────────────────────────────
+  # Each module's template packages are enumerated in its module-packages.yaml and (where they are
+  # showcase) given a demo-showcase rule; everything else under the module is the FORK's own and must
+  # not be claimed by the `core/**` blanket. More-specific rules above still win.
+  - glob: "core/network/**/kpt/core/network/coingecko/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/fineract/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/frankfurter/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/fred/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/jsonplaceholder/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/worldbank/**"
+    owner: demo-showcase
+  - glob: "core/network/**/kpt/core/network/project/**"
+    owner: template
+  - glob: "core/network/**/kpt/core/network/config/**"
+    owner: template
+  - glob: "core/network/**"
+    owner: fork
+  - glob: "core/datastore/**"
+    owner: fork
+  - glob: "core/firebase/**"
+    owner: fork
+  - glob: "core/designsystem/**"
+    owner: fork
+  - glob: "core/ui/**"
+    owner: fork
+
+  # ── core/database — declared packages (module-packages.yaml) ──────────────────────────────────
+  # These had NO rows at all and fell to the `core/**` blanket as `template`, which is the wrong
+  # class for showcase code: a fork keeping the demo would stop receiving updates to it. Caught by
+  # G-CORE-PKG (MP-1) the moment core/database was folded into the audit.
+  - glob: "core/database/**/kpt/core/database/alerts/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/banking/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/cloudtodo/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/crypto/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/currency/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/economic/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/migrations/**"
+    owner: demo-showcase
+  - glob: "core/database/**/kpt/core/database/watchlist/**"
+    owner: demo-showcase
+  # FRAMEWORK packages — template-authored, full-copied. `config` holds the generated DatabaseConfig
+  # + the fork-owned ForkDatabaseConfig (which has its own more-specific rule above).
+  - glob: "core/database/**/kpt/core/database/config/**"
+    owner: template
+  - glob: "core/database/**/kpt/core/database/infra/**"
+    owner: template
+  - glob: "core/database/**/kpt/core/database/di/**"
+    owner: template
+  # A fork's own database packages.
+  - glob: "core/database/**"
+    owner: fork
+
+  # ── core/store — the per-package demo rows are above; this is the module catch-all ─────────────
+  # Framework packages first, then everything else is the fork's own.
+  - glob: "core/store/**/kpt/core/store/config/**"
+    owner: template
+  - glob: "core/store/**/kpt/core/store/prefs/**"
+    owner: template
+  - glob: "core/store/**/kpt/core/store/di/**"
+    owner: template
+  - glob: "core/store/**"
+    owner: fork
+
+  # ── core/domain — declared packages; both are showcase, so a cleaned fork gets an empty module ──
+  - glob: "core/domain/**/kpt/core/domain/calc/**"
+    owner: demo-showcase
+  - glob: "core/domain/**/kpt/core/domain/emi/**"
+    owner: demo-showcase
+  # A fork's own calculators. Everything the template owns is enumerated above.
+  - glob: "core/domain/**"
+    owner: fork
+
+  # ── core/common — one framework package, everything else the fork's ────────────────────────────
+  # `format` is template-authored and full-copied; a fork's own utility must NOT be claimed by the
+  # `core/**` blanket, which is what the catch-all below prevents.
+  - glob: "core/common/**/kpt/core/common/format/**"
+    owner: template
+  - glob: "core/common/**"
+    owner: fork
+
   # ── core/data — same declared-package contract as core/model ──────────────────────────────────
   # The showcase repositories moved out of `demo/**` into per-domain packages declared in
   # app-profile#data.packages[]. Each needs a rule here or it falls to the `core/**` blanket and

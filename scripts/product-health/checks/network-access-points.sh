@@ -279,6 +279,28 @@ points.select { |p| p["type"].to_s.strip.downcase == "supabase" }.each do |p|
              "(#{host})\n     → rename the id (and its package) to '#{ref}'")
 end
 
+# ── NAP-11 — the default-header seam stays wired ─────────────────────────────
+# `ktorfitFor` is the ONE place every generated REST client is built, so a fork's DefaultHeaderProvider
+# reaches the wire only if that function passes it to setupDefaultHttpClient. Delete the argument and
+# NOTHING fails: the template sends no headers, so every test still passes and the loss shows up only
+# in a fork whose API key silently stops being sent.
+#
+# It cannot be covered behaviourally: ktorfitFor builds its client through the `httpClient` platform
+# `expect`, so a test cannot inject a MockEngine to observe the request. Structural, for the same
+# reason store-fork-seam-wiring FS-1/FS-2 are.
+dsl = read(File.join(net_dir, "..", "..", "..", "..", "..", "..", "..",
+                     "core-base/network/src/commonMain/kotlin/kpt/core/base/network/NetworkDsl.kt"))
+dsl ||= read(File.expand_path("core-base/network/src/commonMain/kotlin/kpt/core/base/network/NetworkDsl.kt", Dir.pwd))
+if dsl.nil?
+  puts "   ℹ️  NAP-11 NetworkDsl.kt not readable from here — header-seam wiring unchecked"
+elsif dsl !~ /defaultHeaders\s*=\s*headerProvider\.headersFor\(/
+  fail = bad("❌ NAP-11 ktorfitFor no longer passes the fork's DefaultHeaderProvider to setupDefaultHttpClient\n" \
+             "     → a fork's default headers would silently stop being sent")
+elsif dsl !~ /getOrNull<DefaultHeaderProvider>\(\)/
+  fail = bad("❌ NAP-11 restApi no longer resolves DefaultHeaderProvider from Koin\n" \
+             "     → the seam exists but nothing supplies it")
+end
+
 # ── NAP-7 — no hand-rolled wiring ────────────────────────────────────────────
 # The generated file is the ONLY place a binding may live; a hand-added line re-opens the drift the
 # codegen closes. Comments and KDoc are stripped so the files that DOCUMENT the DSL don't trip it.

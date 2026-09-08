@@ -849,6 +849,7 @@ abstract class SyncForkConfigTask : DefaultTask() {
             val id = m["id"]?.toString()?.takeIf { it.isNotBlank() } ?: continue
             val kind = if (m["type"]?.toString()?.trim()?.lowercase() == "supabase") "SUPABASE" else "REST"
             val baseUrl = m["base_url"]?.toString().orEmpty()
+            val basePath = m["base_path"]?.toString()?.trim()?.takeIf { it.isNotBlank() }
             val host = m["loggable_host"]?.toString().orEmpty()
             val proxied = m["proxied_host"]?.toString()?.takeIf { it.isNotBlank() }
             // One field per line so the generated block stays under the detekt/ktlint max line length.
@@ -856,8 +857,34 @@ abstract class SyncForkConfigTask : DefaultTask() {
             sb.append("            id = \"${esc(id)}\",\n")
             sb.append("            kind = AccessPointKind.$kind,\n")
             sb.append("            baseUrl = \"${esc(baseUrl)}\",\n")
+            if (basePath != null) sb.append("            basePath = \"${esc(basePath)}\",\n")
             sb.append("            loggableHost = \"${esc(host)}\",\n")
             if (proxied != null) sb.append("            proxiedHost = \"${esc(proxied)}\",\n")
+            // Declared headers. A `value:` is baked in; a `runtime:` emits the KEY only — the value
+            // is written to RuntimeHeaderStore at login and read again on every request, because a
+            // credential captured when this singleton client was built could never become a token
+            // obtained after sign-in.
+            val hdrs = (m["headers"] as? List<*>).orEmpty().mapNotNull { h ->
+                val hm = h as? Map<*, *> ?: return@mapNotNull null
+                val hname = hm["name"]?.toString()?.trim().orEmpty()
+                if (hname.isEmpty()) return@mapNotNull null
+                val hvalue = hm["value"]?.toString()
+                val hruntime = hm["runtime"]?.toString()?.trim()
+                when {
+                    hruntime != null && hruntime.isNotEmpty() ->
+                        "HeaderSpec(name = \"${esc(hname)}\", runtimeKey = \"${esc(hruntime)}\")"
+                    hvalue != null ->
+                        "HeaderSpec(name = \"${esc(hname)}\", value = \"${esc(hvalue)}\")"
+                    // Neither set is a malformed row: emitting it would fail HeaderSpec's own
+                    // require() at construction, i.e. at app start. Skip, and let NAP report it.
+                    else -> null
+                }
+            }
+            if (hdrs.isNotEmpty()) {
+                sb.append("            headers = listOf(\n")
+                hdrs.forEach { sb.append("                ").append(it).append(",\n") }
+                sb.append("            ),\n")
+            }
             sb.append("        ),\n")
             count++
         }

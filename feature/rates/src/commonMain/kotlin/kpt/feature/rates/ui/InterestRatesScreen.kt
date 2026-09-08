@@ -44,7 +44,7 @@ import kpt.core.base.designsystem.component.AppCard
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.freshness.FreshnessIndicator
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.common.formatDecimal
+import kpt.core.common.format.formatDecimal
 import kpt.core.designsystem.chart.KptSparkline
 import kpt.core.designsystem.component.RateBadge
 import kpt.core.designsystem.component.RateDirection

@@ -43,7 +43,7 @@ import kpt.core.base.designsystem.component.AppCard
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.ui.freshness.FreshnessIndicator
 import kpt.core.base.ui.screen.ScreenContent
-import kpt.core.common.formatDecimal
+import kpt.core.common.format.formatDecimal
 import kpt.core.designsystem.theme.spacing
 import kpt.core.model.currency.ExchangeRates
 import kpt.feature.currencyrates.generated.resources.Res

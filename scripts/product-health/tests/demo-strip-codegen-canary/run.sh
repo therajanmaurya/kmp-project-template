@@ -44,6 +44,15 @@ bad() { echo "   ❌ $1"; rc=1; }
 SB="$(mktemp -d)"; trap 'rm -rf "$SB"' EXIT
 mkdir -p "$SB/scripts" "$SB/app-profile" "$SB/feature" "$SB/$NET_PKGS"
 cp "$ROOT/scripts/remove-demo.sh" "$SB/scripts/"
+# Package lifecycle now lives in core/<module>/module-packages.yaml, which the sweep reads directly.
+# Without these the sweep finds nothing to delete and the canary would assert against a strip that
+# examined an empty list — a vacuous green of exactly the kind CI-1 exists to prevent.
+for f in "$ROOT"/core/*/module-packages.yaml; do
+  [ -f "$f" ] || continue
+  mod="$(basename "$(dirname "$f")")"
+  mkdir -p "$SB/core/$mod"
+  cp "$f" "$SB/core/$mod/"
+done
 # The demo endpoints, copied with their @ApiBinding annotations — those ARE the binding declaration.
 for d in coingecko frankfurter fred jsonplaceholder worldbank; do
   [ -d "$ROOT/$NET_PKGS/$d" ] && cp -R "$ROOT/$NET_PKGS/$d" "$SB/$NET_PKGS/"
@@ -92,8 +101,8 @@ else
 fi
 
 [ -d "$SB/$PKG_PROBE" ] \
-  && bad "declared owner:template package '$PKG_PROBE' SURVIVED --apply — the package sweep read app-profile AFTER the fence strip had already removed the declarations" \
-  || ok "declared owner:template module package deleted by --apply"
+  && bad "declared owner:demo package '$PKG_PROBE' SURVIVED --apply — the package sweep read app-profile AFTER the fence strip had already removed the declarations" \
+  || ok "declared owner:demo module package deleted by --apply"
 
 # The binding declaration IS the annotated class, so deleting the endpoint package deletes it. There
 # is no committed generated file left to reset — which is the point: it cannot outlive its classes.

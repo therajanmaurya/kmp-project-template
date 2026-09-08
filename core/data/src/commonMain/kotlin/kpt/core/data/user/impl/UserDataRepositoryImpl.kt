@@ -18,7 +18,7 @@ import kpt.core.base.store.screen.FetchPolicy
 import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.asScreenStream
 import kpt.core.data.user.UserDataRepository
-import kpt.core.datastore.UserPreferencesRepository
+import kpt.core.datastore.prefs.UserPreferencesRepository
 import kpt.core.model.user.DarkThemeConfig
 import kpt.core.model.user.LanguageConfig
 import kpt.core.model.user.ThemeBrand

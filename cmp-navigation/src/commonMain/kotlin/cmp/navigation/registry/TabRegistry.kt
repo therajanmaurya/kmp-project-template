@@ -13,7 +13,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import cmp.navigation.authenticatednavbar.AuthenticatedNavBarTabItem
-import kpt.core.ui.NavigationItem
+import kpt.core.ui.navigation.NavigationItem
 
 /**
  * TabRegistry — the FORK-OWNED white-label seam for the authenticated bottom-nav tabs.

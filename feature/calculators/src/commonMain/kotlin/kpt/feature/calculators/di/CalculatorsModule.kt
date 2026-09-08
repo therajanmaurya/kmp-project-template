@@ -10,8 +10,8 @@
 package kpt.feature.calculators.di
 
 import kpt.core.data.config.AppOutboxQualifiers
-import kpt.core.domain.demo.calc.amortizationSchedule
-import kpt.core.domain.demo.calc.computeEmi
+import kpt.core.domain.calc.amortizationSchedule
+import kpt.core.domain.calc.computeEmi
 import kpt.core.model.banking.AmortizationRow
 import kpt.core.model.calc.AmortizationBreakdown
 import kpt.core.store.calc.impl.AmortizationCompute

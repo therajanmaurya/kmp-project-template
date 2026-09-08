@@ -9,7 +9,7 @@
  */
 package kpt.feature.emicalculator.di
 
-import kpt.core.domain.demo.emi.calculateEmi
+import kpt.core.domain.emi.calculateEmi
 import kpt.core.store.emi.impl.EmiCompute
 import kpt.feature.emicalculator.ui.EmiCalculatorViewModel
 import org.koin.core.module.dsl.viewModelOf

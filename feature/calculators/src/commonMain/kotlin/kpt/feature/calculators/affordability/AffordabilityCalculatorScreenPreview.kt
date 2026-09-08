@@ -11,7 +11,7 @@ package kpt.feature.calculators.affordability
 
 import androidx.compose.runtime.Composable
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.domain.demo.calc.AffordabilityResult
+import kpt.core.domain.calc.AffordabilityResult
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /*

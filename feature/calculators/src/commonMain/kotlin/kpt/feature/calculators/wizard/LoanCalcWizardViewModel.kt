@@ -23,7 +23,7 @@ import kpt.core.base.store.submit.SubmitOutbox
 import kpt.core.base.ui.viewmodel.BaseMutationViewModel
 import kpt.core.base.ui.viewmodel.MutationMode
 import kpt.core.data.banking.LoanRepository
-import kpt.core.domain.demo.calc.computeEmi
+import kpt.core.domain.calc.computeEmi
 import kpt.core.model.banking.Loan
 import kpt.core.model.banking.LoanCalcScenario
 import kpt.core.model.banking.LoanKind

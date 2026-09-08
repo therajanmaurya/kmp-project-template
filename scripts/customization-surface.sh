@@ -503,13 +503,19 @@ cs_require_flip_preconditions() {
   # core/model's three-way split. `invoice/` stands for ANY undeclared package — a fork's own model,
   # which must resolve fork. Before the module catch-all existed it resolved `template` off the
   # `core/**` blanket, and a sync would have believed it could overwrite it.
-  _cs_expect "core/model/kpt/core/model/invoice/Invoice.kt"        fork
-  _cs_expect "core/model/kpt/core/model/user/UserData.kt"          template
-  _cs_expect "core/model/kpt/core/model/demo/banking/Loan.kt"      demo-showcase
-  _cs_expect "core/store/config/ProjectErrorMapper.kt"             fork
-  _cs_expect "core/store/config/ProjectScreenStateDefaults.kt"     fork
-  _cs_expect "core/store/economic/ExchangeRatesStore.kt"          template
-  _cs_expect "core/store/banking/InterestRateSeriesStore.kt"      template
+  _cs_expect "core/model/src/commonMain/kotlin/kpt/core/model/invoice/Invoice.kt" fork
+  _cs_expect "core/model/src/commonMain/kotlin/kpt/core/model/user/UserData.kt" template
+  _cs_expect "core/model/src/commonMain/kotlin/kpt/core/model/banking/Loan.kt" demo-showcase
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/config/ProjectErrorMapper.kt" fork
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/config/ProjectScreenStateDefaults.kt" fork
+  # REAL paths, not short synthetic ones. These two asserted `template` only because the short form
+  # missed every `**/kpt/core/store/**` rule and fell through to the `core/**` blanket — the fixture
+  # was testing a path that does not exist. The real files are showcase stores, so demo-showcase.
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/economic/impl/ExchangeRatesStore.kt" demo-showcase
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/economic/impl/InterestRateSeriesStore.kt" demo-showcase
+  # The module catch-all: a fork's own store package must not be claimed by the core/** blanket.
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/invoice/impl/InvoiceStore.kt" fork
+  _cs_expect "core/store/src/commonMain/kotlin/kpt/core/store/prefs/impl/UserDataStore.kt" template
   [ "$bad" -eq 0 ] && echo "✅ T1 flip preconditions hold (og-images generated · secrets-manifest/keystore + core/store Project* seams fork · core/model undeclared=fork · gradle.properties merge/properties-3way · tests/core-store-impl template)"
   return "$bad"
 }

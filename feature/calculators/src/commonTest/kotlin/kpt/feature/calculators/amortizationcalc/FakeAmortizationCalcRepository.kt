@@ -16,8 +16,8 @@ import kpt.core.base.store.screen.ScreenDataStream
 import kpt.core.base.store.screen.ScreenState
 import kpt.core.base.store.screen.screenDataStreamForTesting
 import kpt.core.data.calc.AmortizationCalcRepository
-import kpt.core.domain.demo.calc.amortizationSchedule
-import kpt.core.domain.demo.calc.computeEmi
+import kpt.core.domain.calc.amortizationSchedule
+import kpt.core.domain.calc.computeEmi
 import kpt.core.model.banking.AmortizationRow
 import kpt.core.model.calc.AmortizationBreakdown
 import kpt.core.store.calc.impl.AmortizationCalcParams
