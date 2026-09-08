@@ -864,6 +864,13 @@ abstract class SyncForkConfigTask : DefaultTask() {
             // is written to RuntimeHeaderStore at login and read again on every request, because a
             // credential captured when this singleton client was built could never become a token
             // obtained after sign-in.
+            val authRaw = m["auth"]?.toString()?.trim()?.lowercase()
+            val authScheme = when (authRaw) {
+                "basic" -> "BASIC"
+                "bearer" -> "BEARER"
+                "oauth" -> "OAUTH"
+                else -> "NONE"
+            }
             val hdrs = (m["headers"] as? List<*>).orEmpty().mapNotNull { h ->
                 val hm = h as? Map<*, *> ?: return@mapNotNull null
                 val hname = hm["name"]?.toString()?.trim().orEmpty()
@@ -880,9 +887,19 @@ abstract class SyncForkConfigTask : DefaultTask() {
                     else -> null
                 }
             }
-            if (hdrs.isNotEmpty()) {
+            // A declared `auth:` emits its own Authorization spec, so no one writes that row by hand
+            // (and no one gets the `Basic `/`Bearer ` prefix wrong). An EXPLICIT Authorization row
+            // still wins — a fork with a non-standard scheme keeps full control.
+            val hasExplicitAuthHeader = hdrs.any { it.contains("name = \"Authorization\"") }
+            val allHdrs = if (authScheme != "NONE" && !hasExplicitAuthHeader) {
+                hdrs + "HeaderSpec(name = \"Authorization\", runtimeKey = \"${esc(id)}.auth\")"
+            } else {
+                hdrs
+            }
+            if (authScheme != "NONE") sb.append("            auth = AuthScheme.$authScheme,\n")
+            if (allHdrs.isNotEmpty()) {
                 sb.append("            headers = listOf(\n")
-                hdrs.forEach { sb.append("                ").append(it).append(",\n") }
+                allHdrs.forEach { sb.append("                ").append(it).append(",\n") }
                 sb.append("            ),\n")
             }
             sb.append("        ),\n")

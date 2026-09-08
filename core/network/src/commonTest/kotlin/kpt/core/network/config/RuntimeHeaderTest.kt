@@ -19,6 +19,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kpt.core.base.network.AccessPoint
 import kpt.core.base.network.AccessPointKind
+import kpt.core.base.network.AuthScheme
 import kpt.core.base.network.HeaderSpec
 import kpt.core.base.network.RuntimeHeaderStore
 import kpt.core.base.network.setupDefaultHttpClient
@@ -99,6 +100,41 @@ class RuntimeHeaderTest {
         // rather than by silently sending the wrong thing.
         assertFailsWith<IllegalArgumentException> { HeaderSpec(name = "X") }
         assertFailsWith<IllegalArgumentException> { HeaderSpec(name = "X", value = "a", runtimeKey = "b") }
+    }
+
+    @Test
+    fun the_real_declared_point_sends_its_static_header_with_no_manual_step() = runTest {
+        // The REAL generated point, not a synthetic spec list: this is what production builds from.
+        val fineract = AppAccessPoints.points.first { it.id == "fineract" }
+        val store = RuntimeHeaderStore()
+        val seen = mutableListOf<Map<String, String?>>()
+
+        val client = HttpClient(
+            MockEngine { request ->
+                seen += mapOf(
+                    "tenant" to request.headers["Fineract-Platform-TenantId"],
+                    "auth" to request.headers[HttpHeaders.Authorization],
+                )
+                respond("[]", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            },
+        ) {
+            setupDefaultHttpClient(
+                baseUrl = fineract.effectiveUrl,
+                // Exactly what ktorfitFor passes — nothing added by hand.
+                dynamicHeaders = { store.resolve(fineract.headers) },
+            )()
+        }
+
+        client.get("offices")
+        // Declared `value:` in app.yaml -> on the wire, with no code touching it anywhere.
+        assertEquals("default", seen[0]["tenant"])
+        // …while the credential half stays absent until a token exists.
+        assertNull(seen[0]["auth"])
+
+        store[AuthScheme.runtimeKeyFor("fineract")] = "Basic dG9rZW4="
+        client.get("offices")
+        assertEquals("default", seen[1]["tenant"], "the static header is unaffected by sign-in")
+        assertEquals("Basic dG9rZW4=", seen[1]["auth"])
     }
 
     @Test

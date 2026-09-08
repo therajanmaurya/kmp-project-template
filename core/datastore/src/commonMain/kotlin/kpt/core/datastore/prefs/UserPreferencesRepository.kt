@@ -27,7 +27,20 @@ interface UserPreferencesRepository {
 
     val userData: StateFlow<UserData>
 
+    /**
+     * The stored credential, or null when signed out. Synchronous read for a caller that already
+     * has one in hand; prefer [observeAuthToken] when the value can change under you.
+     */
     val authToken: String?
+
+    /**
+     * The credential as a stream, re-emitting on sign-in and sign-out.
+     *
+     * This is what wires `Authorization` automatically: `AuthHeaderBridge` collects it and writes
+     * the formatted header into `RuntimeHeaderStore`, so a token restored from disk at startup is in
+     * place before the first request and one obtained at login lands the moment it is written.
+     */
+    val observeAuthToken: Flow<String?>
 
     val passcode: String
 
@@ -38,6 +51,15 @@ interface UserPreferencesRepository {
     val observeDynamicColorPreference: Flow<Boolean>
 
     val observeScreenCapturePreference: Flow<Boolean>
+
+    /**
+     * Persist [token] into the ENCRYPTED store, or clear it when null.
+     *
+     * Call on sign-in with the value the auth endpoint returned (for Basic, the base64 of
+     * `user:password`; for OAuth, the access token) and on sign-out with null. Everything downstream
+     * — the header, its wire-format prefix — follows from the access point's declared `auth:`.
+     */
+    suspend fun setAuthToken(token: String?)
 
     suspend fun setLanguage(language: LanguageConfig)
 

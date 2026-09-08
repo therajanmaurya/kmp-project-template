@@ -55,6 +55,12 @@ network:
   #                    supabase  → `supabaseApi("<id>") { <Simple>(it) }`     (single-arg ctor taking
   #                                SupabaseConfigClient)
   #                  An endpoint declared here with no annotated class is simply not wired yet.
+  #   auth           optional — none | basic | bearer | oauth (default none). Declaring it makes the
+  #                  `Authorization` header AUTOMATIC: the generator emits its spec and the auth
+  #                  bridge fills the value from the stored credential in that scheme's wire format
+  #                  (`Basic <t>` / `Bearer <t>`), so no call site formats a credential by hand.
+  #                  An explicit `Authorization` row in `headers` overrides it, for a fork whose
+  #                  scheme is non-standard.
   #   headers        optional — headers sent on EVERY request to this point. Two kinds:
   #                    - { name: X, value: literal }   static, baked into AppAccessPoints
   #                    - { name: X, runtime: some.key } value supplied at RUNTIME via
@@ -62,6 +68,12 @@ network:
   #                      sign-out. Declared here by NAME so "which header does this API need" is a
   #                      property of the endpoint, not something a ViewModel invents; only the VALUE
   #                      is runtime. An unset runtime header is OMITTED, never sent empty.
+  #
+  #                    Do NOT declare `Content-Type` or `Accept`: ContentNegotiation already sets
+  #                    them on every request — Accept from the plugin, Content-Type from the BODY, so
+  #                    a JSON post sends application/json, a text post sends text/plain, and a GET
+  #                    correctly sends none. Declaring them only adds a Content-Type to bodyless
+  #                    requests, describing a body that is not there. Enforced by NAP-13.
   #   anon_key_env   supabase only — env / local.properties key holding the anon key. Generated into
   #                  AppSupabaseAnonKeys as a BuildKonfig read, so no key is ever committed. Omit and
   #                  the point resolves to an empty key (client stays inert, isConfigured == false).
@@ -87,11 +99,13 @@ network:
       owner: fork
       type: rest
       base_url: https://api.example.com/
+      auth: none                    # the fork's endpoint — set basic/bearer/oauth when you wire sign-in
       loggable_host: api.example.com
     - id: staging
       owner: fork
       type: rest
       base_url: https://staging.example.com/
+      auth: none                    # mirrors `main`; keep the two in step
       loggable_host: staging.example.com
     # ── template showcase — removed wholesale by the customizer ──────────────────────────────
     # A fork declares its OWN Supabase point named for its project (id -> package), so this one is
@@ -100,6 +114,7 @@ network:
       owner: template
       type: supabase
       base_url: https://project.supabase.co
+      auth: none                    # Supabase authenticates with its anon key + gotrue, not an Authorization header we set
       loggable_host: project.supabase.co
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
       # the env var / local.properties entry; without it the row generates "" and the client is inert.
@@ -107,21 +122,25 @@ network:
       owner: demo
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
+      auth: none                    # public fixture API
       loggable_host: jsonplaceholder.typicode.com
     - id: frankfurter                # FX / currency exchange rates
       owner: demo
       type: rest
       base_url: https://api.frankfurter.dev/
+      auth: none                    # public, no credential
       loggable_host: api.frankfurter.dev
     - id: coingecko                  # crypto market data
       owner: demo
       type: rest
       base_url: https://api.coingecko.com/
+      auth: none                    # public tier, no credential
       loggable_host: api.coingecko.com
     - id: fred                       # US Federal Reserve economic data
       owner: demo
       type: rest
       base_url: https://api.stlouisfed.org/
+      auth: none                    # keys off a request-time @Query api_key, not a header
       loggable_host: api.stlouisfed.org
       proxied_host: api.stlouisfed.org   # blocks direct CORS calls → route via platform proxy
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
@@ -136,13 +155,14 @@ network:
       # credential that only exists AFTER sign-in — which is exactly why `headers` distinguishes the
       # two: the tenant is a build-time constant, the Authorization is written to the runtime store
       # by the login flow and read again on each request.
+      auth: basic                    # -> Authorization: Basic <token>, wired automatically
       headers:
         - { name: Fineract-Platform-TenantId, value: default }
-        - { name: Authorization, runtime: fineract.auth }
     - id: worldbank                  # World Bank macro indicators
       owner: demo
       type: rest
       base_url: https://api.worldbank.org/
+      auth: none                    # public, no credential
       loggable_host: api.worldbank.org
 
 # ── Room database — declared by ANNOTATION, not here (E1/C7, superseded by the KSP migration) ──

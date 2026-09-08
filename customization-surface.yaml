@@ -517,14 +517,47 @@ rules:
     owner: template
   - glob: "core/network/**/kpt/core/network/config/**"
     owner: template
+  - glob: "core/network/**/kpt/core/network/di/**"
+    owner: template
   - glob: "core/network/**"
     owner: fork
+  # Framework packages — template-authored, must keep syncing. Above the catch-all.
+  - glob: "core/datastore/**/kpt/core/datastore/di/**"
+    owner: template
+  - glob: "core/datastore/**/kpt/core/datastore/prefs/**"
+    owner: template
   - glob: "core/datastore/**"
     owner: fork
+  - glob: "core/firebase/**/kpt/core/firebase/analytics/**"
+    owner: template
+  - glob: "core/firebase/**/kpt/core/firebase/di/**"
+    owner: template
   - glob: "core/firebase/**"
     owner: fork
+  # core/designsystem — template PRIMITIVES, fork BRAND. `theme` is the fork's: its palette comes from
+  # the idea-layer design pipeline, so a sync must never copy the template's Mifos colours over it.
+  # Everything else is framework code a fork should keep receiving fixes for — which is why these are
+  # declared explicitly instead of falling to the module catch-all below. (They briefly did fall
+  # through, which silently stopped chart/component/utils syncing; caught by comparing each package's
+  # registry row against its resolved owner.)
+  - glob: "core/designsystem/**/kpt/core/designsystem/chart/**"
+    owner: template
+  - glob: "core/designsystem/**/kpt/core/designsystem/component/**"
+    owner: template
+  - glob: "core/designsystem/**/kpt/core/designsystem/utils/**"
+    owner: template
   - glob: "core/designsystem/**"
     owner: fork
+  # core/ui — Compose primitives every feature composes. Template-authored; a fork's own primitives
+  # fall to the catch-all.
+  - glob: "core/ui/**/kpt/core/ui/bottombar/**"
+    owner: template
+  - glob: "core/ui/**/kpt/core/ui/input/**"
+    owner: template
+  - glob: "core/ui/**/kpt/core/ui/navigation/**"
+    owner: template
+  - glob: "core/ui/**/kpt/core/ui/utils/**"
+    owner: template
   - glob: "core/ui/**"
     owner: fork
 

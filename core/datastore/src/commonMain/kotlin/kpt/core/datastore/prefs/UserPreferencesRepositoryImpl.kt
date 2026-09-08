@@ -31,6 +31,9 @@ import kpt.core.model.user.UserData
 private const val USER_DATA_KEY = "user_data_key"
 private const val SECURE_DATA_KEY = "secure_data_key"
 
+/** Encrypted-store key for the API credential. Secure store, never the plain one. */
+private const val AUTH_TOKEN_KEY = "auth_token"
+
 /**
  * Splits user data storage between plain (UI preferences) and secure
  * (credentials/auth state) Settings backends.
@@ -101,8 +104,26 @@ class UserPreferencesRepositoryImpl(
     override val userData: StateFlow<UserData>
         get() = _userData.asStateFlow()
 
+    // Seeded from the ENCRYPTED store so a token survives process death: the bridge then restores
+    // `Authorization` at startup, before the first request, without a round trip to the server.
+    private val _authToken = MutableStateFlow(secureSettings.getStringOrNull(AUTH_TOKEN_KEY))
+
     override val authToken: String?
-        get() = null
+        get() = _authToken.value
+
+    override val observeAuthToken: Flow<String?>
+        get() = _authToken.asStateFlow()
+
+    override suspend fun setAuthToken(token: String?) = withContext(dispatcher.io) {
+        if (token.isNullOrBlank()) {
+            // Remove, never store empty: a blank credential is indistinguishable from "signed in
+            // with nothing" downstream, and the header layer would have to guess.
+            secureSettings.remove(AUTH_TOKEN_KEY)
+        } else {
+            secureSettings.putString(AUTH_TOKEN_KEY, token)
+        }
+        _authToken.value = token?.takeIf { it.isNotBlank() }
+    }
 
     override val passcode: String
         get() = _userData.value.passcode

@@ -111,13 +111,25 @@ for spec in $CORE_MODULES; do
       demo)
         [ "$got" = "demo-showcase" ] \
           || note "❌ MP-1 $MOD_LABEL package '$id' is owner:demo but resolves '$got' — expected demo-showcase (add its rule to customization-surface.yaml, or it stops syncing to forks)" ;;
-      template|fork)
-        # A KEPT package may legitimately be any non-strippable sync class: `template` (full-copy),
-        # `fork` (a branded seam like designsystem/theme), `merge` (a 3-way surface like ui/scaffold)
-        # or `generated`. The only contradiction is demo-showcase, which means the sync believes it
-        # is strippable showcase while this file says a clean fork keeps it.
-        [ "$got" != "demo-showcase" ] \
-          || note "❌ MP-1 $MOD_LABEL package '$id' is owner:$owner (kept by --clean) but resolves demo-showcase — the sync would treat it as strippable showcase" ;;
+      template)
+        # TEMPLATE-authored code must keep SYNCING. `template` (full-copy), `merge` (3-way) and
+        # `generated` all deliver upstream fixes; `fork` does not, and `demo-showcase` would strip it.
+        #
+        # `fork` is the dangerous verdict, and the reason this is no longer a blanket "anything but
+        # demo-showcase": adding a module catch-all `core/<m>/** -> fork` silently reclassified every
+        # framework package that had no more-specific rule, so chart / component / bottombar / input
+        # stopped receiving upstream fixes and NOTHING failed. Declare framework packages explicitly
+        # ABOVE the catch-all.
+        case "$got" in
+          template|merge|generated) : ;;
+          *) note "❌ MP-1 $MOD_LABEL package '$id' is owner:template but resolves '$got' — template code must keep syncing; add an explicit rule above the module catch-all" ;;
+        esac ;;
+      fork)
+        # The fork's own: must not be full-copied over, and must not be strippable.
+        case "$got" in
+          fork|merge) : ;;
+          *) note "❌ MP-1 $MOD_LABEL package '$id' is owner:fork but resolves '$got' — a sync would overwrite the fork's work" ;;
+        esac ;;
       *)
         note "❌ MP-1 $MOD_LABEL package '$id' has owner '$owner' — expected demo | template | fork" ;;
     esac

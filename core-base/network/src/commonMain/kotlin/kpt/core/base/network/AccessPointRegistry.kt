@@ -62,6 +62,12 @@ data class AccessPoint(
      * `runtimeKey` header takes its value from [RuntimeHeaderStore] at request time (login, OAuth).
      */
     val headers: List<HeaderSpec> = emptyList(),
+    /**
+     * How this endpoint authenticates. Declaring it makes the `Authorization` header automatic —
+     * the generator emits its spec and the auth bridge fills the value in the right wire format, so
+     * no call site formats a credential by hand.
+     */
+    val auth: AuthScheme = AuthScheme.NONE,
 ) {
     /**
      * The URL requests are actually made against — [baseUrl] + [basePath], normalised.

@@ -68,11 +68,13 @@ network:
   # `UrlType.MAIN` is the framework default in core-base/network — every fork needs one.
   access_points:
     - id: main
+      auth: none
       owner: fork
       type: rest
       base_url: https://api.example.com/
       loggable_host: api.example.com
     - id: staging
+      auth: none
       owner: fork
       type: rest
       base_url: https://staging.example.com/
@@ -81,6 +83,7 @@ network:
     # A fork declares its OWN Supabase point named for its project (id -> package), so this one is
     # `template`: it goes with the showcase rather than being rebranded in place.
     - id: project
+      auth: none
       owner: template
       type: supabase
       base_url: https://project.supabase.co
@@ -89,21 +92,25 @@ network:
       # anon_key_env: SUPABASE_ANON_KEY_DATA   # a fork uncomments this on ITS OWN point and supplies
       # the env var / local.properties entry; without it the row generates "" and the client is inert.
     - id: jsonplaceholder            # WRITABLE, for the Store5 MUTABLE archetype
+      auth: none
       owner: template
       type: rest
       base_url: https://jsonplaceholder.typicode.com/
       loggable_host: jsonplaceholder.typicode.com
     - id: frankfurter                # FX / currency exchange rates
+      auth: none
       owner: template
       type: rest
       base_url: https://api.frankfurter.dev/
       loggable_host: api.frankfurter.dev
     - id: coingecko                  # crypto market data
+      auth: none
       owner: template
       type: rest
       base_url: https://api.coingecko.com/
       loggable_host: api.coingecko.com
     - id: fred                       # US Federal Reserve economic data
+      auth: none
       owner: template
       type: rest
       base_url: https://api.stlouisfed.org/
@@ -112,6 +119,7 @@ network:
       secret_alias: template-fred-api-key # request-time API key — from the vault (secrets-manifest.yaml),
                                          # materialized to local.properties → BuildKonfig.FRED_API_KEY
     - id: worldbank                  # World Bank macro indicators
+      auth: none
       owner: template
       type: rest
       base_url: https://api.worldbank.org/

@@ -279,6 +279,51 @@ points.select { |p| p["type"].to_s.strip.downcase == "supabase" }.each do |p|
              "(#{host})\n     → rename the id (and its package) to '#{ref}'")
 end
 
+# ── NAP-12 — every access point STATES its auth scheme ───────────────────────
+# `auth:` defaults to none, which is the safe default but a silent one: an endpoint that needs a
+# credential and forgot to say so just gets 401s at runtime, and an endpoint that is genuinely public
+# looks identical to one nobody thought about. Requiring the field turns "no auth" into a decision
+# somebody made.
+missing_auth = points.reject { |p| p.key?("auth") }.map { |p| p["id"] }
+if missing_auth.any?
+  fail = bad("❌ NAP-12 access point(s) do not declare `auth:`: #{missing_auth.join(', ')}\n" \
+             "     → add `auth: none|basic|bearer|oauth`; none is valid but must be stated")
+end
+bad_auth = points.select { |p| p.key?("auth") && !%w[none basic bearer oauth].include?(p["auth"].to_s.downcase) }
+if bad_auth.any?
+  fail = bad("❌ NAP-12 unknown auth scheme: #{bad_auth.map { |p| "#{p['id']}=#{p['auth']}" }.join(', ')}\n" \
+             "     → one of none | basic | bearer | oauth (an unknown value silently parses to NONE)")
+end
+
+# ── NAP-13 — transport-negotiated headers are NOT declared ───────────────────
+# `Content-Type` and `Accept` belong to ContentNegotiation, which `setupDefaultHttpClient` installs
+# with `json(jsonConfig)`.
+#
+# MEASURED, not assumed (probe, 2026-09-08) — declared vs not:
+#   declared      GET  Content-Type: application/json   <- on a request with NO body
+#   not declared  GET  Content-Type: absent             <- correct per RFC 9110
+#   either way    POST Content-Type follows the BODY (application/json / text/plain)
+#   either way    Accept: application/json, single value, never duplicated
+#
+# So a declaration does NOT break non-JSON bodies — Ktor derives Content-Type from the body and
+# that wins — and it does NOT duplicate Accept. (Both were claimed when this check was written;
+# the probe disproved them.) What it DOES do is put a Content-Type on bodyless requests,
+# describing a body that is not there, which some proxies and WAFs reject or flag. It is therefore
+# strictly worse than not declaring: nothing gained, one malformed header added.
+# Other codebases carry these as constants (mifos-pay's BaseURL.HEADER_CONTENT_TYPE / HEADER_ACCEPT)
+# because they hand-build requests. Here the client negotiates, so the right number of declarations
+# is zero — and this check exists so that pattern is not ported in by habit.
+negotiated = %w[content-type accept]
+declared_negotiated = points.flat_map do |p|
+  (p["headers"] || []).map { |h| h["name"].to_s }.select { |n| negotiated.include?(n.downcase) }
+                      .map { |n| "#{p['id']}:#{n}" }
+end
+if declared_negotiated.any?
+  fail = bad("❌ NAP-13 transport-negotiated header(s) declared: #{declared_negotiated.join(', ')}\n" \
+             "     → remove them; ContentNegotiation sets Accept and Content-Type per request.\n" \
+             "       They add nothing (the plugin already sets both) and put a Content-Type on bodyless requests.")
+end
+
 # ── NAP-11 — the default-header seam stays wired ─────────────────────────────
 # `ktorfitFor` is the ONE place every generated REST client is built, so a fork's DefaultHeaderProvider
 # reaches the wire only if that function passes it to setupDefaultHttpClient. Delete the argument and
