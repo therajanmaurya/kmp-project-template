@@ -70,7 +70,7 @@ integrity = "1.6.0"
 # Static Analysis & Code Formatting
 ktlint = "14.2.0"
 detekt = "1.23.8"
-spotlessVersion = "8.8.0"
+spotlessVersion = "8.10.2"
 turbine = "1.2.1"
 twitter-detekt-compose = "0.0.26"
 moduleGraph = "2.9.0"
@@ -81,7 +81,7 @@ typesafeConventions = "0.5.0"
 
 # Kotlin KMP Dependencies
 kotlin = "2.4.20"
-kover = "0.9.8"
+kover = "0.9.9"
 kotlinInject = "0.9.0"
 kotlinxBrowser = "0.5.0"
 kotlinxCoroutines = "1.11.0"
