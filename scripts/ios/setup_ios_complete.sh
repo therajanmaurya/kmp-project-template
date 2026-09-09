@@ -395,7 +395,9 @@ _upsert_property() {
     local file="$1" key="$2" value="$3"
     if grep -qE "^${key}=" "$file" 2>/dev/null; then
         # Update existing key (macOS-compatible sed)
-        sed -i '' "s|^${key}=.*|${key}=${value}|" "$file"
+        # -i.bak (not BSD's `-i ''`) so this stays portable if it ever runs on Linux CI.
+        sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
+        rm -f "$file.bak"
     else
         echo "${key}=${value}" >> "$file"
     fi

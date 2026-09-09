@@ -154,11 +154,13 @@ DEMO_PKGS=$(echo "$DEMO_FEATURES" | sed 's/-//g' | paste -sd'|' -)
 say "strip 'import kpt.core.*.demo.*' + demo-feature imports from surviving .kt files"
 if [ "$APPLY" -eq 1 ]; then
   find . -name '*.kt' -not -path '*/build/*' -not -path '*/product-health/tests/*' -print0 | while IFS= read -r -d '' f; do
-    sed -i '' -E \
+    # -i.bak (not BSD's `-i ''`): GNU sed treats a separate '' as the script and fails.
+    sed -i.bak -E \
       -e '/^import kpt\.core\.[a-z]+\.demo\./d' \
       -e '/^import kpt\.feature\.[a-z]+\.demo\./d' \
       -e "/^import kpt\\.feature\\.(${DEMO_PKGS})[.]/d" \
       "$f"
+    rm -f "$f.bak"
   done
 fi
 
@@ -277,8 +279,9 @@ if [ -f "$LEDGER" ]; then
     # silently — a fork that stripped the white-label machinery legitimately has no units file.
     units=$(grep -hoE 'id:[[:space:]]*[A-Za-z0-9_-]+' core/database/migration-units.yaml 2>/dev/null \
               | sed 's/.*id:[[:space:]]*//' | paste -sd', ' - || true)
-    sed -i '' -e "s/^version:[[:space:]]*[0-9][0-9]*/version: 1/" \
-              -e "s/^baseline_units:.*/baseline_units: [${units}]/" "$LEDGER"
+    sed -i.bak -e "s/^version:[[:space:]]*[0-9][0-9]*/version: 1/" \
+               -e "s/^baseline_units:.*/baseline_units: [${units}]/" "$LEDGER"
+    rm -f "$LEDGER.bak"
     grep -q '^version: 1$' "$LEDGER" \
       || { echo "remove-demo: FAILED to reset $LEDGER version" >&2; exit 1; }
   fi
