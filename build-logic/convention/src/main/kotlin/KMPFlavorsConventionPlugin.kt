@@ -92,15 +92,12 @@ class KMPFlavorsConventionPlugin : Plugin<Project> {
 
                 // OFF, and it must stay off. When true the generator appends an optional
                 // `#include? "../Pods/…"` to every generated xcconfig. `#include?` never errors on
-                // a missing file, so dead Pods wiring would survive silently in every fork that
+                // a missing file, so dead wiring would survive silently in every fork that
                 // syncs this template. Enforced by G-IOS-SWIFTPM (IOS-7 flag / IOS-6 output).
                 //
-                // Renamed in kmp-product-flavors 2.9.0 from `iosCocoapodsIntegration`, whose name
-                // oversold it: the flag applies no CocoaPods plugin, generates no podspec and runs
-                // no `pod install` — it only emits that one optional Pods xcconfig include, for a
-                // brownfield app taking the KMP framework via SPM while still using CocoaPods for
-                // OTHER native SDKs. Not our case. The old name survives as a deprecated alias;
-                // using it would leave a CocoaPods word in a build that has no CocoaPods.
+                // The flag emits one optional xcconfig include for brownfield apps that take the
+                // KMP framework via SPM while still using another package manager for OTHER
+                // native SDKs. Not our case — this template is SPM end to end.
                 iosIncludePodsXcconfig.set(false)
 
                 // SwiftPM distribution (kmp-product-flavors 2.9).

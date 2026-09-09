@@ -30,7 +30,7 @@ build-cache/
 # (macOS username) into every fork.
 **/xcuserdata/
 *.xcuserstate
-# SwiftPM artifacts (CocoaPods→SwiftPM migration).
+# SwiftPM artifacts.
 #
 # `cmp-ios/KotlinMultiplatformLinkedPackage/` is TRACKED and must stay tracked: iosApp.xcodeproj
 # declares it as an XCLocalSwiftPackageReference (relativePath = KotlinMultiplatformLinkedPackage),
@@ -184,7 +184,7 @@ deployment/fastlane/.listing_sync_state.json
 # churn on any version bump.
 #
 # The Package.resolved files are deliberately NOT ignored: they pin firebase-ios-sdk to a
-# resolved commit and are the reproducibility guarantee Podfile.lock used to give us.
+# resolved commit and are the reproducibility guarantee for iOS dependencies.
 .swiftpm-locks/**/Package.swift
 .swiftpm-locks/**/*.m
 .swiftpm-locks/**/*.h

@@ -401,10 +401,10 @@ error: no such module 'ComposeApp'
 # or a stale UI — code changes in cmp-shared don't show up in the app
 ```
 
-> Since the E6 SwiftPM/XCFramework migration there is no CocoaPods step — iOS links the
+> Since the E6 SwiftPM/XCFramework migration there is no dependency-install step — iOS links the
 > Kotlin `ComposeApp` framework as an XCFramework assembled by Gradle and embedded by the
 > Xcode `[KMP] Embed and Sign ComposeApp XCFramework` Run-Script phase. This issue replaces
-> the old CocoaPods "sandbox out of sync" failure.
+> the old "sandbox out of sync" class of failure.
 
 **Causes:**
 - The `ComposeApp` XCFramework was never assembled (a fresh checkout / clean build dir)

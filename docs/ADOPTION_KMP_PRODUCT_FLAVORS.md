@@ -126,7 +126,7 @@ Both `:cmp-android:assembleDemoDebug` and `:cmp-android:assembleProdRelease` pas
 > current state: (a) `$(CONFIGURATION)` is never expanded inside an xcconfig `#include`, so
 > the `iOSApp.xcconfig` umbrella never actually loaded the per-variant file — each build
 > configuration now points at its own `Configs/<variant>.xcconfig` directly, and the dead
-> umbrella has been deleted; (b) the per-configuration CocoaPods `#include?` is gone with the
+> umbrella has been deleted; (b) the per-configuration optional xcconfig `#include?` is gone with the
 > pod toolchain. Current contract is enforced by G-IOS-SWIFTPM.
 
 Wired the Xcode project for per-flavor builds so the KMP shared framework is resolved from the

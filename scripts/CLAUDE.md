@@ -403,7 +403,7 @@ UPLOAD_KEYSTORE_ALIAS_PASSWORD="xxx"
 **Prerequisites:**
 - `gradle/fork.properties` filled in and `secrets/apple/` files present
 - Fastlane installed
-- Xcode (iOS is SwiftPM/XCFramework since E6 — no CocoaPods)
+- Xcode (iOS is SwiftPM/XCFramework since E6)
 
 **Output:** IPA uploaded to Firebase App Distribution
 

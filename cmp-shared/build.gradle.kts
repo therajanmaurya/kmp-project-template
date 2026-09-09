@@ -17,8 +17,7 @@ plugins {
     // SKIE — Swift-friendly export of the ComposeApp framework (sealed classes,
     // suspend → async/await, Flow → AsyncSequence, default arguments). Applies to
     // the KMP `binaries.framework { }` export below; the XCFramework the iOS app
-    // consumes therefore ships the SKIE-enhanced Swift API. E6 (SwiftPM/XCFramework)
-    // migration off the Kotlin CocoaPods plugin — see 07-ios-swiftpm.md.
+    // consumes therefore ships the SKIE-enhanced Swift API. See 07-ios-swiftpm.md.
     alias(libs.plugins.skie)
     // worker-kmp v4.0.0 — applies @WorkerKmpApp/@WorkerKmpWorkers codegen pipeline.
     // KSP processor scans this module's commonMain for @WorkerKmpWorkers (see
@@ -38,14 +37,13 @@ skie {
 }
 
 kotlin {
-    // E6 — SwiftPM/XCFramework export (replaces the Kotlin CocoaPods plugin).
+    // E6 — SwiftPM/XCFramework export.
     // Assemble a single `ComposeApp.xcframework` from the iOS device + simulator
     // slices; the iOS app consumes it via `cmp-ios/Package.swift` (SwiftPM binary
     // target) + the flavor-aware `cmp-ios/scripts/embed-xcframework.sh` Xcode
     // Run-Script build phase. The `assembleComposeApp{Debug,Release}XCFramework`
     // (and umbrella `assembleComposeAppXCFramework`) Gradle tasks are registered
-    // automatically by this `XCFramework(...)` DSL — the deploy lanes call them
-    // instead of `pod install`.
+    // automatically by this `XCFramework(...)` DSL, and the deploy lanes call them.
     val xcf = XCFramework("ComposeApp")
     listOf(
         iosArm64(),
@@ -109,8 +107,7 @@ kotlin {
     }
 
     // NOTE — the flavor-aware `{flavor}{BuildType}` → Kotlin/Native build-type mapping
-    // that the removed CocoaPods `xcodeConfigurationToNativeBuildType[...]` block
-    // performed is now reproduced OUTSIDE Gradle, in the Xcode Run-Script build phase
+    // lives OUTSIDE Gradle, in the Xcode Run-Script build phase
     // `cmp-ios/scripts/embed-xcframework.sh`: it reads `$CONFIGURATION`
     // (`demoDebug` / `prodStaging` / `prodRelease` / …), maps a debuggable variant
     // → Debug and everything else → Release (identical semantics), then invokes the

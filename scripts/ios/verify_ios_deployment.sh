@@ -320,7 +320,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     check "Xcode project exists" \
         "[ -d 'cmp-ios/iosApp.xcodeproj' ]"
 
-    # E6 — SwiftPM/XCFramework: there is no CocoaPods `.xcworkspace` any more; the app
+    # E6 — SwiftPM/XCFramework: there is no generated `.xcworkspace`; the app
     # opens as a plain `.xcodeproj` and links the Kotlin ComposeApp XCFramework through
     # the `cmp-ios/Package.swift` binary target.
     check "SwiftPM package manifest exists" \

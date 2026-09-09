@@ -397,8 +397,8 @@ module FastlaneConfig
 
     BUILD_CONFIG = {
       scheme:                        "iosApp",
-      # E6 — the app opens as a plain `.xcodeproj` (SwiftPM/XCFramework); the CocoaPods
-      # `iosApp.xcworkspace` was removed, so `build_app` archives from `project:` below.
+      # E6 — the app opens as a plain `.xcodeproj` (SwiftPM/XCFramework); there is no
+      # generated `.xcworkspace`, so `build_app` archives from `project:` below.
       project_path:                  File.join(DEPLOYMENT_REPO_ROOT, "cmp-ios/iosApp.xcodeproj"),
       app_identifier:                ForkIdentity::APP_ID,
       team_id:                       ForkIdentity::IOS_TEAM_ID,
@@ -786,19 +786,19 @@ def with_ios_preamble(options = {})
     end
   end
 
-  # E6 — SwiftPM/XCFramework, no CocoaPods. The iOS app links the Kotlin `ComposeApp`
+  # E6 — SwiftPM/XCFramework. The iOS app links the Kotlin `ComposeApp`
   # framework as an XCFramework (cmp-ios/Package.swift binary target) that the Xcode
   # `[KMP] Embed and Sign ComposeApp XCFramework` Run-Script build phase assembles +
   # signs + embeds on every archive (cmp-ios/scripts/embed-xcframework.sh). There is no
-  # `Podfile` / `pod install` / `cmp_shared.podspec` step anymore — the per-variant
+  # separate iOS dependency-install step — the per-variant
   # lanes assemble the XCFramework explicitly (see `assemble_ios_xcframework`) before
   # `build_app`, so a cold CI runner produces the framework the archive consumes.
 end
 
-# Assemble the Kotlin `ComposeApp` XCFramework for the given Xcode build type — the
-# SwiftPM/XCFramework replacement for `pod install`. Staging maps to the Release
-# XCFramework slice (mirrors the old cocoapods xcodeConfigurationToNativeBuildType:
-# only *Debug is debuggable). Registered by the `XCFramework("ComposeApp")` DSL in
+# Assemble the Kotlin `ComposeApp` XCFramework for the given Xcode build type.
+# Staging maps to the Release XCFramework slice (only *Debug is debuggable, matching
+# the flavor-aware mapping in cmp-ios/scripts/embed-xcframework.sh).
+# Registered by the `XCFramework("ComposeApp")` DSL in
 # cmp-shared/build.gradle.kts (assembleComposeApp{Debug,Release}XCFramework).
 def assemble_ios_xcframework(build_type = "release")
   xcf_type = build_type.to_s.downcase == "debug" ? "Debug" : "Release"
@@ -1385,8 +1385,8 @@ def build_ios_project(options = {})
   cfg = FastlaneConfig::IosConfig::BUILD_CONFIG
   build_app(
     scheme:           options[:scheme]        || cfg[:scheme],
-    # E6 — archive from the `.xcodeproj` (SwiftPM/XCFramework), NOT a CocoaPods
-    # `.xcworkspace` (removed). The `[KMP] Embed and Sign ComposeApp XCFramework`
+    # E6 — archive from the `.xcodeproj` (SwiftPM/XCFramework), not a generated
+    # `.xcworkspace`. The `[KMP] Embed and Sign ComposeApp XCFramework`
     # Run-Script phase builds + embeds the Kotlin framework during this archive.
     project:          options[:project]       || cfg[:project_path],
     configuration:    options[:configuration] || "Release",

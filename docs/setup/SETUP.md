@@ -22,7 +22,7 @@ Before you begin, ensure your development environment meets the following requir
 - **macOS 13.0+**: Required for iOS development
 - **Xcode 14.1+**: Apple's IDE for iOS development (resolves SwiftPM packages)
 - **Ruby 2.7+**: Required for Fastlane
-- No CocoaPods — iOS links the Kotlin `ComposeApp` framework as an XCFramework via SwiftPM (`cmp-ios/Package.swift`)
+- iOS links the Kotlin `ComposeApp` framework as an XCFramework via SwiftPM (`cmp-ios/Package.swift`)
 
 #### Desktop Development
 - **IntelliJ IDEA 2022.3+**: Recommended IDE for desktop development (Community Edition is sufficient)
@@ -75,7 +75,7 @@ The project uses Gradle's dependency management, so no additional steps are requ
 #### iOS
 
 iOS integrates the Kotlin `ComposeApp` framework as an XCFramework (SwiftPM binary
-target, `cmp-ios/Package.swift`) — there is no CocoaPods step. Assemble the framework,
+target, `cmp-ios/Package.swift`) — there is no dependency-install step. Assemble the framework,
 then open the project in Xcode; its `[KMP] Embed and Sign ComposeApp XCFramework`
 Run-Script phase assembles + embeds it on every build:
 
@@ -122,7 +122,7 @@ This will:
 ### Xcode (for iOS)
 
 1. Open the `cmp-ios/iosApp.xcodeproj` file in Xcode (a plain project — there is no
-   CocoaPods `.xcworkspace` since the SwiftPM/XCFramework migration)
+   generated `.xcworkspace` since the SwiftPM/XCFramework migration)
 2. Select your development team in the project settings
 3. Configure an iOS simulator or device for testing
 
@@ -201,7 +201,7 @@ sdk.dir=/path/to/your/Android/sdk
 
 ### iOS Build Issues
 
-1. Make sure the Kotlin `ComposeApp` XCFramework is assembled and up-to-date (SwiftPM/XCFramework; no CocoaPods):
+1. Make sure the Kotlin `ComposeApp` XCFramework is assembled and up-to-date (SwiftPM/XCFramework):
 
 ```bash
 ./gradlew :cmp-shared:assembleComposeAppXCFramework

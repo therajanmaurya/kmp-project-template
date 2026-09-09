@@ -1,6 +1,6 @@
 [versions]
 buildkonfig = "0.21.2"
-kmpProductFlavors = "2.9.1"
+kmpProductFlavors = "2.10.0"
 
 # ── Fork Identity — edit ONLY these 5 lines, then run ./gradlew syncForkConfig ──────────────────
 appId            = "org.mifos.kmp.template"   # Android applicationId + iOS bundle ID
@@ -11,7 +11,7 @@ iosTeamId        = "YOUR_TEAM_ID"             # Apple Developer Team ID (PLACEHO
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
 # Android
 androidDesugarJdkLibs = "2.1.5"
-androidGradlePlugin = "9.3.1"
+androidGradlePlugin = "9.4.0"
 androidTools = "32.3.1"
 compileSdk = "37"
 minSdk = "26"
@@ -445,9 +445,7 @@ android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version
 typesafe-conventions = { id = "dev.panuszewski.typesafe-conventions", version.ref = "typesafeConventions" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 # SKIE — applied in cmp-shared/build.gradle.kts to Swift-enhance the exported
-# ComposeApp framework/XCFramework (E6). Replaces the Kotlin CocoaPods plugin
-# (`org.jetbrains.kotlin.native.cocoapods`), which was removed with the CocoaPods
-# → SwiftPM/XCFramework migration.
+# ComposeApp framework/XCFramework (E6). iOS integration is SwiftPM/XCFramework.
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 
 android-application-convention = { id = "org.convention.android.application" }
