@@ -13,7 +13,7 @@ schema_version: "1.0"
 # a module, so lifecycle has to be stated per package.
 #
 # ── SECTIONS ─────────────────────────────────────────────────────────────────
-#   demo:      template SHOWCASE modules. `include()`d inside the `// demo:begin … // demo:end` fence
+#   demo:      template SHOWCASE modules. `include()`d inside the demo begin/end marker fence
 #              in settings.gradle.kts, so `scripts/remove-demo.sh` deletes the whole directory. The
 #              ROW SURVIVES with `status: removed` — that record is what lets
 #              `/kmp-project-template-sync` tell "stripped on purpose" from "went missing".

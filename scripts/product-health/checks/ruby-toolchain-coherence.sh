@@ -19,8 +19,26 @@
 #         deployment/ on the previous fastlane. A gitignored config would fix only one machine.
 #   RT-4  no tracked Ruby script hardcodes a `#!/usr/bin/ruby` shebang — that bypasses rbenv/bundler
 #         and re-introduces the system-2.6 interpreter. Use `#!/usr/bin/env ruby`.
+#   RT-6  the ROOT bundler app root pins BUNDLE_PATH at vendor/bundle, via a TRACKED config — the
+#         twin of RT-5. Without it a fresh clone gets no `path` at the root at all (proven: `git
+#         archive HEAD` + `bundle config get path` → "You have not configured a value for `path`"),
+#         so a root `bundle install` scatters gems into the global gem dir while deployment/ fills
+#         ../vendor/bundle: the same two-copies drift, relocated. RT-5 alone does not catch it.
+#   RT-7  the CI contract. ruby/setup-ruby with `bundler-cache: true` runs
+#         `bundle config set --local path <cwd>/vendor/bundle` (bundler.js: `path.join(process.cwd(),
+#         'vendor/bundle')`) and OVERWRITES whichever app-root config it runs in — so RT-5/RT-6's
+#         values are ignored in CI by design. What actually matters there is that setup-ruby's
+#         `working-directory` lands on the app root that owns the lanes: EVERY workflow calling a
+#         publish-*-kmp / release-multi-platform reusable workflow must pass `fastlane_cwd:
+#         deployment`. Left at its default '.', fastlane resolves against the ROOT Fastfile — whose
+#         only lane is `ios build_ios` — and the job dies with "Could not find lane" after a full
+#         build. Checked across ALL callers, because a repo accumulates them.
+#   RT-8  (WARN, non-blocking) the live interpreter matches .ruby-version. This is the trap in the
+#         header above, made self-diagnosing: a shell without rbenv's shims on PATH silently gets
+#         /usr/bin/ruby 2.6 and `bundle exec` dies deep inside rubygems' activate_bin_path with
+#         nothing naming the real cause.
 #
-# exit 0 = PASS · 1 = FAIL (blocks). No .ruby-version → PASS (project declares no Ruby toolchain).
+# exit 0 = PASS · 1 = FAIL (blocks) · 2 = WARN. No .ruby-version → PASS (no Ruby toolchain declared).
 set -uo pipefail
 # shellcheck source=scripts/product-health/lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
@@ -79,19 +97,84 @@ fi
 DBC="$HEALTH_ROOT/deployment/.bundle/config"
 if [ -d "$HEALTH_ROOT/deployment/fastlane" ]; then
   if [ ! -f "$DBC" ]; then
-    echo "${C_RED}\u2717 RT-5${C_RST}: deployment/ is a bundler app root but has no .bundle/config —"
+    echo "${C_RED}✗ RT-5${C_RST}: deployment/ is a bundler app root but has no .bundle/config —"
     echo "       it will materialize its own vendor/bundle (duplicate gems that drift). Add:"
     echo "         BUNDLE_PATH: \"../vendor/bundle\""
     fail=1
   elif ! grep -qE '^BUNDLE_PATH:.*\.\./vendor/bundle' "$DBC"; then
-    echo "${C_RED}\u2717 RT-5${C_RST}: deployment/.bundle/config does not point BUNDLE_PATH at ../vendor/bundle:"
+    echo "${C_RED}✗ RT-5${C_RST}: deployment/.bundle/config does not point BUNDLE_PATH at ../vendor/bundle:"
     grep -E '^BUNDLE_PATH:' "$DBC" | sed 's/^/       /'
     fail=1
   elif [ "$(git -C "$HEALTH_ROOT" ls-files deployment/.bundle/config | wc -l | tr -d ' ')" -eq 0 ]; then
-    echo "${C_RED}\u2717 RT-5${C_RST}: deployment/.bundle/config is UNTRACKED — it would fix only this machine."
+    echo "${C_RED}✗ RT-5${C_RST}: deployment/.bundle/config is UNTRACKED — it would fix only this machine."
     fail=1
   fi
 fi
 
-[ "$fail" -eq 0 ] && echo "ruby toolchain coherent (single version $want; Gemfile.lock + deployment agree)"
-exit "$fail"
+# RT-6 — the ROOT bundler app root must pin the shared vendor tree, via a TRACKED config.
+RBC="$HEALTH_ROOT/.bundle/config"
+if [ -f "$HEALTH_ROOT/Gemfile" ]; then
+  if [ ! -f "$RBC" ]; then
+    echo "${C_RED}✗ RT-6${C_RST}: repo root is a bundler app root but has no .bundle/config —"
+    echo "       a fresh clone resolves no 'path' at all and installs to the global gem dir. Add:"
+    echo "         BUNDLE_PATH: \"vendor/bundle\""
+    fail=1
+  elif ! grep -qE '^BUNDLE_PATH:[[:space:]]*"?vendor/bundle"?[[:space:]]*$' "$RBC"; then
+    echo "${C_RED}✗ RT-6${C_RST}: root .bundle/config does not point BUNDLE_PATH at vendor/bundle:"
+    grep -E '^BUNDLE_PATH:' "$RBC" | sed 's/^/       /'
+    fail=1
+  elif [ "$(git -C "$HEALTH_ROOT" ls-files .bundle/config | wc -l | tr -d ' ')" -eq 0 ]; then
+    echo "${C_RED}✗ RT-6${C_RST}: root .bundle/config is UNTRACKED — it would fix only this machine."
+    echo "       .gitignore needs the dir un-excluded first:  !/.bundle/ ; /.bundle/* ; !/.bundle/config"
+    fail=1
+  fi
+fi
+
+# RT-7 — CI contract, checked across EVERY caller (not one hand-picked file).
+#
+# setup-ruby's `working-directory` is driven by whatever the caller passes as fastlane_cwd, so the
+# contract lives in the CALLERS — and a repo accumulates them (an orchestrator, a local variant, a
+# single-platform bypass). Checking one file only ever finds the one you were already looking at:
+# release-android-only.yml sat here passing no fastlane_cwd at all, which resolves
+# `fastlane android deployInternal` against the ROOT Fastfile — whose only lane is `ios build_ios`.
+# It has never been dispatched, so nothing ever reported it.
+#
+# Scope: callers of the fastlane-invoking reusable workflows (publish-*-kmp, release-multi-platform).
+# Deliberately NOT every actionhub caller — pr-check / tag-* / status / cache-cleanup run no
+# fastlane, and rollback-v2 accepts no fastlane_cwd input at all (tracked upstream instead).
+if [ -d "$HEALTH_ROOT/deployment/fastlane" ] && [ -d "$HEALTH_ROOT/.github/workflows" ]; then
+  for wf in "$HEALTH_ROOT"/.github/workflows/*.yml "$HEALTH_ROOT"/.github/workflows/*.yaml; do
+    [ -f "$wf" ] || continue
+    grep -qE 'uses:.*(publish-(android|apple|desktop|web)-kmp|release-multi-platform)' "$wf" || continue
+    cwd_val="$(grep -oE '^[[:space:]]*fastlane_cwd:[[:space:]]*[^[:space:]#]+' "$wf" | head -1 \
+               | sed -E 's/.*fastlane_cwd:[[:space:]]*//; s/^["'"'"']//; s/["'"'"']$//')"
+    if [ -z "$cwd_val" ]; then
+      echo "${C_RED}✗ RT-7${C_RST}: $(basename "$wf") calls a fastlane publish workflow but passes no"
+      echo "       fastlane_cwd — it defaults to '.', where the only lane is 'ios build_ios'."
+      echo "       Add:  fastlane_cwd: deployment"
+      fail=1
+    elif [ "$cwd_val" != "deployment" ]; then
+      echo "${C_RED}✗ RT-7${C_RST}: $(basename "$wf") passes fastlane_cwd: $cwd_val, but the lanes live"
+      echo "       in deployment/fastlane. Expected 'deployment'."
+      fail=1
+    fi
+  done
+fi
+
+# RT-8 — WARN only: the interpreter this shell actually reaches.
+warn=0
+if command -v ruby >/dev/null 2>&1; then
+  live="$(ruby -e 'print RUBY_VERSION' 2>/dev/null || true)"
+  if [ -n "$live" ] && [ "$live" != "$want" ]; then
+    echo "${C_YEL}⚠ RT-8${C_RST}: live ruby is $live but .ruby-version declares $want ($(command -v ruby))."
+    echo "       Nothing is wrong in the repo — this shell just is not reaching the project interpreter,"
+    echo "       and 'bundle exec' will die inside rubygems' activate_bin_path with a misleading error."
+    echo "       Fix the shell:  eval \"\$(rbenv init -)\"   (or add ~/.rbenv/shims to PATH)"
+    warn=2
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then exit "$fail"; fi
+if [ "$warn" -ne 0 ]; then exit "$warn"; fi
+echo "ruby toolchain coherent (single version $want; Gemfile.lock, root + deployment app roots, and CI agree)"
+exit 0

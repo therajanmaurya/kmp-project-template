@@ -31,7 +31,11 @@ import kotlin.time.Clock
  * rare (≤ 1 per week per country/indicator pair).
  */
 @StoreProvider(id = "macroIndicator", ttl = "7d")
-@CacheKey(fn = "of", key = "economic:macro:{countryCode}:{indicator}:{years}y", params = ["countryCode:String", "indicator:String", "years:Int"])
+@CacheKey(
+    fn = "of",
+    key = "economic:macro:{countryCode}:{indicator}:{years}y",
+    params = ["countryCode:String", "indicator:String", "years:Int"],
+)
 fun provideMacroIndicatorStore(
     api: WorldBankApi,
     networkMonitor: NetworkMonitor,

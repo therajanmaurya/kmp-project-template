@@ -188,14 +188,11 @@ class AppDatabaseProcessor(
         val companion = declarations
             .filterIsInstance<KSClassDeclaration>()
             .firstOrNull { it.isCompanionObject }
-            ?: return null
-        val fn = companion.declarations
-            .filterIsInstance<KSFunctionDeclaration>()
-            .firstOrNull { it.simpleName.asString() == "install" && it.parameters.size == 1 }
-            ?: return null
-        val param = fn.parameters.single().type.resolve().declaration.qualifiedName?.asString()
-            ?: return null
-        return simpleName.asString() to (fqn() to param)
+        val fn = companion?.declarations
+            ?.filterIsInstance<KSFunctionDeclaration>()
+            ?.firstOrNull { it.simpleName.asString() == "install" && it.parameters.size == 1 }
+        val param = fn?.parameters?.single()?.type?.resolve()?.declaration?.qualifiedName?.asString()
+        return param?.let { simpleName.asString() to (fqn() to it) }
     }
 
     /**

@@ -26,22 +26,6 @@ import kpt.core.store.generated.resources.error_category_timeout_read
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The fork's error-copy extension point, declared HERE so it is TEMPLATE-owned and full-copied by
- * every sync. [ProjectErrorMapper] implements it and is the only fork-owned half.
- *
- * The default returns null — "I do not handle this" — so the framework's categorised copy below
- * stays reachable. That default is the reason this is an interface rather than a top-level function
- * the fork's file must declare: when the template adds a NEW hook here, it ships with a default body
- * and every existing fork keeps compiling. A top-level function cannot do that — the template's call
- * site would reference a function that does not exist in the fork-owned file, and the fork would
- * break on the very sync that was supposed to hand it the improvement.
- */
-interface ErrorMessageOverrides {
-    /** Fork copy for [error], or null to fall through to the framework's categorised message. */
-    fun message(error: Throwable): String? = null
-}
-
-/**
  * Application-level error → user-facing message mapper.
  *
  * ONE source of user-facing copy: [rememberAppErrorMessageFor], which resolves every
@@ -71,6 +55,28 @@ fun errorCategoryToken(error: Throwable): String = when (val cat = categorize(er
     is ErrorCategory.Server -> "server_${cat.httpCode}"
     is ErrorCategory.ClientError -> "client_${cat.httpCode}"
     ErrorCategory.Generic -> "generic"
+}
+
+/**
+ * The fork's error-copy extension point, declared HERE so it is TEMPLATE-owned and full-copied by
+ * every sync. [ProjectErrorMapper] implements it and is the only fork-owned half.
+ *
+ * It stays in this file on purpose: customization-surface.yaml lists this path as owner:template,
+ * but the catch-all glob covering the rest of `core/store` is owner:fork — so the same interface
+ * in a sibling file would
+ * be fork-owned, never synced, and a new hook could never reach an existing fork. That is the
+ * migration FS-4 of scripts/product-health/checks/store-fork-seam-wiring.sh exists to block.
+ *
+ * The default returns null — "I do not handle this" — so the framework's categorised copy above
+ * stays reachable. That default is the reason this is an interface rather than a top-level function
+ * the fork's file must declare: when the template adds a NEW hook here, it ships with a default body
+ * and every existing fork keeps compiling. A top-level function cannot do that — the template's call
+ * site would reference a function that does not exist in the fork-owned file, and the fork would
+ * break on the very sync that was supposed to hand it the improvement.
+ */
+interface ErrorMessageOverrides {
+    /** Fork copy for [error], or null to fall through to the framework's categorised message. */
+    fun message(error: Throwable): String? = null
 }
 
 /**

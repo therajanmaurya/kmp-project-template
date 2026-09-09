@@ -58,7 +58,6 @@ demo:
   - { id: cloudtodo,  status: exists }      # cloud-todo table
   - { id: crypto,     status: exists }      # coin market / detail
   - { id: currency,   status: exists }      # exchange rates + rate history
-  - { id: demo,       status: exists }      # leftover demo test tree
   - { id: economic,   status: exists }      # interest-rate series
   - { id: migrations, status: exists }      # the template's own schema-history specs
   - { id: watchlist,  status: exists }      # watchlist table

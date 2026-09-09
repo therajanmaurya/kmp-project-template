@@ -99,7 +99,12 @@ actual class SecureSettingsFactory {
         tmp.outputStream().use { encrypted.store(it, "AES-GCM encrypted — do not hand-edit") }
         restrictToOwner(tmp)
         runCatching {
-            Files.move(tmp.toPath(), secureFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            Files.move(
+                tmp.toPath(),
+                secureFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
         }.onFailure {
             // Filesystems without atomic move (some network mounts) — fall back to a plain replace.
             Files.move(tmp.toPath(), secureFile.toPath(), StandardCopyOption.REPLACE_EXISTING)

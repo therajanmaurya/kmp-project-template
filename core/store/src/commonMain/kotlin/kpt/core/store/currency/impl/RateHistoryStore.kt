@@ -34,7 +34,11 @@ import org.mobilenativefoundation.store.store5.Store
 import kotlin.time.Clock
 
 @StoreProvider(id = "rateHistory", ttl = "1h")
-@CacheKey(fn = "of", key = "currency:rateHistory:{from}-{to}-{days}d", params = ["from:String", "to:String", "days:Int"])
+@CacheKey(
+    fn = "of",
+    key = "currency:rateHistory:{from}-{to}-{days}d",
+    params = ["from:String", "to:String", "days:Int"],
+)
 fun provideRateHistoryStore(
     api: FrankfurterApi,
     networkMonitor: NetworkMonitor,

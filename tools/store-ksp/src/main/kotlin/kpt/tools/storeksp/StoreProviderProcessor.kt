@@ -64,25 +64,25 @@ class StoreProviderProcessor(
     private var emitted = false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (emitted) return emptyList()
-        val fns = resolver.getSymbolsWithAnnotation(PROVIDER)
-            .filterIsInstance<KSFunctionDeclaration>()
-            .toList()
-        if (fns.isEmpty()) return emptyList()
-
-        val specs = fns.mapNotNull { toSpec(it) }
-        if (specs.size != fns.size) return emptyList() // a spec failed validation; error already logged
-        if (!validateGlobally(specs)) return emptyList()
-
-        // Sorted so the generated files are byte-stable across builds: KSP hands symbols back in
-        // an order that depends on how the compiler walked the sources, which would otherwise
-        // reshuffle the output on unrelated edits.
-        val ordered = specs.sortedBy { it.qualifier }
-
-        emitRegistry(ordered, fns)
-        emitCacheKeys(ordered, fns)
-        emitBindings(ordered, fns)
-        emitted = true
+        // Every exit is the same empty list — this processor never defers symbols — so the aborts
+        // are a guard around the work, not distinct results. `&&` keeps the original order: a spec
+        // count mismatch (error already logged by toSpec) short-circuits before validateGlobally.
+        if (!emitted) {
+            val fns = resolver.getSymbolsWithAnnotation(PROVIDER)
+                .filterIsInstance<KSFunctionDeclaration>()
+                .toList()
+            val specs = fns.mapNotNull { toSpec(it) }
+            if (fns.isNotEmpty() && specs.size == fns.size && validateGlobally(specs)) {
+                // Sorted so the generated files are byte-stable across builds: KSP hands symbols
+                // back in an order that depends on how the compiler walked the sources, which
+                // would otherwise reshuffle the output on unrelated edits.
+                val ordered = specs.sortedBy { it.qualifier }
+                emitRegistry(ordered, fns)
+                emitCacheKeys(ordered, fns)
+                emitBindings(ordered, fns)
+                emitted = true
+            }
+        }
         return emptyList()
     }
 
@@ -93,32 +93,44 @@ class StoreProviderProcessor(
         arguments.firstOrNull { it.name?.asString() == name }?.value?.toString().orEmpty()
 
     private fun toSpec(fn: KSFunctionDeclaration): StoreSpec? {
-        val a = ann(fn, "StoreProvider").firstOrNull() ?: return null
-        val id = a.str("id")
-        if (id.isBlank()) {
-            logger.error("@StoreProvider requires a non-blank id", fn); return null
+        val a = ann(fn, "StoreProvider").firstOrNull()
+        val id = a?.str("id").orEmpty()
+        val ttl = a?.str("ttl").orEmpty()
+        val idBad = a != null && id.isBlank()
+        val ttlBad = a != null && ttl.isNotEmpty() && !TTL_RE.matches(ttl)
+
+        // No `else`: exactly one branch runs, so the FIRST failing check is reported — the same
+        // diagnostic the earlier log-then-return chain produced.
+        when {
+            idBad ->
+                logger.error("@StoreProvider requires a non-blank id", fn)
+            ttlBad ->
+                logger.error("@StoreProvider(ttl = \"$ttl\") must look like 5m / 1h / 7d", fn)
         }
-        val ttl = a.str("ttl")
-        if (ttl.isNotEmpty() && !TTL_RE.matches(ttl)) {
-            logger.error("@StoreProvider(ttl = \"$ttl\") must look like 5m / 1h / 7d", fn); return null
-        }
-        val declaredQualifier = a.str("qualifier")
-        val qualifier = declaredQualifier.ifEmpty { id.replaceFirstChar { it.uppercaseChar() } }
+        // Rejected BEFORE any @CacheKey is parsed, exactly as the original early returns did, so a
+        // provider with a bad id never also emits key diagnostics.
+        if (a == null || idBad || ttlBad) return null
+
+        val cacheKeyAnns = ann(fn, "CacheKey")
+        val keys = cacheKeyAnns.mapNotNull { k -> toKeySpec(k, fn) }
+        val qualifier = a.str("qualifier").ifEmpty { id.replaceFirstChar { it.uppercaseChar() } }
         val logout = a.arguments.firstOrNull { it.name?.asString() == "logout" }?.value as? Boolean ?: true
 
         // The payoff: dependencies are READ from the signature, never restated.
         val deps = fn.parameters.mapNotNull { it.name?.asString() }
 
-        val keys = ann(fn, "CacheKey").mapNotNull { k -> toKeySpec(k, fn) }
-        if (keys.size != ann(fn, "CacheKey").size) return null
-
         // Providers live in `<domain>.impl`; their keys belong beside the domain, not inside impl.
         val pkg = fn.packageName.asString().removeSuffix(".impl")
-        return StoreSpec(
-            id = id, qualifier = qualifier, ttl = ttl, logout = logout, pkg = pkg,
-            providerFqn = fn.qualifiedName?.asString().orEmpty(),
-            providerName = fn.simpleName.asString(), deps = deps, keys = keys,
-        )
+        // A short `keys` list means toKeySpec already logged the reason; reject without more noise.
+        return if (keys.size != cacheKeyAnns.size) {
+            null
+        } else {
+            StoreSpec(
+                id = id, qualifier = qualifier, ttl = ttl, logout = logout, pkg = pkg,
+                providerFqn = fn.qualifiedName?.asString().orEmpty(),
+                providerName = fn.simpleName.asString(), deps = deps, keys = keys,
+            )
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -126,11 +138,19 @@ class StoreProviderProcessor(
         val key = k.str("key")
         val name = k.str("name")
         val builder = k.str("fn")
-        if (key.isBlank()) { logger.error("@CacheKey requires a non-blank key", fn); return null }
-        if (name.isBlank() == builder.isBlank()) {
-            logger.error("@CacheKey(key = \"$key\") needs exactly one of name= (constant) or fn= (builder)", fn)
-            return null
+
+        val keyBad = key.isBlank()
+        val slotBad = name.isBlank() == builder.isBlank()
+
+        // No `else`: the FIRST failing check is the one reported, as before.
+        when {
+            keyBad ->
+                logger.error("@CacheKey requires a non-blank key", fn)
+            slotBad ->
+                logger.error("@CacheKey(key = \"$key\") needs exactly one of name= (constant) or fn= (builder)", fn)
         }
+        if (keyBad || slotBad) return null
+
         val raw = (k.arguments.firstOrNull { it.name?.asString() == "params" }?.value as? List<*>).orEmpty()
         val params = raw.mapNotNull { p ->
             val t = p.toString()
@@ -138,21 +158,26 @@ class StoreProviderProcessor(
             if (i <= 0) { logger.error("@CacheKey params entry '$t' must be \"name:Type\"", fn); null }
             else t.substring(0, i).trim() to t.substring(i + 1).trim()
         }
-        if (params.size != raw.size) return null
-
         val placeholders = PLACEHOLDER_RE.findAll(key).map { it.groupValues[1] }.toSet()
         val declared = params.map { it.first }.toSet()
+        // These two loops report EVERY mismatched placeholder/param, so they stay loops rather
+        // than folding into the single-branch `when` above.
         (placeholders - declared).forEach {
             logger.error("@CacheKey(key = \"$key\") has placeholder {$it} with no matching param", fn)
         }
         (declared - placeholders).forEach {
             logger.error("@CacheKey(key = \"$key\") declares param '$it' that the key never uses", fn)
         }
-        if (placeholders != declared) return null
-        if (builder.isNotBlank() && params.isEmpty()) {
-            logger.error("@CacheKey(fn = \"$builder\") has no params — use name= for a constant", fn); return null
+        val builderNoParams = builder.isNotBlank() && params.isEmpty()
+        if (builderNoParams) {
+            logger.error("@CacheKey(fn = \"$builder\") has no params — use name= for a constant", fn)
         }
-        return KeySpec(name, builder, key, params)
+        // params.size != raw.size means a malformed entry was already reported in the mapNotNull.
+        return if (params.size != raw.size || placeholders != declared || builderNoParams) {
+            null
+        } else {
+            KeySpec(name, builder, key, params)
+        }
     }
 
     private fun validateGlobally(specs: List<StoreSpec>): Boolean {
@@ -227,7 +252,10 @@ class StoreProviderProcessor(
         if (withTtl.isNotEmpty()) {
             sb.append("\n    /** Freshness windows, declared as `@StoreProvider(ttl = …)`. */\n")
             sb.append("    object Ttl {\n")
-            withTtl.forEach { sb.append("        val ").append(screamingSnake(it.id)).append(" = ").append(ttlExpr(it.ttl)).append("\n") }
+            withTtl.forEach {
+                sb.append("        val ").append(screamingSnake(it.id))
+                    .append(" = ").append(ttlExpr(it.ttl)).append("\n")
+            }
             sb.append("    }\n")
         }
         sb.append("}\n")

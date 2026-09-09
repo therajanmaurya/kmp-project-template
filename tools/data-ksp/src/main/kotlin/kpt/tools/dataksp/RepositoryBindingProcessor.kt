@@ -20,6 +20,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSValueParameter
 
 /**
  * Derives `GeneratedRepositoryBindings` from `@RepositoryBinding` on repository implementations.
@@ -67,7 +68,9 @@ class RepositoryBindingProcessor(
         // Two bindings under one qualifier is the failure the qualifier exists to prevent.
         providers.filter { it.qualifier.isNotBlank() }
             .groupBy { it.qualifier }.filterValues { it.size > 1 }
-            .forEach { (q, dup) -> logger.error("data-ksp: qualifier '$q' is bound by ${dup.joinToString { it.fnName }}") }
+            .forEach { (q, dup) ->
+                logger.error("data-ksp: qualifier '$q' is bound by ${dup.joinToString { it.fnName }}")
+            }
 
         write(render(rows, providers), impls.mapNotNull { it.containingFile } + providers.mapNotNull { it.decl })
         writeQualifiers(providers)
@@ -87,35 +90,50 @@ class RepositoryBindingProcessor(
         val decl: com.google.devtools.ksp.symbol.KSFile?,
     )
 
+    /**
+     * One constructor dependency of a `@DataProvider` factory → `name to <Koin resolve expression>`,
+     * or null when the parameter is defaulted (the fork may leave it unset) or has no usable name.
+     *
+     * Split out of [provider] so that function reads as "parse the annotation, resolve the bound
+     * type, emit the binding" rather than also carrying the per-parameter resolution strategy.
+     */
+    private fun dependency(param: KSValueParameter): Pair<String, String>? {
+        // Defaulted parameters are the fork's to leave unset; an unnamed one cannot be emitted.
+        val name = param.name?.asString()
+        if (param.hasDefault || name == null) return null
+        val storeId = param.annotations.firstOrNull { it.shortName.asString() == "FromStore" }
+            ?.arguments?.firstOrNull { it.name?.asString() == "id" }?.value as? String
+        val named = param.annotations.firstOrNull { it.shortName.asString() == "FromQualifier" }
+            ?.arguments?.firstOrNull { it.name?.asString() == "name" }?.value as? String
+        // A nullable dependency is OPTIONAL — resolving it with get() would fail the graph for a
+        // fork that never installed it.
+        val nullable = param.type.resolve().isMarkedNullable
+        val resolve = when {
+            !storeId.isNullOrBlank() -> "get($REGISTRY.${storeId.replaceFirstChar { it.uppercaseChar() }})"
+            !named.isNullOrBlank() -> "get(named(\"$named\"))"
+            nullable -> "getOrNull()"
+            else -> "get()"
+        }
+        return name to resolve
+    }
+
     /** A `@DataProvider` factory function: return type is the bound type, parameters are the deps. */
     private fun provider(fn: KSFunctionDeclaration): Prov? {
-        val fqn = fn.qualifiedName?.asString() ?: return null
-        val ann = fn.annotations.firstOrNull { it.shortName.asString() == "DataProvider" } ?: return null
+        val fqn = fn.qualifiedName?.asString()
+        val ann = fn.annotations.firstOrNull { it.shortName.asString() == "DataProvider" }
+        val ret = fn.returnType?.resolve()
+
+        // Only an unresolvable RETURN TYPE is a user error worth reporting: a missing qualified
+        // name or a function that simply is not annotated are both "not ours", and reporting them
+        // would fire on every unrelated declaration KSP hands us.
+        if (fqn != null && ann != null && ret == null) {
+            logger.error("data-ksp: @DataProvider ${fn.simpleName.asString()} has no resolvable return type")
+        }
+        if (fqn == null || ann == null || ret == null) return null
+
         val qualifier = (ann.arguments.firstOrNull { it.name?.asString() == "qualifier" }?.value as? String).orEmpty()
         val eager = ann.arguments.firstOrNull { it.name?.asString() == "createdAtStart" }?.value as? Boolean ?: false
-        val ret = fn.returnType?.resolve()
-        if (ret == null) {
-            logger.error("data-ksp: @DataProvider ${fn.simpleName.asString()} has no resolvable return type")
-            return null
-        }
-        val args = fn.parameters.mapNotNull { param ->
-            if (param.hasDefault) return@mapNotNull null
-            val name = param.name?.asString() ?: return@mapNotNull null
-            val storeId = param.annotations.firstOrNull { it.shortName.asString() == "FromStore" }
-                ?.arguments?.firstOrNull { it.name?.asString() == "id" }?.value as? String
-            val named = param.annotations.firstOrNull { it.shortName.asString() == "FromQualifier" }
-                ?.arguments?.firstOrNull { it.name?.asString() == "name" }?.value as? String
-            // A nullable dependency is OPTIONAL — resolving it with get() would fail the graph for a
-            // fork that never installed it.
-            val nullable = param.type.resolve().isMarkedNullable
-            val resolve = when {
-                !storeId.isNullOrBlank() -> "get($REGISTRY.${storeId.replaceFirstChar { it.uppercaseChar() }})"
-                !named.isNullOrBlank() -> "get(named(\"$named\"))"
-                nullable -> "getOrNull()"
-                else -> "get()"
-            }
-            name to resolve
-        }
+        val args = fn.parameters.mapNotNull(::dependency)
         // Keep the TYPE ARGUMENTS: `SubmitOutbox<Loan>`, not `SubmitOutbox`. Koin binds by the
         // declared type, and a bare `single { … }` cannot infer T through the factory call.
         val bound = buildString {
@@ -169,21 +187,27 @@ class RepositoryBindingProcessor(
     }
 
     private fun spec(decl: KSClassDeclaration): Row? {
-        val impl = decl.qualifiedName?.asString() ?: return null
+        val impl = decl.qualifiedName?.asString()
         val iface = (
             decl.annotations
                 .firstOrNull { it.shortName.asString() == "RepositoryBinding" }
                 ?.arguments?.firstOrNull { it.name?.asString() == "binds" }
                 ?.value as? KSType
             )?.declaration?.qualifiedName?.asString()
-        if (iface == null) {
-            logger.error("data-ksp: @RepositoryBinding on ${decl.simpleName.asString()} has no resolvable `binds`")
-            return null
+        val ctor = decl.primaryConstructor
+
+        // No `else`: exactly one branch runs, so the FIRST failing check is the one reported —
+        // the same diagnostic the earlier log-then-return chain produced. An unresolvable
+        // qualified name is not a user error, so it rejects silently.
+        when {
+            impl == null -> Unit
+            iface == null ->
+                logger.error("data-ksp: @RepositoryBinding on ${decl.simpleName.asString()} has no resolvable `binds`")
+            ctor == null ->
+                logger.error("data-ksp: ${decl.simpleName.asString()} has no primary constructor to derive from")
         }
-        val ctor = decl.primaryConstructor ?: run {
-            logger.error("data-ksp: ${decl.simpleName.asString()} has no primary constructor to derive from")
-            return null
-        }
+        if (impl == null || iface == null || ctor == null) return null
+
         val args = ctor.parameters.mapNotNull { param ->
             // A defaulted parameter is a TEST SEAM (clock, timeZone), not a graph dependency. Passing
             // `get()` for it would ask Koin for a type nothing binds and fail at construction.
@@ -211,7 +235,9 @@ class RepositoryBindingProcessor(
         ) {
             imports += REGISTRY_FQN
         }
-        if (providers.any { p -> p.args.any { it.second.startsWith("get(named(") } }) imports += "org.koin.core.qualifier.named"
+        if (providers.any { p -> p.args.any { it.second.startsWith("get(named(") } }) {
+            imports += "org.koin.core.qualifier.named"
+        }
         providers.forEach { imports += it.fnFqn }
         rows.forEach { imports += it.iface; imports += it.impl }
 

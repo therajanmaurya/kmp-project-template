@@ -137,7 +137,6 @@ composeNavigation = "2.9.2"
 jbCoreBundle = "1.0.1"
 jbSavedState = "1.4.0"
 material3adaptive = "1.2.0"
-gitLive = "2.4.0"
 aboutLibraries = "15.0.3"
 
 # Desktop Version
@@ -388,10 +387,6 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-cloud-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 firebase-performance = { group = "com.google.firebase", name = "firebase-perf" }
-
-gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "gitLive" }
-gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "gitLive" }
-gitlive-firebase-performance = { module = "dev.gitlive:firebase-performance", version.ref = "gitLive" }
 
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }

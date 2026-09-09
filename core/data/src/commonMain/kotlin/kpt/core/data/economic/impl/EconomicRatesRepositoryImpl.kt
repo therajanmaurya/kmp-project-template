@@ -23,7 +23,8 @@ import org.mobilenativefoundation.store.store5.Store
 
 @RepositoryBinding(binds = EconomicRatesRepository::class)
 class EconomicRatesRepositoryImpl(
-    @FromStore("interestRateSeries") private val interestRateSeriesStore: Store<InterestRateSeriesKey, InterestRateSeries>,
+    @FromStore("interestRateSeries")
+    private val interestRateSeriesStore: Store<InterestRateSeriesKey, InterestRateSeries>,
 ) : EconomicRatesRepository {
 
     override fun interestRateSeriesStream(

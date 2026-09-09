@@ -138,12 +138,21 @@ deployment/**/metadata/**/*.png
 # Ruby stuff we don't care about
 .bundle/
 vendor/
-# …except deployment's bundler config, which redirects that second app root at the
-# repo-root vendor tree so the gems are materialized ONCE. Must be tracked to help
-# anyone but the machine that wrote it. (Re-including needs the dir un-excluded first.)
+# …except the two bundler app-root configs, which pin BOTH roots at the SAME repo-root
+# vendor tree so the gems are materialized ONCE. Must be tracked to help anyone but the
+# machine that wrote them — untracked, a fresh clone gets no `path` at all and the roots
+# diverge again. (Re-including needs the dir un-excluded first.)
+!/.bundle/
+/.bundle/*
+!/.bundle/config
 !deployment/.bundle/
 deployment/.bundle/*
 !deployment/.bundle/config
+# …and the canary fixtures, which are only load-bearing if they survive a clone. RT-5/RT-6 assert
+# these files exist AND are tracked, so an ignored fixture makes the RED/GREEN legs disagree between
+# a developer's tree and CI — the canary would pass here and fail there for a reason nothing names.
+!scripts/product-health/tests/**/.bundle/
+!scripts/product-health/tests/**/.bundle/config
 
 # Sync Log File
 *.log
