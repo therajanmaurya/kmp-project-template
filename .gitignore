@@ -138,6 +138,12 @@ deployment/**/metadata/**/*.png
 # Ruby stuff we don't care about
 .bundle/
 vendor/
+# …except deployment's bundler config, which redirects that second app root at the
+# repo-root vendor tree so the gems are materialized ONCE. Must be tracked to help
+# anyone but the machine that wrote it. (Re-including needs the dir un-excluded first.)
+!deployment/.bundle/
+deployment/.bundle/*
+!deployment/.bundle/config
 
 # Sync Log File
 *.log
