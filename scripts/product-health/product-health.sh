@@ -52,5 +52,27 @@ done
 echo ""
 echo "── ${pass} passed · ${warn} warn · ${fail} failed ──"
 [ "$warn" -gt 0 ] && [ "$fail" = 0 ] && echo "   ${C_DIM}(warnings don't block — but resolve them before releasing)${C_RST}"
+
+# ── Local-run hint: fork mode is the SAFE DEFAULT, so say why, don't infer around it ─────────
+#
+# Mode comes only from TEMPLATE_SELF_BUILD, which quality-gate.yml sets from `github.repository`
+# ('1' upstream, '' on every fork). A LOCAL clone has no such signal, so it runs in fork mode —
+# and in the template checkout the three directional identity checks (fork-identity /
+# deployment-whitelabel B1/B8 / secrets-alias-namespace) then FAIL by design: they are reading the
+# committed Mifos reference identity as "a fork that has not rebranded yet".
+#
+# That default is deliberate and stays. Auto-detecting template mode from git remotes would give a
+# real white-label fork — which commonly also has `upstream` pointing at openMF — a silent local
+# pass on the very checks that exist to tell it to rebrand. A missing hint is an annoyance; a
+# false PASS is the failure this suite exists to prevent. So: explain the red, never remove it.
+if [ "${TEMPLATE_SELF_BUILD:-}" != "1" ] && [ "$fail" -gt 0 ] && wl_identity_is_reference "$app_id" "$org"; then
+  echo ""
+  echo "   ${C_DIM}Note: identity still matches the committed Mifos reference${C_RST}"
+  echo "   ${C_DIM}(${app_id} / ${org}), so the directional identity checks read this as an${C_RST}"
+  echo "   ${C_DIM}un-rebranded FORK. If this checkout IS the upstream template, re-run:${C_RST}"
+  echo "   ${C_DIM}  TEMPLATE_SELF_BUILD=1 bash scripts/product-health/product-health.sh${C_RST}"
+  echo "   ${C_DIM}If it is a fork, this is the real finding — rebrand in app-profile/.${C_RST}"
+fi
+
 [ "$fail" -gt 0 ] && exit 1
 exit 0

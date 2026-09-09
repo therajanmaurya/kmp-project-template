@@ -11,6 +11,8 @@ package kpt.core.network.config
 
 import kpt.core.base.network.AccessPoint
 import kpt.core.base.network.AccessPointKind
+import kpt.core.base.network.AuthScheme
+import kpt.core.base.network.HeaderSpec
 
 /**
  * The per-fork list of network access points this app talks to — REST and Supabase in ONE place.
@@ -42,7 +44,7 @@ object AppAccessPoints {
             loggableHost = "staging.example.com",
         ),
         AccessPoint(
-            id = "supabase_data",
+            id = "project",
             kind = AccessPointKind.SUPABASE,
             baseUrl = "https://project.supabase.co",
             loggableHost = "project.supabase.co",
@@ -71,6 +73,18 @@ object AppAccessPoints {
             baseUrl = "https://api.stlouisfed.org/",
             loggableHost = "api.stlouisfed.org",
             proxiedHost = "api.stlouisfed.org",
+        ),
+        AccessPoint(
+            id = "fineract",
+            kind = AccessPointKind.REST,
+            baseUrl = "https://sandbox.mifos.community/",
+            basePath = "fineract-provider/api/v1/",
+            loggableHost = "sandbox.mifos.community",
+            auth = AuthScheme.BASIC,
+            headers = listOf(
+                HeaderSpec(name = "Fineract-Platform-TenantId", value = "default"),
+                HeaderSpec(name = "Authorization", runtimeKey = "fineract.auth"),
+            ),
         ),
         AccessPoint(
             id = "worldbank",

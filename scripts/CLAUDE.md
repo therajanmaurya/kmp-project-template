@@ -403,7 +403,7 @@ UPLOAD_KEYSTORE_ALIAS_PASSWORD="xxx"
 **Prerequisites:**
 - `gradle/fork.properties` filled in and `secrets/apple/` files present
 - Fastlane installed
-- CocoaPods installed
+- Xcode (iOS is SwiftPM/XCFramework since E6)
 
 **Output:** IPA uploaded to Firebase App Distribution
 
@@ -569,7 +569,6 @@ UPLOAD_KEYSTORE_ALIAS_PASSWORD="xxx"
    - Ruby installed
    - Bundler installed
    - Fastlane installed
-   - CocoaPods installed
    - Xcode Command Line Tools
    - Git installed
    - OpenSSL installed
@@ -583,9 +582,8 @@ UPLOAD_KEYSTORE_ALIAS_PASSWORD="xxx"
 
 3. **Project Structure (6 checks):**
    - Xcode project exists
-   - Workspace exists
    - Shared module exists
-   - Podfile exists
+   - `cmp-ios/Package.swift` exists (SwiftPM binary target)
    - Info.plist exists
 
 4. **App Store Connect API (4 checks):**
@@ -723,7 +721,6 @@ See [Version Handling Guide](../docs/claude/version-handling.md)
   - Gradle
   - Ruby
   - Bundler
-  - CocoaPods (if macOS)
   - Firebase CLI
   - GitHub CLI (`gh`)
 - Displays versions

@@ -51,7 +51,7 @@ fi
 if [[ "${1:-}" == "--clean" ]]; then
   shift
   print_info "Demo-showcase removal (customizer --clean)…"
-  bash "$(dirname "$0")/scripts/remove-demo.sh" "$@"
+  bash "$(dirname "$0")/../remove-demo.sh" "$@"
   exit $?
 fi
 
@@ -144,7 +144,7 @@ fi
 if [[ "$KEEP_DEMO" -eq 0 ]]; then
   echo
   print_info "Removing demo showcase (default — pass --keep-demo to retain it)…"
-  if bash "$(dirname "$0")/scripts/remove-demo.sh" --apply --all $STRIP_FORMAT_FLAG; then
+  if bash "$(dirname "$0")/../remove-demo.sh" --apply --all $STRIP_FORMAT_FLAG; then
     print_success "Demo showcase removed — clean, branded framework shell ready"
   else
     print_warning "Demo removal reported an issue — review the scripts/remove-demo.sh output above."

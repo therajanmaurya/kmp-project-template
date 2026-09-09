@@ -1,17 +1,17 @@
 [versions]
 buildkonfig = "0.21.2"
-kmpProductFlavors = "2.8.3"
+kmpProductFlavors = "2.10.0"
 
 # ── Fork Identity — edit ONLY these 5 lines, then run ./gradlew syncForkConfig ──────────────────
 appId            = "org.mifos.kmp.template"   # Android applicationId + iOS bundle ID
 appDisplayName   = "Money Toolkit"    # Android app_name, iOS CFBundleDisplayName
-desktopAppName   = "App Toolkit"     # JVM package name, dock name
+desktopAppName   = "Money Toolkit"     # JVM package name, dock name
 projectName      = "kmp-project-template"      # rootProject.name, Fastlane PROJECT_NAME
 iosTeamId        = "YOUR_TEAM_ID"             # Apple Developer Team ID (PLACEHOLDER — set in app-profile/platforms/apple/apple.yaml#team_id)
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
 # Android
 androidDesugarJdkLibs = "2.1.5"
-androidGradlePlugin = "9.3.1"
+androidGradlePlugin = "9.4.0"
 androidTools = "32.3.1"
 compileSdk = "37"
 minSdk = "26"
@@ -70,7 +70,7 @@ integrity = "1.6.0"
 # Static Analysis & Code Formatting
 ktlint = "14.2.0"
 detekt = "1.23.8"
-spotlessVersion = "8.8.0"
+spotlessVersion = "8.10.2"
 turbine = "1.2.1"
 twitter-detekt-compose = "0.0.26"
 moduleGraph = "2.9.0"
@@ -80,8 +80,8 @@ moduleGraph = "2.9.0"
 typesafeConventions = "0.5.0"
 
 # Kotlin KMP Dependencies
-kotlin = "2.4.0"
-kover = "0.9.8"
+kotlin = "2.4.20"
+kover = "0.9.9"
 kotlinInject = "0.9.0"
 kotlinxBrowser = "0.5.0"
 kotlinxCoroutines = "1.11.0"
@@ -103,11 +103,15 @@ koinAnnotationsVersion = "4.2.2"
 
 
 # KMP Toolkit Libraries
-# 3.5.11: cmp-firebase analytics+crashlytics engine + cmp-firebase-compose companion (KmpToolkit dev).
-kmptoolkit = "3.5.11"
+# 3.5.21: cmp-firebase on GitLive 3.0.0-alpha02 (Firebase BoM 34.18.0) — wasmJs PROMOTED from the
+#         Measurement-Protocol tier to the native Firebase tier, so wasmJs now reads FirebaseConfig.web
+#         (the same `web` entry as js) and needs applicationId/apiKey/projectId/authDomain populated.
+#         Also: cmp-share direct-to-app share (ShareOptions.targetPackage) + file:// → FileProvider
+#         content:// resolution; cmp-remote-config min/max app-version gate.
+kmptoolkit = "3.5.21"
 
 # CMP Libraries
-compose-plugin = "1.11.1"
+compose-plugin = "1.12.0"
 coil = "3.5.0"
 backHandlerVersion = "2.5.0"
 constraintLayout = "0.8.0"
@@ -133,7 +137,6 @@ composeNavigation = "2.9.2"
 jbCoreBundle = "1.0.1"
 jbSavedState = "1.4.0"
 material3adaptive = "1.2.0"
-gitLive = "2.4.0"
 aboutLibraries = "15.0.3"
 
 # Desktop Version
@@ -385,10 +388,6 @@ firebase-cloud-messaging = { group = "com.google.firebase", name = "firebase-mes
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 firebase-performance = { group = "com.google.firebase", name = "firebase-perf" }
 
-gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "gitLive" }
-gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "gitLive" }
-gitlive-firebase-performance = { module = "dev.gitlive:firebase-performance", version.ref = "gitLive" }
-
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
 roborazzi-accessibility-check = { group = "io.github.takahirom.roborazzi", name = "roborazzi-accessibility-check", version.ref = "roborazzi" }
@@ -441,9 +440,7 @@ android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version
 typesafe-conventions = { id = "dev.panuszewski.typesafe-conventions", version.ref = "typesafeConventions" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 # SKIE — applied in cmp-shared/build.gradle.kts to Swift-enhance the exported
-# ComposeApp framework/XCFramework (E6). Replaces the Kotlin CocoaPods plugin
-# (`org.jetbrains.kotlin.native.cocoapods`), which was removed with the CocoaPods
-# → SwiftPM/XCFramework migration.
+# ComposeApp framework/XCFramework (E6). iOS integration is SwiftPM/XCFramework.
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 
 android-application-convention = { id = "org.convention.android.application" }
@@ -499,4 +496,3 @@ mifos-kmp-room = { id = "mifos.kmp.room" }
 worker-app = { id = "io.github.mobilebytelabs.worker-app", version.ref = "worker-version" }
 
 # Supabase Config Plugin
-kmp-supabase-config = { id = "org.convention.kmp.supabase.config" }

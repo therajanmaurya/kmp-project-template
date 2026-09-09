@@ -13,7 +13,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.BillReminder
+import kpt.core.model.banking.BillReminder
 import kpt.feature.bills.testing.FakeBillReminderRepository
 import kpt.feature.bills.testing.FakeBillReminderScheduler
 import kpt.feature.bills.testing.InMemorySubmitOutbox

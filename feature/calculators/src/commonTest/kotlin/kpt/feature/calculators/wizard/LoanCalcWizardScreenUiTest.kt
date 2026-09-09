@@ -14,7 +14,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.banking.LoanCalcScenario
+import kpt.core.model.banking.LoanCalcScenario
 import kpt.feature.calculators.TestTags
 import kotlin.test.Test
 

@@ -32,19 +32,27 @@ while IFS= read -r f; do
   case "$f" in */demo/*) : ;; *) viol C1-demo-location "$f declares a .demo package but is not under a demo/ directory" ;; esac
 done < <(grep -rlE '^package +[a-zA-Z0-9_.]*\.demo(\.|$)' core feature --include='*.kt' 2>/dev/null | grep -v '/build/' || true)
 
-# ── C2 + C3: marker integrity across every surviving .kt/.kts ─────────────────────────
+# ── C2 + C3: marker integrity across every surviving .kt/.kts/.yaml ───────────────────
+# .yaml is IN SCOPE: app-profile/app.yaml carries real fences (the database block), and a prose
+# `demo:begin` there is worse than in Kotlin — an unpaired begin token makes the stripper skip from
+# that line to the next `demo:end`, silently deleting whole top-level keys. That is not theoretical:
+# a comment ABOUT the fence mechanism, written one line above `access_points:`, deleted the entire
+# access-point list and the head of the database block.
 while IFS= read -r f; do
   [ -z "$f" ] && continue
-  begins=$(grep -cE '^[[:space:]]*// demo:begin([[:space:]].*)?$' "$f" || true)
-  ends=$(grep -cE '^[[:space:]]*// demo:end$' "$f" || true)
-  [ "$begins" != "$ends" ] && viol C2-marker-balance "$f has $begins '// demo:begin' vs $ends '// demo:end' (must match)"
+  # `//` (Kotlin) and `#` (YAML) are both clean marker styles — the stripper is line-based and
+  # comment-agnostic, so the convention has to be too.
+  begins=$(grep -cE '^[[:space:]]*(//|#) demo:begin([[:space:]].*)?$' "$f" || true)
+  ends=$(grep -cE '^[[:space:]]*(//|#) demo:end$' "$f" || true)
+  [ "$begins" != "$ends" ] && viol C2-marker-balance "$f has $begins clean 'demo:begin' vs $ends 'demo:end' (must match)"
   # any line mentioning a marker token that is NOT a clean standalone marker = prose token
   while IFS=: read -r ln _; do
     viol C3-prose-marker "$f:$ln contains a demo:begin/demo:end token in prose (corrupts the stripper)"
   done < <(grep -nE 'demo:(begin|end)' "$f" 2>/dev/null \
-             | grep -vE ':[[:space:]]*// demo:begin([[:space:]].*)?$' \
-             | grep -vE ':[[:space:]]*// demo:end$' || true)
-done < <(grep -rlE 'demo:(begin|end)' . --include='*.kt' --include='*.kts' 2>/dev/null | grep -v '/build/' || true)
+             | grep -vE ':[[:space:]]*(//|#) demo:begin([[:space:]].*)?$' \
+             | grep -vE ':[[:space:]]*(//|#) demo:end$' || true)
+done < <(grep -rlE 'demo:(begin|end)' . --include='*.kt' --include='*.kts' --include='*.yaml' 2>/dev/null \
+           | grep -v '/build/' | grep -v '/product-health/tests/' || true)
 
 # ── C4: every demo-block feature module has a matching directory ──────────────────────
 while IFS= read -r feat; do

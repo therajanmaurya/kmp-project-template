@@ -34,6 +34,35 @@ jobs:
       # openMF/Mifos signing+org identity — Apple 90288) + appid-consistency (FAILs if fork.properties
       # app.id drifted from libs.versions.toml appId) + store-listing (WARNs on un-authored copy).
       # The upstream template itself sets TEMPLATE_SELF_BUILD=1 so its fork-only checks skip.
+      # gradle/fork.properties is gitignored (per-fork filled-in values: signing DN, Apple team id,
+      # demo creds), so on a fresh CI clone it does not exist — and the checks below then fall back
+      # to gradle/fork.properties.template and short-circuit. appid-consistency and fork-identity
+      # were therefore never actually ENFORCED in CI, which is precisely the drift they exist to
+      # catch, and white-label-derived WARNed on every run with nothing able to clear it.
+      #
+      # Derive it from the app-profile SoT instead of committing it. derive.rb is pure Ruby (no JDK,
+      # no Gradle — this job stays a ~10s bash job) and emits only NON-placeholder values, so nothing
+      # sensitive is materialised: unfilled signing fields stay absent and read as the declared '^$'
+      # placeholder. Committing the file instead would put apple.team.id / demo.password / the
+      # keystore DN in git and give the derived bridge a second source of truth alongside app-profile.
+      # Honour .ruby-version (3.3.6) instead of whatever Ruby the runner image happens to ship.
+      # derive.rb needs no gems (stdlib `yaml` only), so bundler-cache stays off and this adds ~5s.
+      # Without it CI silently runs a different interpreter than the one the repo declares and
+      # every other surface uses — and deployment/_shared/*.rb already relies on 3.0+ syntax, so
+      # the first 3.3-only construct in a CI-run script would fail in CI alone. RT-8 of
+      # scripts/product-health/checks/ruby-toolchain-coherence.sh warns on exactly this mismatch,
+      # and the step below runs that check — so pinning here is also what keeps it quiet.
+      # `ruby-version` is deliberately unset: this action's documented default ('default') resolves
+      # the version FROM .ruby-version — so the declared 3.3.6 is honoured without restating it here
+      # and creating a second place to update. (There is no `ruby-version-file` input at this pin.)
+      - name: Setup Ruby (honours .ruby-version)
+        uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f  # v1.232.0
+        with:
+          bundler-cache: false
+
+      - name: Derive fork.properties from app-profile (SoT → build bridge)
+        run: ruby scripts/white-label/derive.rb
+
       - name: Product health (fork.properties sanity)
         env:
           TEMPLATE_SELF_BUILD: ${{ github.repository == 'openMF/kmp-project-template' && '1' || '' }}

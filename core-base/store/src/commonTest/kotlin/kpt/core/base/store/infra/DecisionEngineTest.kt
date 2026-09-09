@@ -54,7 +54,7 @@ class DecisionEngineTest {
     }
 
     @Test
-    fun `no data + Unavailable + no error + CACHE_FIRST_SWR = Empty (offline-first)`() {
+    fun `no data + Unavailable + no error + CACHE_FIRST_SWR = Empty — offline-first`() {
         // Offline-first policy: a cache-first screen with no cached data offline surfaces the screen's
         // own Empty state, NOT a blocking NoNetwork (every other policy keeps NoNetwork — see the test
         // above, which uses the NETWORK_WITH_CACHE default). Regression guard for the DecisionEngine
@@ -131,7 +131,7 @@ class DecisionEngineTest {
     // in-flight refresh) — never network state, never error.
 
     @Test
-    fun `has data + Unavailable = Content FRESH (network state in ConnectivityBanner, not DataFreshness)`() {
+    fun `has data + Unavailable = Content FRESH — network state belongs in ConnectivityBanner not DataFreshness`() {
         val data = dataStoreData("cached")
         val result = DecisionEngine.decide(data, unavailable)
         assertIs<ScreenState.Content<String>>(result)
@@ -139,7 +139,7 @@ class DecisionEngineTest {
     }
 
     @Test
-    fun `has data + CaptivePortal = Content FRESH (network state in ConnectivityBanner, not DataFreshness)`() {
+    fun `has data + CaptivePortal = Content FRESH — network state belongs in ConnectivityBanner not DataFreshness`() {
         val data = dataStoreData("cached")
         val result = DecisionEngine.decide(data, captivePortal)
         assertIs<ScreenState.Content<String>>(result)
@@ -147,7 +147,7 @@ class DecisionEngineTest {
     }
 
     @Test
-    fun `has data + refreshing = Content UPDATING (request-state, legitimate)`() {
+    fun `has data + refreshing = Content UPDATING — request-state is legitimate`() {
         val data = dataStoreData("old", isRefreshing = true)
         val result = DecisionEngine.decide(data, available)
         assertIs<ScreenState.Content<String>>(result)
@@ -163,7 +163,7 @@ class DecisionEngineTest {
     }
 
     @Test
-    fun `has data + refreshing + Unavailable = Content UPDATING (refreshing wins - network state ignored)`() {
+    fun `has data + refreshing + Unavailable = Content UPDATING — refreshing wins over network state`() {
         val data = dataStoreData("old", isRefreshing = true)
         val result = DecisionEngine.decide(data, unavailable)
         assertIs<ScreenState.Content<String>>(result)
@@ -244,7 +244,7 @@ class DecisionEngineTest {
 
     @OptIn(ExperimentalTime::class)
     @Test
-    fun `decideFreshness - has data + offline + fresh = Fresh band (network ignored)`() {
+    fun `decideFreshness - has data + offline + fresh = Fresh band — network ignored`() {
         // freshness is pure time + error; network connectivity is NEVER read.
         val now = Clock.System.now()
         val data = dataStoreData("cached", fetchedAtInstant = now - 2.minutes)

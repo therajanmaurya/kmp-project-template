@@ -12,9 +12,10 @@ package cmp.navigation.registry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import kpt.core.base.ui.nav.popBackStackSafely
-import kpt.core.data.demo.di.ProjectRepositoryModule
-import kpt.core.database.demo.di.ProjectDatabaseModule
-import kpt.core.network.demo.di.ProjectNetworkModule
+import kpt.core.data.di.ProjectRepositoryModule
+import kpt.core.database.di.ProjectDatabaseModule
+import kpt.core.datastore.di.ProjectDatastoreModule
+import kpt.core.network.di.ProjectNetworkModule
 import kpt.feature.addtowatchlist.di.AddToWatchlistModule
 import kpt.feature.alerts.di.AlertsModule
 import kpt.feature.alerts.navigation.alertsGraph
@@ -34,6 +35,7 @@ import kpt.feature.loans.di.LoansModule
 import kpt.feature.loans.navigation.loansGraph
 import kpt.feature.macro.di.MacroModule
 import kpt.feature.macro.navigation.macroGraph
+import kpt.feature.profile.di.ProfileModule
 import kpt.feature.rates.di.RatesModule
 import kpt.feature.rates.navigation.ratesGraph
 import kpt.feature.watchlist.di.WatchlistModule
@@ -59,8 +61,16 @@ object FeatureRegistry {
      * [cmp.navigation.di.KoinModules] and are always present; this is the fork's own features.
      */
     val featureKoinModules: List<Module> = listOf(
-        // demo:begin — default demo feature set + relocated core demo DI aggregators (E1 / C1–C3, F3).
-        // customizer --clean strips this whole fenced block → an empty listOf() for a clean fork.
+        // ── the FORK's own per-layer DI seams — OUTSIDE the fence, so `--clean` keeps them ──
+        // Empty on the template; a fork fills them. They are listed here rather than inside the demo
+        // block because a cleaned fork must still HAVE somewhere to register DI: the whole list used
+        // to be fenced, so `remove-demo.sh` reduced it to `listOf()` and left no seam at all.
+        ProjectRepositoryModule,
+        ProjectNetworkModule,
+        ProjectDatabaseModule,
+        ProjectDatastoreModule,
+        // demo:begin — default demo feature set + the demo DI aggregators.
+        // customizer --clean strips this fenced block; the four Project* seams above survive.
         // ── default demo feature set — replace with your fork's ──
         CurrencyRatesModule,
         EmiCalculatorModule,
@@ -75,10 +85,8 @@ object FeatureRegistry {
         WatchlistModule,
         AddToWatchlistModule,
         CloudTodoModule,
-        // ── relocated core demo DI (were inline fenced blocks in the core aggregators) ──
-        ProjectRepositoryModule,
-        ProjectNetworkModule,
-        ProjectDatabaseModule,
+        ProfileModule,
+        // ── demo DI aggregators (were inline fenced blocks in the core aggregators) ──
         // demo:end
     )
 

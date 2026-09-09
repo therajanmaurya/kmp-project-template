@@ -22,7 +22,7 @@ here rather than re-deriving it:
 3. Author a feature and **declare** its `feature_profile.store_archetype` (one of the 8 archetypes).
 4. Run codegen (`/kmp-implement` → `kmp-store-gen`) — it reads `store_archetype` and emits the matching
    `core/store` factory (`createStore` / `createMemoryStore` / `createOfflineStore` /
-   `createMutableStore`) + `FetchPolicy`, appended to `AppStoreRegistry`. The unified
+   `createMutableStore`) + `FetchPolicy`, annotated `@StoreProvider`. The unified
    `BaseMutationViewModel` + `MutationMode` (InSession / Draft) drives every write screen.
 5. **Build / run**, then periodically run **`/kmp-project-template-sync`** to pull future white-label
    improvements (backbone + `customization-surface.yaml` are sync-reachable) without losing fork work.

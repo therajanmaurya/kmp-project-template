@@ -215,7 +215,7 @@ storeCacheManager.pruneExpiredDrafts(maxAgeMs = 7L * 24 * 60 * 60 * 1000)  // 7 
 single<StoreCacheManager> { get<StoreCacheManagerImpl>() }
 
 // Register each store that should be cleared on logout
-(get<StoreCacheManager>() as StoreCacheManagerImpl).register(get(AppStoreRegistry.LoanStore))
+// generated from @StoreProvider(logout = true) — no hand-registration needed
 ```
 
 ---
@@ -321,8 +321,8 @@ Everything consumer-forks need lives in `core/store/`:
 |---|---|
 | `AppScreenStateDefaults.kt` | Brand visuals, copy, Lottie animations, telemetry hooks |
 | `AppErrorMapper.kt` | Domain-error → user-message mapping (extends `categorize()`) |
-| `AppStoreRegistry.kt` | Named Store qualifiers (Koin) |
-| `appStoreModule.kt` | Koin DI bindings for your Store factories |
+| `@StoreProvider` on the provider | Store id, TTL, logout purge — qualifier is GENERATED |
+| `@CacheKey` on the provider | Stream cache keys — the `<Store>Keys` object is GENERATED |
 
 `KptTheme` provides `LocalScreenStateDefaults` automatically — zero per-screen wiring.
 

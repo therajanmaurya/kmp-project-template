@@ -44,7 +44,7 @@ class RoomChangeBusTest {
     @Test
     fun daoFlow_emitsInitialQuery_onSubscribe_withoutWaitingForSignal() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("initial"))
-        daoFlow("table_a", block = source).test {
+        daoFlow("table_a", block = source::next).test {
             assertEquals("initial", awaitItem())
             assertEquals(1, source.callCount, "initial subscribe should query exactly once")
             cancelAndIgnoreRemainingEvents()
@@ -54,7 +54,7 @@ class RoomChangeBusTest {
     @Test
     fun daoFlow_reQueries_whenBusNotifiesMatchingTable() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("v1", "v2"))
-        daoFlow("table_b", block = source).test {
+        daoFlow("table_b", block = source::next).test {
             assertEquals("v1", awaitItem())                  // initial query → snapshot[0]
             RoomChangeBus.notify("table_b")
             assertEquals("v2", awaitItem())                  // signal → re-query → snapshot[1]
@@ -66,7 +66,7 @@ class RoomChangeBusTest {
     @Test
     fun daoFlow_ignoresSignalsForUnrelatedTables() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("only"))
-        daoFlow("table_c", block = source).test {
+        daoFlow("table_c", block = source::next).test {
             assertEquals("only", awaitItem())
             RoomChangeBus.notify("some_other_table")
             expectNoEvents()
@@ -78,7 +78,7 @@ class RoomChangeBusTest {
     @Test
     fun daoFlow_reEmits_whenAnyOfMultipleWatchedTablesIsNotified() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("v0", "v1", "v2"))
-        daoFlow("table_d", "table_e", block = source).test {
+        daoFlow("table_d", "table_e", block = source::next).test {
             assertEquals("v0", awaitItem())
             RoomChangeBus.notify("table_e")                  // second-listed table
             assertEquals("v1", awaitItem())
@@ -92,7 +92,7 @@ class RoomChangeBusTest {
     @Test
     fun daoFlow_reEmits_whenMultiTableSignalContainsAtLeastOneWatchedTable() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("before", "after"))
-        daoFlow("table_f", block = source).test {
+        daoFlow("table_f", block = source::next).test {
             assertEquals("before", awaitItem())
             RoomChangeBus.notify(setOf("table_unrelated", "table_f", "table_other"))
             assertEquals("after", awaitItem())
@@ -114,7 +114,7 @@ class RoomChangeBusTest {
     @Test
     fun notifyingWrite_publishesSignal_afterSuccessfulBlock() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("pre-write", "post-write"))
-        daoFlow("table_g", block = source).test {
+        daoFlow("table_g", block = source::next).test {
             assertEquals("pre-write", awaitItem())
             notifyingWrite("table_g") { /* simulate DAO write */ }
             assertEquals("post-write", awaitItem())
@@ -126,7 +126,7 @@ class RoomChangeBusTest {
     @Test
     fun notifyingWrite_doesNotPublish_whenBlockThrows() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("untouched"))
-        daoFlow("table_h", block = source).test {
+        daoFlow("table_h", block = source::next).test {
             assertEquals("untouched", awaitItem())
 
             assertFailsWith<IllegalStateException> {
@@ -151,7 +151,7 @@ class RoomChangeBusTest {
     @Test
     fun notifyingWrite_singleTableFastPath_publishesEquivalentSignal() = runTest {
         val source = ColdFlowFactory(snapshots = listOf("v0", "v1", "v2"))
-        daoFlow("table_j", block = source).test {
+        daoFlow("table_j", block = source::next).test {
             assertEquals("v0", awaitItem())
 
             // Single-table call (fast path: notify(String)).
@@ -206,11 +206,16 @@ class RoomChangeBusTest {
 // is re-run on every fresh subscription.
 // ---------------------------------------------------------------------------
 
-private class ColdFlowFactory<T>(private val snapshots: List<T>) : () -> Flow<T> {
+private class ColdFlowFactory<T>(private val snapshots: List<T>) {
     var callCount: Int = 0
         private set
 
-    override fun invoke(): Flow<T> {
+    /**
+     * A plain method rather than `: () -> Flow<T>`: Kotlin/JS rejects implementing a function
+     * interface ("Implementing a function interface is prohibited in JavaScript"), which broke
+     * `compileTestKotlinJs` for this whole module. Call sites pass `source::next` instead.
+     */
+    fun next(): Flow<T> {
         val snapshot = snapshots[callCount.coerceAtMost(snapshots.lastIndex)]
         callCount++
         return flowOf(snapshot)

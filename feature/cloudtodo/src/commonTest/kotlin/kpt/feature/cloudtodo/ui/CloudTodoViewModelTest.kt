@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kpt.core.base.store.mutation.BlockReason
 import kpt.core.base.store.mutation.MutationResult
-import kpt.core.model.demo.cloudtodo.CloudTodo
+import kpt.core.model.cloudtodo.CloudTodo
 import kpt.feature.cloudtodo.testing.FakeCloudTodoRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

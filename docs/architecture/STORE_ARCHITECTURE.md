@@ -16,10 +16,10 @@
 | Module | Owner | Contains |
 |---|---|---|
 | `core-base/store` | **template** — do not edit in a fork | `StoreFactory`, `DecisionEngine`, `MutationGateway`, `ConflictInbox`, `DeleteSync`, `asScreenStream`, `infra/impl` Room defaults |
-| `core/store` | **fork seam** — edit freely | `provide<Name>Store(...)`, `AppStoreRegistry`, `AppCacheKeys`, `AppErrorMapper`, `AppScreenStateDefaults`, `StoreModule` DI |
+| `core/store` | **fork seam** — edit freely | `provide<Name>Store(...)` + `@StoreProvider`/`@CacheKey`, `AppErrorMapper`, `AppScreenStateDefaults`, `StoreModule` DI |
 
 A fork never calls `StoreFactory` directly from a feature. It authors a `provide<Name>Store(...)` in
-`core/store`, registers a qualifier in `AppStoreRegistry`, and `core/data` consumes the store. Fork
+`core/store`, annotates it `@StoreProvider`, and `core/data` consumes the store. Fork
 pressure goes to `core/store`; a genuine framework fix goes upstream.
 
 ---
@@ -87,8 +87,10 @@ Rules that hold at every step:
 - The entity→domain map lives **inside** `SourceOfTruth.reader`, so the store emits the **domain** model.
 - `core/data` calls `asScreenStream`, never the feature layer.
 - A feature module sees only `core/data` + `core/domain` — never `core/store` or `core/network`.
-- `cacheKey` comes from `AppCacheKeys` (`core/store`), never an inline string literal. Static keys are
-  constants (`AppCacheKeys.LOANS`); per-key streams use typed builders (`AppCacheKeys.loan(id)`) so the
+- `cacheKey` comes from `AppCacheKeys` (`core/store`), never an inline string literal. (The demo
+  showcase's own keys live in the fork-owned `DemoCacheKeys` under `core/store/**/demo/`, so
+  `remove-demo.sh` strips them without touching the template seam.) Static keys are
+  constants (`AppCacheKeys.MY_THINGS`); per-key streams use typed builders (`AppCacheKeys.myThing(id)`) so the
   format lives in one place and cannot drift or collide.
 
 ### What actually hits the network, and when
@@ -205,7 +207,7 @@ class LoanRepositoryImpl(
     private val screen: ScreenStreamContext,
 ) {
     fun loan(id: LoanId, scope: CoroutineScope) =
-        store.asScreenStream(id, screen, AppCacheKeys.loan(id.value), scope)
+        store.asScreenStream(id, screen, AppCacheKeys.Loans.item(id.value), scope)
 }
 ```
 
@@ -321,7 +323,7 @@ Every dependency is a lambda or interface, so it is testable without a fake Stor
   the next user sees the previous user's cached rows.
 - **App start** — `pruneExpiredDrafts()`. 30-day default TTL for `SUBMITTED`/`FAILED` draft rows;
   `PENDING` drafts are never pruned.
-- **TTLs** — live next to the qualifier in `AppStoreRegistry`.
+- **TTLs** — declared as `@StoreProvider(ttl = "5m")` on the provider.
 
 ---
 
@@ -330,7 +332,7 @@ Every dependency is a lambda or interface, so it is testable without a fake Stor
 1. Pick the archetype (§2) → it determines the factory and `FetchPolicy`.
 2. Author `provide<Name>Store(...)` in `core/store`, returning `Store<Key, DomainModel>`. Map
    entity→domain inside `SourceOfTruth.reader`.
-3. Add the qualifier to `AppStoreRegistry` and the cache key to `AppCacheKeys`.
+3. Annotate the provider: `@StoreProvider(id = …)` plus a `@CacheKey` per stream. Both are generated.
 4. Bind it in `StoreModule` and add it to the logout-clear list.
 5. Consume it from a `core/data` repository via `asScreenStream` — never from a feature module.
 6. If it is writable, route mutations through `MutationGateway` (§4) — never a DAO write.

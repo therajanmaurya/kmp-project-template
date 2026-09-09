@@ -8,8 +8,8 @@
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import java.util.Properties
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.convention.forkProp
 
 /*
  * Copyright 2025 Mifos Initiative
@@ -97,10 +97,8 @@ compose.resources {
 // `gradle/fork.properties#app.display.name` — the build-bridge that syncForkConfig generates from the
 // SoT `app-profile/app.yaml#identity.app_name`. AppInfo.appDisplayName exposes it as the single
 // common-code read point, so a fork rebrands in app-profile, not in per-feature strings.xml.
-val coreBaseUiForkProps = Properties().apply {
-    val f = rootProject.file("gradle/fork.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
+// Read through the ONE Gradle-side reader (org.convention.ForkProperties).
+val coreBaseUiAppDisplayName = forkProp("app.display.name", "App Toolkit")
 
 buildkonfig {
     packageName = "kpt.core.base.ui"
@@ -108,7 +106,7 @@ buildkonfig {
         buildConfigField(
             STRING,
             "APP_DISPLAY_NAME",
-            coreBaseUiForkProps.getProperty("app.display.name").orEmpty().ifBlank { "App Toolkit" },
+            coreBaseUiAppDisplayName,
         )
     }
 }

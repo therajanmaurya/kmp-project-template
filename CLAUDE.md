@@ -117,10 +117,66 @@ a real demo `*Store.kt` / `*ViewModel.kt` / `*Test.kt`. The decision matrix + mo
 | NETWORK_WITH_CACHE | `createStore` | `ExchangeRatesStore.kt`, `InterestRateSeriesStore.kt` | `CurrencyRatesViewModel.kt`, `InterestRatesViewModel.kt` | `store-archetype-coverage.sh` (AC-3) |
 | NETWORK_ONLY | `createStore` + `FetchPolicy.NETWORK_ONLY` | `SpotRateLookupStore.kt` | `CurrencyRatesViewModel.kt` (online) | `SpotRateLookupStoreTest.kt` |
 | CACHE_ONLY | `createStore` + `FetchPolicy.CACHE_ONLY` | `SpotRateLookupStore.kt` | `CurrencyRatesViewModel.kt` (offline) | `CurrencyConverterViewModelTest.kt` |
-| PERIODIC | `createStore` + TTL in `AppStoreRegistry` | `ExchangeRatesStore.kt` | `HomeViewModel.kt` tile | `HomeDashboardViewModelTest.kt` |
+| PERIODIC | `createStore` + `@StoreProvider(ttl = …)` | `ExchangeRatesStore.kt` | `HomeViewModel.kt` tile | `HomeDashboardViewModelTest.kt` |
 | MEMORY_ONLY | `createMemoryStore` | `MacroIndicatorStore.kt` | `CountryMacroViewModel.kt` | `store-archetype-coverage.sh` (AC-3) |
 | LOAD_ONCE | `createStore` + `asLoadOnceStream` | `LoansStore.kt` | `LoanDetailViewModel.kt` | `LoanDetailViewModelTest.kt` |
 | MUTABLE | `createMutableStore` + `Bookkeeper` | `CloudTodoStore.kt` | `EditBillReminderViewModel.kt` | `EditBillReminderViewModelTest.kt`, `OfflineSubmitSyncerTest.kt` |
+
+### Store declaration — `@StoreProvider` is the SoT
+
+**One place declares a store: the annotation on its provider function.** `tools/store-ksp` derives
+everything else. There is no registry file to edit, no YAML row to add, and no DI module to register
+into.
+
+```kotlin
+@StoreProvider(id = "loans")
+@CacheKey(name = "LIST", key = "loans")
+@CacheKey(fn = "item", key = "loan:{id}", params = ["id:String"])
+fun provideLoansStore(dao: LoanDao): Store<Unit, List<Loan>> = StoreFactory.createOfflineStore(…)
+```
+
+generates three files — two aggregates in `config/` plus the DI module:
+
+| Generated | Carries |
+|---|---|
+| `config/AppStoreRegistry` | every Koin qualifier flat (`AppStoreRegistry.Loans`) + a nested `Ttl` object (`AppStoreRegistry.Ttl.COIN_MARKETS`) |
+| `config/AppCacheKeys` | the cache keys, nested one object per store (`AppCacheKeys.Loans.LIST`, `AppCacheKeys.Loans.item(id)`) |
+| `di/GeneratedStoreBindings` | `single(AppStoreRegistry.Loans) { provideLoansStore(dao = get()) }` **and** the `StoreCacheManager` logout registration |
+
+Cache keys nest per store because the annotations name them by ROLE (`LIST`, `item`, `of`) and those
+roles repeat across stores — flat would collide, nested cannot. Qualifiers and TTLs are unique by
+construction (the processor errors on a duplicate `id`/`qualifier`), so they stay flat.
+
+**Dependencies come from the function signature.** Never restate them — that is the whole reason
+this is an annotation rather than a declaration file.
+
+**Generated output is a BUILD ARTIFACT** under `build/generated/ksp/…`, never committed source.
+Nothing to hand-edit, nothing to keep in sync on a template sync, no ownership row to declare for it,
+and nothing for `remove-demo.sh` to reset. Delete a demo package and its bindings cease to exist
+because the annotations went with it.
+
+**`logout` drives both the binding and the purge.** A store bound but never registered survives
+sign-out and shows the previous user's cached rows to the next person on a shared device. They cannot
+disagree when one field produces both. Set `logout = false` only for a `MutableStore` — Store5 5.1
+does not make it a `Store` subtype, so `register` cannot accept one; its rows still go via the paired
+read store's table.
+
+**Ownership stays in `app-profile/app.yaml#core_store.packages[]`** — one `owner: template | fork`
+per package, which is what `remove-demo.sh` reads. A store inherits its package's lifecycle rather
+than declaring its own.
+
+**Validation is a build error, not a later gate.** The processor fails the build on a duplicate id or
+qualifier, a duplicate cache-key string (two streams sharing a key share a fetched-at stamp, so one
+refresh silently marks the other fresh), a placeholder with no matching param, or a malformed `ttl`.
+
+> **For `/kmp-project-template-retrain` and `/implement`:** across `core/store`, `core/database` and
+> `core/network` the ANNOTATION is the only input. Do not re-add `core_store.stores[]` /
+> `core_store.cache_keys[]`, `database.entities[]` / `database.daos[]` / `database.type_converters[]`,
+> or an access point's `api:` field to app-profile. Do not author `AppStoreRegistry.kt`,
+> `AppCacheKeys.kt` or `AppDatabase.kt`, do not hand-write entries in `GeneratedStoreBindings`,
+> `GeneratedDaoBindings`, `GeneratedConverterBindings` or `GeneratedApiBindings`, and do not recreate a
+> `ProjectStoreModule` seam. All of those existed before the KSP migrations and were removed;
+> regenerating any of them produces duplicate declarations that fail the build.
 
 ### Write side — one unified mutation ViewModel
 
@@ -142,28 +198,67 @@ The app shell reads features + backbone + tabs + stores + network from registrie
 line per surface, never edits the shell:
 
 - **`FeatureRegistry`** (`cmp-navigation/.../registry/FeatureRegistry.kt`) — registers demo/fork
-  features into `AuthenticatedNavigation`.
+  features into `AuthenticatedNavigation`. Its `featureKoinModules` list has TWO regions: the fork's
+  per-layer `Project*Module` seams **outside** the `// demo:begin … // demo:end` fence (they survive
+  `--clean`), and the demo feature set + `Demo*Module` aggregators **inside** it (stripped).
+- **Per-layer fork DI seams** — `core/{data,database,network}/.../di/Project*Module.kt`. Empty
+  on the template; this is where a fork registers its own repositories, DAOs, stores and network
+  singles. They live outside `demo/` so `remove-demo.sh` leaves them standing; their demo
+  counterparts (`.../demo/di/Demo*Module.kt`) are deleted by the same strip. Enforced by
+  `scripts/product-health/checks/white-label-di-seams.sh` (WLS-1…WLS-5).
+  **`core/store` has no such seam**: stores are declared with `@StoreProvider`, so there is nothing to
+  hand-register. A fork needing a bespoke Koin module adds it to `FeatureRegistry`, which is fork-owned.
 - **`BackboneRegistry`** (`cmp-navigation/.../registry/BackboneRegistry.kt`) — home/profile/settings
   backbone graph.
 - **`TabRegistry`** (`cmp-navigation/.../registry/TabRegistry.kt`) — bottom-nav tab set.
-- **`AppStoreRegistry`** (`core/store/.../AppStoreRegistry.kt`) — feature-tagged Store5 factories.
+- **Store5 stores** — NOT a registry file. Each provider carries `@StoreProvider` and
+  `tools/store-ksp` generates its `<Store>Keys` object (qualifier + TTL + cache keys) and its
+  binding. See "Store declaration — `@StoreProvider` is the SoT" above.
 - **`AppAccessPoints`** + **`AccessPointRegistry`** (`core-base/network/.../AccessPointRegistry.kt`) —
   the declared network endpoints (see Network below).
-- **`core/store`** — `AppScreenStateDefaults`, `AppErrorMapper`, `appStoreModule` (branded state
-  visuals + error mapping + DI).
+- **`core/store`** — `config/AppScreenStateDefaults`, `config/AppErrorMapper` (template-owned; a
+  fork extends them via the `ProjectErrorMapper` / `ProjectScreenStateDefaults` seams).
 
 ### Network — N REST + N Supabase access points
 
-Every endpoint the app talks to is declared once in
-`app-profile/app.yaml#network.access_points` (`type: rest | supabase`) and generated into
-`AppAccessPoints.points`, which the fork registers as `AccessPointRegistry(AppAccessPoints.points)`
-in its `NetworkModule`. The registry resolves any number of REST **and** Supabase points:
+Every endpoint the app talks to is declared once in `app-profile/app.yaml#network.access_points`
+(`type: rest | supabase`). **`./gradlew syncForkConfig` projects that one list onto every derived
+surface**, so the only thing a fork writes is the API type itself:
 
-- **REST** — `restApi<T>("<id>")` DSL + `AccessPointRegistry.restBaseUrl(type)`; `core-base/network`
-  owns the transport, so a fork writes only the API interface + one `restApi("<id>")` line.
-- **Supabase** — `AccessPointRegistry.supabasePoints()` returns every declared Supabase point;
-  a per-point `SupabaseConfigClient` factory builds the client (URL from the registry, key from
-  secrets by id). `supabasePoints()` supports N Supabase projects, not a single hardcoded client.
+| Generated surface | What it carries |
+|---|---|
+| `AppAccessPoints.points` | the registry list (`AccessPointRegistry` wraps it in `NetworkModule`) |
+| `AppUrlTypes` | one `UrlType` constant per endpoint, for runtime base-URL switching |
+| `GeneratedApiBindings` | the Koin binding for every API type annotated `@ApiBinding` — included by `ProjectNetworkModule` |
+| `AppSupabaseAnonKeys` | one row per Supabase point; value from `BuildKonfig` via `anon_key_env:` |
+
+**Adding an endpoint is two steps: declare it in `app.yaml`, then write the API type and annotate it
+`@ApiBinding("<id>")`.** There is no wiring step — REST and Supabase alike.
+
+The split is deliberate. The endpoint's `base_url` / `type` / `owner` / `secret_alias` /
+`anon_key_env` are per-fork DEPLOYMENT config and stay in app-profile; the class↔point link is a
+property of the class and lives on it. Putting a URL in an annotation would force a fork to edit a
+template-owned API class to change it — the 3-way merge this contract exists to remove.
+
+- **REST** — `restApi<T>("<id>")` builds the Ktor client + Ktorfit from the access point (base URL,
+  loggable host, proxy). `@ApiBinding("<id>")` on `FooApi` generates `restApi("<id>") { it.createFooApi() }`.
+- **Supabase** — `supabaseApi<T>("<id>")` is the exact twin, resolving a per-point
+  `SupabaseConfigClient` (URL from the registry, anon key by id) via `SupabaseClientFactory`.
+  `@ApiBinding("<id>")` on `FooApi` generates `supabaseApi("<id>") { FooApi(it) }`, so the facade needs
+  a single-arg constructor taking `SupabaseConfigClient`. N Supabase projects, not one hardcoded client.
+  Unlike REST there is no generated stub — supabase-kt has no interface-generation step, so `T` is the
+  fork's own typed wrapper over `client.postgrest`.
+
+`AppAccessPoints` / `AppUrlTypes` / `AppSupabaseAnonKeys` are **committed** (a fresh clone must build
+without running Gradle), so nothing inherently forces them to still match `app.yaml`;
+`GeneratedApiBindings` is a build artifact derived from the annotations.
+`scripts/product-health/checks/network-access-points.sh` (NAP-1…NAP-9) is what keeps them honest: it
+fails on a declared-but-unprojected endpoint, a stale base URL, a missing `UrlType`, an `@ApiBinding`
+naming an undeclared point (or none at all, which would make the check vacuous), a Supabase point with
+no anon-key row, an anon key committed as a literal, and any hand-written `restApi(`/`supabaseApi(`
+outside the generated file. Two of those are
+otherwise silent — a missing `UrlType` constant makes `getBaseUrl` fall back to `MAIN`'s URL rather
+than fail, and a committed anon key works fine right up until it needs rotating.
 
 ### Tech Stack
 
@@ -357,8 +452,8 @@ Customize in **`core/store`** (the single discoverable seam):
 
 - **`AppScreenStateDefaults`** — brand visuals, copy, Lottie animations, telemetry hooks
 - **`AppErrorMapper`** — domain-error → user-message mapping (extends `categorize()`)
-- **`AppStoreRegistry`** — your named Store qualifiers
-- **`appStoreModule`** — Koin DI module for Store factories
+- **`@StoreProvider` on your provider fn** — qualifier, TTL, cache keys, binding and logout purge,
+  all generated. There is no registry to edit and no DI module to add it to.
 
 See `core/store/README.md` for the "what you get for free" list and full integration
 pattern.
@@ -484,7 +579,8 @@ re-deriving it:
 3. Author a feature and **declare its `store_archetype`** (one of the 8) in its `feature_profile`.
 4. Run codegen (`/kmp-implement` → `kmp-store-gen`) — it reads `store_archetype` and emits the matching
    `core/store` factory (`createStore` / `createMemoryStore` / `createOfflineStore` /
-   `createMutableStore`) + `FetchPolicy`, registered into `AppStoreRegistry`.
+   `createMutableStore`) + `FetchPolicy`, and annotates the provider with `@StoreProvider` — codegen
+   does the registering.
 5. **Build / run**, then periodically run **`/kmp-project-template-sync`** to pull future white-label
    improvements from the upstream template without losing your fork's work.
 
@@ -556,7 +652,7 @@ See [Secrets Management Guide](docs/claude/secrets-management.md) for complete r
 - **Bundle ID:** authored in `app-profile/app.yaml#identity.app_id` (the single source of truth) — same value as the Android applicationId; `syncForkConfig` regenerates `fork.properties#app.id` + writes `gradle/libs.versions.toml#appId`, which the build reads. Edit it in app-profile — don't hand-edit fork.properties or the catalog.
 - **Min Version:** iOS 15.0, **Target:** iOS 17.0
 - **Code Signing:** Fastlane Match (adhoc for Firebase, appstore for TestFlight/App Store)
-- **Shared framework integration:** SwiftPM / XCFramework (`cmp-ios/Package.swift` binary target + the `[KMP] Embed and Sign ComposeApp XCFramework` Xcode Run-Script phase). No CocoaPods / Ruby pod toolchain.
+- **Shared framework integration:** SwiftPM / XCFramework (`cmp-ios/Package.swift` binary target + the `[KMP] Embed and Sign ComposeApp XCFramework` Xcode Run-Script phase). No Ruby package-manager toolchain.
 
 ### macOS
 - **Code Signing:** Manual keychain setup with .p12 certificates

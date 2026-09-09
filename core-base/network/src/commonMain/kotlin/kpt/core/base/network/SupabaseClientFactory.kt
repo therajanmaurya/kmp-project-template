@@ -42,6 +42,22 @@ class SupabaseClientFactory(
         }
     }
 
+    /**
+     * Client for [id], or throw naming every declared Supabase point.
+     *
+     * The [clientFor] null is right for "probe whether this fork configured Supabase"; it is wrong for
+     * DI wiring, where a typo'd or undeclared id must fail loudly at graph construction rather than
+     * inject a null-shaped absence. This is the Supabase twin of [ktorfitFor]'s error, and [supabaseApi]
+     * is its only intended caller.
+     */
+    fun requireClientFor(id: String): SupabaseConfigClient =
+        clientFor(id) ?: error(
+            "No SUPABASE access point '$id' declared in app-profile network.access_points " +
+                "(AccessPointRegistry). Declared Supabase points: " +
+                registry.supabasePoints().joinToString { it.id }.ifEmpty { "(none)" } +
+                ". Declare it there with `type: supabase`, or fix the id.",
+        )
+
     /** Map of every declared Supabase access-point id → its client. */
     fun clients(): Map<String, SupabaseConfigClient> =
         registry.supabasePoints().mapNotNull { p -> clientFor(p.id)?.let { p.id to it } }.toMap()

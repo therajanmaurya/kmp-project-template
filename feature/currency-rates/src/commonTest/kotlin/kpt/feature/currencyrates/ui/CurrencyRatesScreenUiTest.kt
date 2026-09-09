@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kpt.core.designsystem.theme.KptTheme
-import kpt.core.model.demo.currency.ExchangeRates
+import kpt.core.model.currency.ExchangeRates
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import kotlin.test.Test
 
