@@ -528,7 +528,18 @@ rules:
     owner: template
   - glob: "core/datastore/**"
     owner: fork
-  - glob: "core/firebase/**/kpt/core/firebase/analytics/**"
+  # core/firebase — `config/` is the whole template-owned surface, matching what `config/` means in
+  # core/store and core/network: the code a fork extends rather than edits. It holds the two
+  # CROSS-CUTTING halves, `config/analytics/` and `config/crashlytics/` — session, navigation,
+  # network, sync, crash breadcrumbs — neither of which knows about any feature.
+  # A FEATURE's tracking is its own top-level package (`loans/`), a sibling of `config/` rather than
+  # anything inside it, so `remove-demo.sh` strips a feature as one plain directory and `config/`
+  # never contains demo code. A fork's own feature package is undeclared and falls to the module
+  # catch-all below (`fork`), so adding `payments/` needs no rule and no row. `loans/` is the
+  # template's showcase of that layout, hence demo-showcase: shipped, synced, deleted by `--clean`.
+  - glob: "core/firebase/**/kpt/core/firebase/loans/**"
+    owner: demo-showcase
+  - glob: "core/firebase/**/kpt/core/firebase/config/**"
     owner: template
   - glob: "core/firebase/**/kpt/core/firebase/di/**"
     owner: template

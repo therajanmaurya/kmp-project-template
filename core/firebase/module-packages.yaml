@@ -51,10 +51,22 @@ schema_version: "1.0"
 module: firebase
 
 
+# Deleted by `remove-demo.sh`; the row survives with `status: removed` as the record.
+# One package per FEATURE, holding that feature's analytics AND crash vocabulary together. It is a
+# top-level package, a SIBLING of `config/` rather than anything inside it, so the strip is a single
+# plain row and the template surface below stays free of demo code.
+demo:
+  - { id: loans, status: exists }           # the worked example: Loans{Analytics,Crash}* for feature/loans
+
 # Kept by a clean fork, full-copied by a sync.
+# `config/` is the template-owned surface a fork EXTENDS rather than edits — the same meaning the
+# package carries in core/store and core/network. Its two halves, `config/analytics/` and
+# `config/crashlytics/`, are cross-cutting: neither knows about any feature.
 template:
-  - { id: analytics, status: exists }       # KptAnalytics tracker, events and extensions
-  - { id: di,        status: exists }       # FirebaseModule
+  - { id: config, status: exists }          # config/analytics + config/crashlytics — the cross-cutting halves
+  - { id: di,     status: exists }          # FirebaseModule
 
 # THIS FORK's own packages. `/implement` registers here. Empty is normal on the template.
+# A fork tracking its own feature just creates `kpt/core/firebase/<feature>/` — undeclared IS fork,
+# so there is nothing to add here and nothing in customization-surface.yaml to touch.
 fork: []
