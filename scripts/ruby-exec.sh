@@ -41,9 +41,26 @@
 RUBY_EXEC_SH_LOADED=1
 
 _ruby_exec_repo_root() {
-  # scripts/ruby-exec.sh → repo root is one level up from scripts/
-  local d; d="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-  printf '%s' "$d"
+  # scripts/ruby-exec.sh → repo root is one level up from scripts/.
+  #
+  # BASH_SOURCE is UNSET when this file is sourced from zsh — the macOS default shell, and exactly
+  # what scripts/CLAUDE.md tells a human to do interactively (`. scripts/ruby-exec.sh && ruby_exec_report`).
+  # `dirname ""` is `.`, so the root resolved to the PARENT OF THE CWD, `.ruby-version` was not found,
+  # and ruby_exec_report printed `pinned=` empty — a diagnostic quietly reporting no pin on a repo
+  # that has one. Never guess a root: derive it if we can, then VERIFY it by marker, then search.
+  local d=""
+  # shellcheck disable=SC2128
+  if [ -n "${BASH_SOURCE:-}" ]; then d="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)"; fi
+  [ -n "$d" ] || { [ -n "${ZSH_VERSION:-}" ] && [ -n "${0:-}" ] && d="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)"; }
+  # A derived root only counts if it actually looks like this repo — otherwise fall through.
+  if [ -n "$d" ] && { [ -f "$d/.ruby-version" ] || [ -f "$d/Gemfile" ]; }; then printf '%s' "$d"; return 0; fi
+  # Last resort: walk up from the CWD for the marker. Works from any subdirectory and any shell.
+  d="$PWD"; local i=0
+  while [ "$d" != "/" ] && [ $i -lt 8 ]; do
+    if [ -f "$d/.ruby-version" ] || [ -f "$d/Gemfile" ]; then printf '%s' "$d"; return 0; fi
+    d="$(dirname "$d")"; i=$((i+1))
+  done
+  printf '%s' "$PWD"
 }
 
 # The pinned version, from the SoT. Empty if .ruby-version is absent (a fork that stripped it).

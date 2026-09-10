@@ -37,7 +37,7 @@ scripts/
 ├── secrets/        platform-wise secrets toolkit
 ├── store/          store listing + screenshots
 ├── _shared/        shared bash helpers
-└── product-health/ the 27-check health suite (self-documenting)
+└── product-health/ the 30-check health suite (self-documenting)
 ```
 
 ---
@@ -184,7 +184,7 @@ scripts/white-label/doctor.sh
 # who owns a path (sync ownership)
 scripts/customization-surface.sh resolve core/store/src/commonMain/kotlin/kpt/core/store/di/StoreModule.kt
 
-# health suite (27 checks)
+# health suite (30 checks)
 bash scripts/product-health/product-health.sh
 # on the upstream template itself, where fork-identity checks would misfire:
 TEMPLATE_SELF_BUILD=1 bash scripts/product-health/product-health.sh

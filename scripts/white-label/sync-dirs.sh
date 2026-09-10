@@ -7,6 +7,28 @@
 # customization-surface contract library (white-label-template-completion E0/T3).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ── SOURCE the contract library — without this the entire merge engine is dead code ─────────────
+# Four sites in this file gate on `declare -F cs_match_g` / `declare -F cs_merge`, including the
+# per-directory 3-way merge loop and merge_contract_root_files(). Nothing ever sourced the library,
+# so every one of those guards was permanently FALSE and every `owner: merge` path was full-copied
+# in silence — the exact clobber the contract's merge class exists to prevent, on every fork, on
+# every sync. The guards read as defensive ("no-op on forks that don't ship the reader"); they were
+# unconditional.
+#
+# Proven end-to-end 2026-09-10 by running the real sync on a clone of mbs/cappy: the CappyWidgets
+# app-extension target vanished from project.pbxproj (40 refs → 0) and the fork's
+# com.apple.security.application-groups entitlement was dropped, while the 12 widget source files
+# stayed on disk as unbuildable orphans. No conflict, no warning, exit 0.
+#
+# A comment at the is_excluded() call site claimed the library must be a SUBPROCESS because it uses
+# "bash-4 syntax". It does not: sourcing it under macOS's /bin/bash 3.2.57 defines cs_match_g and
+# cs_merge correctly (the only `mapfile` matches are a local VARIABLE of that name, not the bash-4
+# builtin). Sourcing is fail-soft — a fork without the reader keeps the old full-copy behaviour.
+if [ -f "$SCRIPT_DIR/../customization-surface.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$SCRIPT_DIR/../customization-surface.sh" >/dev/null 2>&1 || true
+fi
+
 # Capture the invocation args verbatim so the self-update re-exec (below) can restart the sync with
 # the SAME flags (--dry-run / --only / --force …) on the freshly-materialized engine.
 ORIGINAL_ARGS=("$@")
@@ -266,6 +288,10 @@ get_sync_branch_name() {
 print_items() {
     echo -e "${BLUE}Items to sync:${NC}"
     echo -e "${BOLD}Directories:${NC}"
+    # Loop variables are declared local even in a pure-print helper — same dynamic-scope hazard that
+    # made is_excluded() rewrite its caller's `dir`. This one is called at top level today, which is
+    # exactly how it stays harmless until someone calls it from inside a function.
+    local dir file
     for dir in "${SYNC_DIRS[@]}"; do
         echo -e "  ${BOLD}→${NC} $dir"
     done
@@ -338,21 +364,33 @@ is_excluded() {
     fi
 
     # Check directory-specific exclusions
-    for dir in "${!EXCLUSIONS[@]}"; do
+    # `_ex_dir`, NOT `dir` — bash has DYNAMIC scope, so an undeclared loop variable here assigns to
+    # the CALLER's `local dir`. sync_directory() calls is_excluded() from its convention-exclusion
+    # loop, so this `for dir in …` silently rewrote sync_directory's own `dir` to the LAST key of
+    # EXCLUSIONS, and every step after that point ran against the wrong directory:
+    #   propagate_template_deletions "$dir"   → wrong dir
+    #   the 3-way merge loop's `-- "$dir"`     → wrong dir
+    #   the "Restore excluded files" block     → wrong EXCLUSIONS entry
+    # Proven 2026-09-10: a real `--only cmp-ios` run printed "Syncing cmp-ios", then the merge loop
+    # reported `dir=[feature/settings]` and merged 63 feature/settings strings files while cmp-ios
+    # got ZERO merge passes — its project.pbxproj was full-copied (-404/+35), deleting the fork's
+    # CappyWidgets target. The loop variable is now function-private and can never reach a caller.
+    local _ex_dir
+    for _ex_dir in "${!EXCLUSIONS[@]}"; do
         # Skip the root key as we've already checked it
-        if [ "$dir" = "root" ]; then
+        if [ "$_ex_dir" = "root" ]; then
             continue
         fi
 
         # Check if the path starts with the directory we're looking at
-        if [[ "$full_path" == "$dir"* ]]; then
+        if [[ "$full_path" == "$_ex_dir"* ]]; then
             local IFS=' '
-            read -ra EXCLUDE_ITEMS <<< "${EXCLUSIONS[$dir]}"
+            read -ra EXCLUDE_ITEMS <<< "${EXCLUSIONS[$_ex_dir]}"
 
             for item in "${EXCLUDE_ITEMS[@]}"; do
                 local IFS=':'
                 read -ra PARTS <<< "$item"
-                local exclude_path="$dir/${PARTS[0]}"
+                local exclude_path="$_ex_dir/${PARTS[0]}"
                 local exclude_type="${PARTS[1]}"
 
                 # Remove any duplicate slashes
@@ -469,6 +507,103 @@ merge_settings_include_union() {
 #   • both diverged (ours != base, theirs != base, ≠)    → CONFLICT        → keep ours + surface
 # The fork's file formatting/comments are preserved (we walk OURS and only swap bumped values
 # + append template-added keys). Returns 0 clean · 1 if a real conflict was surfaced.
+# ── project.pbxproj — a STRUCTURAL 3-way, delegated to merge-pbxproj.rb ──────
+# A line merge is not merely suboptimal on a pbxproj, it is unusable: the file is a serialized
+# object graph, so "add a target" edits UUID arrays three levels from the object it adds, and
+# git merge-file calls adjacent array insertions a conflict. Worse, conflict markers make the
+# project UNOPENABLE — a human cannot even use Xcode to resolve what the merge produced. Measured
+# on mbs/cappy: git merge-file emitted 6 conflict markers where the structural merge has 0.
+#
+# FALLBACK IS "KEEP OURS", NEVER "TAKE THEIRS". Without ruby the merge cannot run, and the two
+# failure modes are not symmetric: taking the template's copy silently deletes the fork's targets
+# (unrecoverable without git archaeology), while keeping the fork's copy merely means this sync
+# skipped the Xcode project — visible, warned, and re-tried on the next run.
+merge_pbxproj_3way() {
+    local ours="$1" base="$2" theirs="$3" out="${4:-$1}"
+    [ -f "$ours" ] && [ -f "$theirs" ] || { [ -f "$theirs" ] && cp "$theirs" "$out"; return 0; }
+    [ -f "$base" ] || cp "$ours" "$base"
+
+    local repo_root; repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    local merger="$repo_root/scripts/white-label/merge-pbxproj.rb"
+    if [ ! -f "$merger" ]; then
+        print_warning "merge-pbxproj.rb absent — KEPT the fork's $out (this sync skipped the Xcode project)"
+        cp "$ours" "$out"; return 0
+    fi
+
+    # shellcheck source=/dev/null
+    . "$repo_root/scripts/ruby-exec.sh" 2>/dev/null || true
+    if ! declare -F ruby_exec >/dev/null 2>&1; then
+        print_warning "ruby-exec.sh unavailable — KEPT the fork's $out (this sync skipped the Xcode project)"
+        cp "$ours" "$out"; return 0
+    fi
+
+    local tmp_out; tmp_out="$(mktemp -d)/project.pbxproj"
+    mkdir -p "$(dirname "$tmp_out")"
+
+    # PLAIN ruby first, bundler only as a fallback. `xcodeproj` ships as a fastlane transitive, so on
+    # a machine that has ever set up iOS deployment it is already installed for the pinned ruby and
+    # loads with a bare `require` — measured 1.27.0 on both the template and a fresh fork clone.
+    # Going through bundler FIRST breaks that: `bundle exec` demands a fully-installed Gemfile in the
+    # FORK, and a fork that has never run `bundle install` gets bundler resolving against whatever
+    # ruby it lands on. Observed on a real run — the merge died in bundler under macOS's system ruby
+    # 2.6 with `uninitialized constant Gem::Resolver::APISet::GemParser`, nothing to do with the
+    # merge, and the sync fell back to keep-ours for a file it could have merged cleanly.
+    # merge-pbxproj.rb exits 2 (and only 2) when the gem is genuinely unavailable, so that is the
+    # single signal worth retrying under bundler.
+    ruby_exec "$merger" --ours "$ours" --base "$base" --theirs "$theirs" --out "$tmp_out" --report
+    local _rc=$?
+    if [ "$_rc" -eq 2 ] && declare -F ruby_bundle >/dev/null 2>&1; then
+        ruby_bundle "$repo_root" -- exec ruby "$merger" \
+            --ours "$ours" --base "$base" --theirs "$theirs" --out "$tmp_out" --report
+        _rc=$?
+    fi
+    if [ "$_rc" -eq 0 ]; then
+        cp "$tmp_out" "$out"; rm -rf "$(dirname "$tmp_out")"; return 0
+    fi
+    rm -rf "$(dirname "$tmp_out")"
+    # Exit 1 = a difference the merger refuses to decide; exit 2 = the gem/toolchain is missing.
+    print_warning "pbxproj merge did not complete — KEPT the fork's $out. Review the reason above;"
+    print_warning "  a per-fork identity setting belongs in FORK_IDENTITY_KEYS in merge-pbxproj.rb."
+    cp "$ours" "$out"
+    return 1
+}
+
+# ── Info.plist / *.entitlements — key-level union, delegated to merge-plist.rb ───────────────
+# Template and fork each add their OWN keys to a flat top-level <dict>, so the additions land at the
+# same point in the text and a line merge calls non-overlapping changes a conflict. Both files are
+# also ADD/ADD against a fork's older base (neither existed at mbs/cappy's b97eb73d), so there is no
+# ancestor and EVERY line conflicts. A `<<<<<<<` in an XML plist does not parse — the build breaks.
+# Same keep-ours fallback rationale as the pbxproj merger.
+merge_plist_union() {
+    local ours="$1" base="$2" theirs="$3" out="${4:-$1}"
+    [ -f "$ours" ] && [ -f "$theirs" ] || { [ -f "$theirs" ] && cp "$theirs" "$out"; return 0; }
+
+    local repo_root; repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    local merger="$repo_root/scripts/white-label/merge-plist.rb"
+    if [ ! -f "$merger" ]; then
+        print_warning "merge-plist.rb absent — KEPT the fork's $out (this sync skipped it)"
+        cp "$ours" "$out"; return 0
+    fi
+    # shellcheck source=/dev/null
+    . "$repo_root/scripts/ruby-exec.sh" 2>/dev/null || true
+    if ! declare -F ruby_exec >/dev/null 2>&1; then
+        print_warning "ruby-exec.sh unavailable — KEPT the fork's $out (this sync skipped it)"
+        cp "$ours" "$out"; return 0
+    fi
+    # `-` tells the merger there is no ancestor for THIS FILE, which is different from the repo
+    # having no merge base: a file added on both sides since the last sync has a valid repo base
+    # and still no file base.
+    local base_arg="$base"; [ -s "$base" ] || base_arg="-"
+    local tmp; tmp="$(mktemp)"
+    if ruby_exec "$merger" --ours "$ours" --base "$base_arg" --theirs "$theirs" --out "$tmp" --report; then
+        cp "$tmp" "$out"; rm -f "$tmp"; return 0
+    fi
+    rm -f "$tmp"
+    print_warning "plist union did not complete — KEPT the fork's $out. Review the reason above."
+    cp "$ours" "$out"
+    return 1
+}
+
 merge_libs_catalog_3way() {
     local ours="$1" base="$2" theirs="$3" out="${4:-$1}"
     [ -f "$ours" ] && [ -f "$theirs" ] || { [ -f "$theirs" ] && cp "$theirs" "$out"; return 0; }
@@ -549,7 +684,10 @@ merge_contract_root_files() {
     echo -e "\n${BLUE}${BOLD}Contract-keyed root merges (settings include-union + catalog-3way)...${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
-    local mbase; mbase="$(git merge-base "$BASE_BRANCH" "$TEMP_BRANCH" 2>/dev/null)"
+    # Anchor via resolve_merge_base, NOT `git merge-base` alone — a copied (non-forked) fork has no
+    # shared history and the bare call returns empty, which silently degrades every merge below into
+    # a full-copy. See resolve_merge_base().
+    local mbase; mbase="$(resolve_merge_base "$BASE_BRANCH" "$TEMP_BRANCH")" || mbase=""
     local f strat o b t rc
     # gradle.properties joins these rather than SYNC_FILES: it is `owner: merge` and carries the
       # fork's own `fork.project.name`, so a full checkout would clobber it. A 3-way takes the
@@ -567,6 +705,8 @@ merge_contract_root_files() {
         case "$strat" in
             include-union) merge_settings_include_union "$o" "$b" "$t" "$f"; rc=$? ;;
             catalog-3way)  merge_libs_catalog_3way      "$o" "$b" "$t" "$f"; rc=$? ;;
+            pbxproj-3way)  merge_pbxproj_3way          "$o" "$b" "$t" "$f"; rc=$? ;;
+            plist-union)   merge_plist_union           "$o" "$b" "$t" "$f"; rc=$? ;;
             *)             cs_merge "$strat" "$o" "$b" "$t" "$f"; rc=$? ;;
         esac
         if [ "${rc:-0}" -eq 0 ]; then
@@ -576,6 +716,39 @@ merge_contract_root_files() {
         fi
         rm -f "$o" "$b" "$t"
     done
+}
+
+# ── The 3-way merge BASE, for true forks AND copied ones ─────────────────────
+# `owner: merge` is only worth declaring if the 3-way actually has a common ancestor to diff
+# against. Two fork topologies exist and only one has it:
+#
+#   forked   — `gh repo fork` / `git clone` of the template. Shares history, so
+#              `git merge-base $BASE_BRANCH $TEMP_BRANCH` returns a real commit.
+#   copied   — the template TREE copied into a fresh repo (the common case in practice: measured
+#              on mbs/cappy 2026-09-10 — different root commits, ZERO shared commits).
+#              `git merge-base` returns EMPTY.
+#
+# An empty base is not a harmless degradation. `git merge-file ours <base> theirs` with base==ours
+# sees every template difference as a clean addition onto an untouched base and takes ALL of theirs
+# — so the merge silently produces exactly the full-copy that declaring `merge` was meant to prevent,
+# with a reassuring "Merged (…) — fork edits preserved" line printed over the top of the loss.
+#
+# `.template-version#template_sha` is the anchor for the copied case, and its own header already
+# says so ("anchors the next sync's 3-way merge base") — the merge loops simply were not reading it.
+# It records the template commit this tree last synced FROM, which is precisely the common ancestor
+# git cannot compute across unrelated histories.
+#
+# Order: real merge-base (most accurate) → PREV_TEMPLATE_SHA (correct for copied forks) → empty
+# (first-ever sync of a copied fork with no anchor — the caller then falls back to ours, and the
+# loop WARNS rather than claiming a merge it did not perform).
+resolve_merge_base() {
+    local a="$1" b="$2" mb
+    mb="$(git merge-base "$a" "$b" 2>/dev/null)"
+    if [ -n "$mb" ]; then printf '%s' "$mb"; return 0; fi
+    if [ -n "${PREV_TEMPLATE_SHA:-}" ] && git cat-file -e "$PREV_TEMPLATE_SHA" 2>/dev/null; then
+        printf '%s' "$PREV_TEMPLATE_SHA"; return 0
+    fi
+    return 1
 }
 
 # Function to sync directory with exclusions
@@ -691,14 +864,44 @@ sync_directory() {
             # (BASE_BRANCH), theirs=upstream (temp_branch), base=merge-base. Guarded:
             # no-op on forks that don't ship the reader.
             if declare -F cs_match_g >/dev/null 2>&1 && declare -F cs_merge >/dev/null 2>&1; then
-                local _mbase; _mbase="$(git merge-base "$BASE_BRANCH" "$temp_branch" 2>/dev/null)"
+                local _mbase; _mbase="$(resolve_merge_base "$BASE_BRANCH" "$temp_branch")" || _mbase=""
                 while IFS= read -r _mf; do
                     [ -z "$_mf" ] && continue
                     cs_match_g "$_mf"; [ "${CS_M_OWNER:-}" = "merge" ] || continue
+                    # A line-based 3-way on a binary produces corruption that still LOOKS like a
+                    # successful merge. The blanket `merge` rows cover whole platform shells, so a
+                    # binary reaching here is expected (icons, .webp, .ico) rather than exceptional —
+                    # most are carved out as `fork`, and this catches whatever is not.
+                    if [ -f "$_mf" ] && ! LC_ALL=C grep -qI . "$_mf" 2>/dev/null \
+                       && [ -s "$_mf" ]; then
+                        print_warning "Binary ${BOLD}$_mf${NC} is merge-owned — took the template's copy (no line merge possible)"
+                        continue
+                    fi
                     local _o _b _t; _o="$(mktemp)"; _b="$(mktemp)"; _t="$(mktemp)"
                     if git show "$BASE_BRANCH:$_mf" > "$_o" 2>/dev/null \
                        && git show "$temp_branch:$_mf" > "$_t" 2>/dev/null; then
-                        git show "${_mbase}:$_mf" > "$_b" 2>/dev/null || cp "$_o" "$_b"
+                        # ── The per-FILE ancestor, which is not the same as the repo having one ──
+                        # A file ADDED on both sides since the last sync (add/add) has a valid repo
+                        # merge base and NO base blob of its own. Seeding `base` with OURS in that
+                        # case is not a neutral fallback — it actively inverts the result: every key
+                        # the fork owns then looks like something present in the ancestor and deleted
+                        # upstream, so the merge DROPS it and reports success.
+                        #
+                        # Measured 2026-09-10: cmp-ios/iosApp/iosApp.entitlements is add/add for
+                        # mbs/cappy (absent at b97eb73d; the template added its own in 99083ed2, the
+                        # fork added its own). With base:=ours the union emitted ONE key —
+                        # keychain-access-groups — silently dropping the fork's
+                        # com.apple.security.application-groups, the WidgetKit shared container.
+                        #
+                        # An EMPTY base states the truth: no common ancestor. A union strategy then
+                        # unions (correct), and a line 3-way conflicts (honest, and visible) instead
+                        # of quietly handing the file to the template.
+                        if [ -n "$_mbase" ] && git show "${_mbase}:$_mf" > "$_b" 2>/dev/null; then
+                            :
+                        else
+                            : > "$_b"
+                            print_warning "No common ancestor for ${BOLD}$_mf${NC} (added on both sides) — merging as add/add"
+                        fi
                         mkdir -p "$(dirname "$_mf")"
                         # Route the contract-declared strategy: the two structure-aware unions
                         # (include-union / catalog-3way) use their dedicated engines; everything
@@ -708,6 +911,8 @@ sync_directory() {
                         case "$_ms" in
                             include-union) merge_settings_include_union "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
                             catalog-3way)  merge_libs_catalog_3way      "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
+                            pbxproj-3way)  merge_pbxproj_3way          "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
+                            plist-union)   merge_plist_union           "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
                             *)             cs_merge "$_ms" "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
                         esac
                         if [ "${_mrc:-0}" -eq 0 ]; then
