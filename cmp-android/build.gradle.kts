@@ -160,9 +160,6 @@ dependencies {
 
     implementation(libs.kermit.koin)
 
-    implementation(libs.app.update.ktx)
-    implementation(libs.app.update)
-
     implementation(libs.coil.kt)
 
     implementation(libs.filekit.core)
