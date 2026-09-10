@@ -52,6 +52,18 @@ class ScreenDataStreamIntegrationTest {
     // satisfies it in milliseconds, so a generous ceiling costs nothing on success and still fails
     // loudly — with a real "no more events" diagnostic — if a state never arrives. [runTestTimeout]
     // sits above it so Turbine's diagnostic wins the race against runTest's bare timeout.
+    //
+    // 2026-09-10 — the budget was NOT the cause, and raising it a third time would not have helped.
+    // `offline_with_empty_store_emits_Empty_offlineFirst` failed again under Kover, but the whole
+    // `:core-base:store:desktopTest` task ran ~18s end to end: it asserted the WRONG STATE, it did
+    // not time out. Root cause was in production code, not scheduling — DecisionEngine's
+    // offline-first rule required `error == null`, while Store5's `cached(refresh = false)` DOES
+    // invoke the fetcher when nothing is cached, so offline cold start reliably produced a
+    // connection failure and the screen showed Empty or a blocking NoNetwork depending on which
+    // emission won. Fixed in DecisionEngine.decideNoData and pinned deterministically by
+    // DecisionEngineTest ("…NETWORK error + CACHE_FIRST_SWR = Empty — doomed fetch ignored").
+    // Leave these budgets alone: they are a hang ceiling, and the next failure here is signal, not
+    // a reason to widen them again.
     private val turbineTimeout = 4.minutes
 
     /** Must exceed [turbineTimeout] so Turbine reports WHICH state never arrived. */

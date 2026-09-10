@@ -64,6 +64,40 @@ class DecisionEngineTest {
     }
 
     @Test
+    fun `no data + Unavailable + NETWORK error + CACHE_FIRST_SWR = Empty — doomed fetch ignored`() {
+        // The offline-first rule must survive the network error that offline reliably PRODUCES.
+        //
+        // Store5's `cached(key, refresh = false)` invokes the fetcher when nothing is cached
+        // (`refresh = false` means "don't refetch when data exists", not "never fetch"), so a
+        // cold-start offline screen always attempts a doomed request and always gets a connection
+        // failure. The rule used to require `error == null`, which meant the screen showed Empty or
+        // a blocking NoNetwork depending purely on whether the empty emission or the failure won the
+        // race — Empty on a fast machine, NoNetwork on a loaded CI runner.
+        //
+        // Offline, a transport failure is the expected outcome and says nothing about the data, so
+        // it must not change the verdict.
+        val result = DecisionEngine.decide(
+            emptyStoreData(error = FakeIOException("connection refused")),
+            unavailable,
+            FetchPolicy.CACHE_FIRST_SWR,
+        )
+        assertIs<ScreenState.Empty>(result)
+    }
+
+    @Test
+    fun `no data + Unavailable + NON-network error + CACHE_FIRST_SWR = not Empty — real signal kept`() {
+        // The complement, and the reason the guard is category-scoped rather than dropped outright:
+        // an auth failure cannot legitimately originate from an offline device, so if one appears it
+        // is real signal and must still surface rather than be swallowed as "expected offline".
+        val result = DecisionEngine.decide(
+            emptyStoreData(error = RuntimeException("HTTP 401 Unauthorized")),
+            unavailable,
+            FetchPolicy.CACHE_FIRST_SWR,
+        )
+        assertFalse(result is ScreenState.Empty, "a non-transport error offline must not read as Empty")
+    }
+
+    @Test
     fun `starvation-fix integration - empty sentinel while refreshing + Unavailable = NoNetwork`() {
         // Integration contract for the StoreDataMapper starvation fix:
         // mapToStoreDataNoFallback now emits StoreData(EMPTY_SENTINEL, isEmpty=true,
