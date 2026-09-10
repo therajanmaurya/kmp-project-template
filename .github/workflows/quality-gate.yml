@@ -60,6 +60,20 @@ jobs:
         with:
           bundler-cache: false
 
+      # xcodeproj — the ONLY gem this job needs, and it is needed for one reason: without it the
+      # pbxproj-merge canary cannot exercise scripts/white-label/merge-pbxproj.rb and downgrades
+      # itself to a WARN. That check is what stops a regression in the Xcode-project 3-way from
+      # reaching a fork, where the symptom is a silently deleted target rather than a build error,
+      # so leaving it unexercised upstream would make it decorative exactly where it matters.
+      #
+      # `gem install` rather than `bundler-cache: true`: bundler would install the whole fastlane
+      # tree (~1-2 min) for a job that is otherwise ~10s. xcodeproj pulls only CFPropertyList /
+      # nanaimo / claide / colored2 / atomos and adds a few seconds. `|| true` keeps a transient
+      # rubygems outage from failing the quality gate on something this job can degrade around —
+      # the check WARNs on its own when the gem is missing.
+      - name: Install xcodeproj (pbxproj-merge canary only)
+        run: gem install xcodeproj --no-document || true
+
       - name: Derive fork.properties from app-profile (SoT → build bridge)
         run: ruby scripts/white-label/derive.rb
 

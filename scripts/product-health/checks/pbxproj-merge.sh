@@ -101,6 +101,7 @@ else
   [ "$pm6" -eq 0 ] && say "✅ PM-6" "plist union keeps both sides' keys and the result parses"
 fi
 
+# 0 PASS · 1 FAIL (blocks) · 2 WARN (gem unavailable — canary not exercised, non-blocking)
 exit "$fail"
 fi
 
@@ -116,9 +117,30 @@ if [ "$lm" -eq 0 ]; then
   bad PM-2 "git merge-file does NOT conflict on this fixture — the canary no longer proves anything"
 fi
 
-if ruby_bundle "$HEALTH_ROOT" -- exec ruby "$MERGER" \
-     --ours "$FIX/ours.pbxproj" --base "$FIX/base.pbxproj" --theirs "$FIX/theirs.pbxproj" \
-     --out "$OUT" >"$WORK/log" 2>&1; then
+# Plain interpreter first, bundler only if the gem is genuinely absent — mirrors what
+# merge_pbxproj_3way does in the engine, so this check exercises the real code path.
+ruby_exec "$MERGER" --ours "$FIX/ours.pbxproj" --base "$FIX/base.pbxproj" \
+  --theirs "$FIX/theirs.pbxproj" --out "$OUT" >"$WORK/log" 2>&1
+mrc=$?
+if [ "$mrc" -eq 2 ] && declare -F ruby_bundle >/dev/null 2>&1; then
+  ruby_bundle "$HEALTH_ROOT" -- exec ruby "$MERGER" \
+    --ours "$FIX/ours.pbxproj" --base "$FIX/base.pbxproj" --theirs "$FIX/theirs.pbxproj" \
+    --out "$OUT" >"$WORK/log" 2>&1
+  mrc=$?
+fi
+
+# Exit 2 means the `xcodeproj` gem is unavailable — NOT that the merge is broken. merge-pbxproj.rb
+# reserves that code for exactly this, and the engine treats it the same way (keep-ours, never
+# take-theirs). A runner without the gem cannot exercise the canary, and failing the build there
+# would block every fork whose CI does not install it for a capability the fork may never use.
+# It is a WARN — visible and clearable — not a pass and not a failure.
+GEM_MISSING=0
+if [ "$mrc" -eq 2 ]; then
+  GEM_MISSING=1
+  say "⚠️ PM-2" "the xcodeproj gem is unavailable here — pbxproj merge NOT exercised (PM-3..PM-5 skipped)"
+  echo "           clear it with:  gem install xcodeproj --no-document   (it also ships as a fastlane transitive)"
+  [ "$fail" -eq 0 ] && fail=2
+elif [ "$mrc" -eq 0 ]; then
   m="$(grep -c '^<<<<<<<\|^>>>>>>>' "$OUT" 2>/dev/null || true)"; m="${m:-0}"
   if [ "$m" -eq 0 ]; then
     say "✅ PM-2" "structural merge clean (git merge-file left $lm marker(s) on the same inputs)"
@@ -129,6 +151,11 @@ else
   bad PM-2 "merger exited non-zero: $(tail -3 "$WORK/log" | tr '\n' ' ')"
 fi
 
+# A sub-check that quietly does not run reads exactly like one that passed. When the merge produced
+# no output these three used to disappear from the report entirely — say so instead.
+if [ ! -f "$OUT" ] && [ "$GEM_MISSING" -eq 0 ]; then
+  bad PM-3 "no merged pbxproj was produced — PM-3..PM-5 could not run"
+fi
 if [ -f "$OUT" ]; then
   # ── PM-3 ─────────────────────────────────────────────────────────────────
   miss=""
