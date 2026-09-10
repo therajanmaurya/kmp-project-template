@@ -46,7 +46,7 @@ note() { echo "  $1"; fails=$((fails + 1)); }
 # <yaml key>:<module dir>:<demo-dir-must-be-gone>
 # Every core module with a module-packages.yaml is audited. `demo_gone` is per-module because
 # core/data keeps `demo/di/` (WLS governs it) and core/database keeps a demo test tree.
-CORE_MODULES="${MP_MODULES:-model:model:yes data:data:no domain:domain:yes common:common:yes store:store:yes database:database:no network:network:yes datastore:datastore:yes designsystem:designsystem:yes firebase:firebase:yes ui:ui:yes}"
+CORE_MODULES="${MP_MODULES:-model:model:yes data:data:no domain:domain:yes common:common:yes store:store:yes database:database:no network:network:yes platform:platform:yes datastore:datastore:yes designsystem:designsystem:yes firebase:firebase:yes ui:ui:yes}"
 summary=""
 
 [ -f "$APP_YAML" ] || { echo "no app-profile/app.yaml — nothing to audit (ok)"; exit 0; }

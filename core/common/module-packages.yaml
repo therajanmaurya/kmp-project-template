@@ -53,6 +53,7 @@ module: common
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: format, status: exists }          # formatDate / formatDecimal / formatGrouped / formatTimeAgo
 
 # THIS FORK's own packages. `/implement` registers here. Empty is normal on the template.

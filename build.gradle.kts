@@ -129,6 +129,24 @@ subprojects {
     // coverage gate without weakening real-test signal.
     tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
         failOnNoDiscoveredTests = false
+
+        // A CI test failure must arrive DIAGNOSABLE. Gradle's default console output prints two
+        // frames and drops the exception message, which turned two real failures on this repo into
+        // `AssertionError at SomeTest.kt:99` and `IllegalArgumentException at Preconditions.kt:26` —
+        // neither of which says what was expected, what arrived, or which library raised it. Both
+        // reproduced only on a loaded CI runner, so the console output was the ONLY evidence
+        // available, and in both cases it was insufficient to diagnose from. One was then
+        // mis-diagnosed twice in a row as a timeout and "fixed" by widening timeouts.
+        //
+        // FULL exception format costs nothing on a green run (no failures, no output) and makes the
+        // red run self-explanatory.
+        testLogging {
+            events("failed")
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+        }
     }
 }
 

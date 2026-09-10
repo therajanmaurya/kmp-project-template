@@ -66,6 +66,7 @@ demo:
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: di,    status: exists }           # DataModule aggregator + the ProjectRepositoryModule fork seam
   - { id: infra, status: exists }           # sync/outbox test support
   - { id: user,  status: exists }           # UserDataRepository + logout manager

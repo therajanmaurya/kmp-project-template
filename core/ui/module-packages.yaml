@@ -53,6 +53,7 @@ module: ui
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: bottombar,  status: exists }      # app bottom bar
   - { id: input,      status: exists }      # shared input primitives
   - { id: navigation, status: exists }      # NavigationItem

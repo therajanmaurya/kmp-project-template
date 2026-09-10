@@ -14,6 +14,8 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import kpt.core.base.platform.context.AppContext
 import kpt.core.base.platform.intent.IntentManager
+import kpt.core.base.platform.share.ShareManager
+import kpt.core.base.platform.url.UrlLauncher
 import kpt.core.base.platform.review.AppReviewManager
 import kpt.core.base.platform.update.AppUpdateManager
 
@@ -50,6 +52,19 @@ val LocalAppReviewManager: ProvidableCompositionLocal<AppReviewManager> = compos
  */
 val LocalIntentManager: ProvidableCompositionLocal<IntentManager> = compositionLocalOf {
     error("CompositionLocal LocalIntentManager not present")
+}
+
+/**
+ * Opening a URL — distinct from [LocalIntentManager] (system screens) and [LocalShareManager]
+ * (handing content to another app).
+ */
+val LocalUrlLauncher: ProvidableCompositionLocal<UrlLauncher> = compositionLocalOf {
+    error("CompositionLocal UrlLauncher not present")
+}
+
+/** Handing content to the platform share chooser. */
+val LocalShareManager: ProvidableCompositionLocal<ShareManager> = compositionLocalOf {
+    error("CompositionLocal ShareManager not present")
 }
 
 /**

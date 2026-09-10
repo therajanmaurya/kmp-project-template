@@ -25,6 +25,11 @@ kotlin {
             // in nonAndroidMain (Android keeps its native ACTION_SEND/ACTION_VIEW path).
             implementation(libs.cmp.share)
             implementation(libs.cmp.intent.launcher)
+            implementation(libs.cmp.open.url)
+            implementation(libs.cmp.inapp.update)
+            // The CompositionLocals read their managers OUT of Koin rather than constructing a
+            // second copy — platformModule is the single owner. Same pattern as core-base/security.
+            implementation(libs.koin.compose)
 
             // Explicit (rather than transitive via compose.runtime) — nonAndroidMain
             // IntentManagerImpl owns its own CoroutineScope for fire-and-forget dispatch.
@@ -41,11 +46,11 @@ kotlin {
 
             implementation(compose.material3)
 
+            // In-app REVIEW stays on Play Core — the toolkit has no review engine yet, so
+            // AppReviewManager keeps its Android impl and its non-Android no-op. That is the
+            // last Activity-bound manager, and the last reason LocalManagerProvider is split.
             implementation(libs.review)
             implementation(libs.review.ktx)
-
-            implementation(libs.app.update.ktx)
-            implementation(libs.app.update)
         }
     }
 }

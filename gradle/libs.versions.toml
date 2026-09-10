@@ -372,6 +372,15 @@ ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.r
 
 cmp-intent-launcher = { module = "io.github.mobilebytelabs:cmp-intent-launcher", version.ref = "kmptoolkit" }
 cmp-share = { module = "io.github.mobilebytelabs:cmp-share", version.ref = "kmptoolkit" }
+# cmp-open-url — commonMain URL opening (openUrl / openInBrowser / openWithApp / canOpen).
+# Ships `actual`s for 11 targets, so consumers stay in commonMain.
+cmp-open-url = { module = "io.github.mobilebytelabs:cmp-open-url", version.ref = "kmptoolkit" }
+# cmp-inapp-update — 11-target update check + store launch. Replaces the Play-Core-only
+# AppUpdateManagerImpl whose nonAndroidMain twin was two empty method bodies.
+# Alias is `cmp-inapp-update`, NOT `cmp-in-app-update`: the generated accessor would be
+# `libs.cmp.in.app.update` and `in` is a Kotlin keyword — the build script fails to compile.
+# The published coordinate is unchanged.
+cmp-inapp-update = { module = "io.github.mobilebytelabs:cmp-in-app-update", version.ref = "kmptoolkit" }
 cmp-network-monitor = { module = "io.github.mobilebytelabs:cmp-network-monitor", version.ref = "kmptoolkit" }
 cmp-network-monitor-compose = { module = "io.github.mobilebytelabs:cmp-network-monitor-compose", version.ref = "kmptoolkit" }
 # cmp-deep-link — commonMain deep-link handler. Android capture is auto-init (ContentProvider +

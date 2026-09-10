@@ -14,9 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import kpt.core.base.platform.context.AppContext
 import kpt.core.base.platform.context.activity
-import kpt.core.base.platform.intent.IntentManagerImpl
 import kpt.core.base.platform.review.AppReviewManagerImpl
-import kpt.core.base.platform.update.AppUpdateManagerImpl
+import org.koin.compose.koinInject
 
 /**
  * Android-specific implementation of the LocalManagerProvider composable function.
@@ -44,8 +43,12 @@ actual fun LocalManagerProvider(
     val activity = context.activity as Activity
     CompositionLocalProvider(
         LocalAppReviewManager provides AppReviewManagerImpl(activity),
-        LocalIntentManager provides IntentManagerImpl(),
-        LocalAppUpdateManager provides AppUpdateManagerImpl(activity),
+        // Resolved from platformModule — NOT constructed here. Constructing them again would
+        // hand composition a different instance from the one a ViewModel injects.
+        LocalIntentManager provides koinInject(),
+        LocalUrlLauncher provides koinInject(),
+        LocalShareManager provides koinInject(),
+        LocalAppUpdateManager provides koinInject(),
     ) {
         content()
     }

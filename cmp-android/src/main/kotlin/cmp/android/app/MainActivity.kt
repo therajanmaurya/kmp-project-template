@@ -16,15 +16,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import cmp.shared.SharedApp
 import io.github.mobilebytelabs.kmptoolkit.firebase.analytics.AnalyticsHelper
 import io.github.mobilebytelabs.kmptoolkit.firebase.analytics.AppLifecycleTracker
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
+import kotlinx.coroutines.launch
 import kpt.core.base.data.infra.NetworkMonitor
 import kpt.core.base.platform.update.AppUpdateManager
 import kpt.core.base.platform.update.AppUpdateManagerImpl
@@ -57,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen().setKeepOnScreenCondition { shouldShowSplashScreen }
 
         super.onCreate(savedInstanceState)
-        appUpdateManager = AppUpdateManagerImpl(this)
+        appUpdateManager = AppUpdateManagerImpl()
 
         val darkThemeConfigFlow = userPreferencesRepository.observeDarkThemeConfig
 
@@ -71,8 +74,13 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val status by networkMonitor.isOnline.collectAsStateWithLifecycle(false)
 
-            if (status) {
-                appUpdateManager.checkForAppUpdate()
+            // Keyed on `status` so the check runs once per connectivity transition. It used to be
+            // a bare call inside setContent, so it re-ran on every recomposition — making
+            // checkForAppUpdate suspend turned that from a silent bug into a compile error.
+            LaunchedEffect(status) {
+                if (status) {
+                    appUpdateManager.checkForAppUpdate()
+                }
             }
 
             lifecycleTracker.markAppLaunchComplete()
@@ -116,7 +124,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        appUpdateManager.checkForResumeUpdateState()
+        lifecycleScope.launch { appUpdateManager.checkForResumeUpdateState() }
         lifecycleTracker.onEnterBackground()
     }
 
