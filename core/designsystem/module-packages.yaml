@@ -53,6 +53,7 @@ module: designsystem
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: chart,     status: exists }       # chart primitives
   - { id: component, status: exists }       # shared components
   - { id: icon,      status: exists }       # icon set

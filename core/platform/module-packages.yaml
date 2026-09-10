@@ -1,6 +1,6 @@
 schema_version: "1.0"
 # ─────────────────────────────────────────────────────────────────────────────
-# core/ui — module-packages.yaml
+# core/platform — module-packages.yaml
 #
 # WHAT THIS IS
 # The lifecycle of every package in this module: which ones a clean fork keeps, which the customizer
@@ -29,7 +29,7 @@ schema_version: "1.0"
 #              row at all — undeclared IS fork — so a row here is self-documenting only.
 #
 # ── FIELDS ───────────────────────────────────────────────────────────────────
-#   id:        the package directory under `src/<sourceSet>/kotlin/kpt/core/ui/<id>/`.
+#   id:        the package directory under `src/<sourceSet>/kotlin/kpt/core/platform/<id>/`.
 #   status:    DERIVED FROM DISK, never hand-maintained. Rewritten by `remove-demo.sh --apply`.
 #                exists   the directory is present
 #                removed  absent and this is a `demo:` row — the customizer deleted it, as designed
@@ -39,7 +39,7 @@ schema_version: "1.0"
 #              next customizer run recomputes it from what is actually on disk.
 #
 # ── HOW TO UPDATE ────────────────────────────────────────────────────────────
-#   add a showcase package  create `kpt/core/ui/<id>/`, add a row under `demo:`, and add a
+#   add a showcase package  create `kpt/core/platform/<id>/`, add a row under `demo:`, and add a
 #                           `demo-showcase` rule for it in customization-surface.yaml (MP-1 fails
 #                           without it — the package would silently stop syncing to forks).
 #   add framework code      create the package, add a row under `template:`.
@@ -48,17 +48,17 @@ schema_version: "1.0"
 #
 # Audited by scripts/product-health/checks/core-package-ownership.sh (MP-1..MP-6).
 # ─────────────────────────────────────────────────────────────────────────────
-module: ui
+module: platform
 
 
 # Kept by a clean fork, full-copied by a sync.
 template:
   - { id: config, status: exists }          # the fork-extension seam — see config/README.md
-  - { id: bottombar,  status: exists }      # app bottom bar
-  - { id: input,      status: exists }      # shared input primitives
-  - { id: navigation, status: exists }      # NavigationItem
-  - { id: scaffold,   status: exists }      # KptScaffold
-  - { id: utils,      status: exists }      # UI helpers
 
-# THIS FORK's own packages. `/implement` registers here. Empty is normal on the template.
+# THIS FORK's own packages. Empty is normal on the template — this module ships zero Kotlin source
+# by design (see CONSUMPTION.md); it is a re-export boundary until a feature needs a bridge.
+# `kmp-platform-gen` writes each expect/actual capability package (permissions/, biometrics/, …)
+# as features need them. Those stay UNDECLARED — the module catch-all resolves them `fork`, so a
+# sync never overwrites a fork's own bridges. That catch-all was missing until 2026-09-10, when
+# platform fell to the `core/**` blanket and resolved `template` instead.
 fork: []

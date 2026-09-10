@@ -199,6 +199,7 @@ module_packages:
   - core/firebase/module-packages.yaml
   - core/model/module-packages.yaml
   - core/network/module-packages.yaml
+  - core/platform/module-packages.yaml
   - core/store/module-packages.yaml
   - core/ui/module-packages.yaml
   - feature/module-packages.yaml

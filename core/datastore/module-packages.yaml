@@ -53,6 +53,7 @@ module: datastore
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: di,    status: exists }           # DatastoreModule + the ProjectDatastoreModule fork seam
   - { id: prefs, status: exists }           # user + project preference repositories
 

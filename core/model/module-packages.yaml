@@ -66,6 +66,7 @@ demo:
 
 # Kept by a clean fork, full-copied by a sync.
 template:
+  - { id: config, status: exists }          # the fork-extension seam — see config/README.md
   - { id: user, status: exists }            # UserData, ThemeBrand, LanguageConfig — the framework reads these
 
 # THIS FORK's own packages. `/implement` registers here. Empty is normal on the template.

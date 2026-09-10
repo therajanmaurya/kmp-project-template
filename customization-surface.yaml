@@ -526,6 +526,10 @@ rules:
     owner: template
   - glob: "core/datastore/**/kpt/core/datastore/prefs/**"
     owner: template
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/datastore/**/kpt/core/datastore/config/**"
+    owner: template
   - glob: "core/datastore/**"
     owner: fork
   # core/firebase — `config/` is the whole template-owned surface, matching what `config/` means in
@@ -557,6 +561,10 @@ rules:
     owner: template
   - glob: "core/designsystem/**/kpt/core/designsystem/utils/**"
     owner: template
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/designsystem/**/kpt/core/designsystem/config/**"
+    owner: template
   - glob: "core/designsystem/**"
     owner: fork
   # core/ui — Compose primitives every feature composes. Template-authored; a fork's own primitives
@@ -568,6 +576,10 @@ rules:
   - glob: "core/ui/**/kpt/core/ui/navigation/**"
     owner: template
   - glob: "core/ui/**/kpt/core/ui/utils/**"
+    owner: template
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/ui/**/kpt/core/ui/config/**"
     owner: template
   - glob: "core/ui/**"
     owner: fork
@@ -621,6 +633,10 @@ rules:
   - glob: "core/domain/**/kpt/core/domain/emi/**"
     owner: demo-showcase
   # A fork's own calculators. Everything the template owns is enumerated above.
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/domain/**/kpt/core/domain/config/**"
+    owner: template
   - glob: "core/domain/**"
     owner: fork
 
@@ -628,6 +644,10 @@ rules:
   # `format` is template-authored and full-copied; a fork's own utility must NOT be claimed by the
   # `core/**` blanket, which is what the catch-all below prevents.
   - glob: "core/common/**/kpt/core/common/format/**"
+    owner: template
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/common/**/kpt/core/common/config/**"
     owner: template
   - glob: "core/common/**"
     owner: fork
@@ -670,6 +690,10 @@ rules:
   # core/model: the template's packages are enumerated above, so everything else IS the fork's.
   # `demo/**` is matched earlier by the generic demo-showcase rule, so DemoRepositoryModule keeps
   # its own lifecycle and is not swept into this bucket.
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/data/**/kpt/core/data/config/**"
+    owner: template
   - glob: "core/data/**"
     owner: fork
 
@@ -724,7 +748,20 @@ rules:
   # The direction is safe BECAUSE the template's list is declared: a new template package must be
   # added to app-profile for the strip to reach it anyway, and G-MODEL-PKG (MP-1) fails if that row
   # has no matching ownership rule here — so a template package cannot silently land in this bucket.
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/model/**/kpt/core/model/config/**"
+    owner: template
   - glob: "core/model/**"
+    owner: fork
+  # core/platform had NO module catch-all, so a fork's own platform package resolved `template`
+  # off the blanket below and a sync would have overwritten it. It is unaudited by MP-4 today
+  # (not in core-package-ownership.sh CORE_MODULES), which is why it went unnoticed.
+  # The fork-extension seam — template-owned so a sync keeps delivering upstream fixes.
+  # MUST stay above the module catch-all below, which resolves `fork`.
+  - glob: "core/platform/**/kpt/core/platform/config/**"
+    owner: template
+  - glob: "core/platform/**"
     owner: fork
   - glob: "core/**"
     owner: template
