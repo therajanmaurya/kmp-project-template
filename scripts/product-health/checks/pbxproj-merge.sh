@@ -72,7 +72,7 @@ done
 # ── ruby availability (skip, don't fail) ────────────────────────────────────
 # shellcheck source=/dev/null
 . "$HEALTH_ROOT/scripts/ruby-exec.sh" 2>/dev/null || true
-if ! declare -F ruby_bundle >/dev/null 2>&1; then
+if ! declare -F ruby_exec >/dev/null 2>&1; then
   say "⚠️ PBX" "ruby-exec.sh unavailable — merge checks skipped (engine falls back to KEEP-OURS)"
   # ── PM-6 — plist union ──────────────────────────────────────────────────────
 PLIST_MERGER="${PM_PLIST_MERGER:-$HEALTH_ROOT/scripts/white-label/merge-plist.rb}"
@@ -192,7 +192,12 @@ proj = Xcodeproj::Project.open(File.dirname(ARGV[0]))
 abort "no targets" if proj.targets.empty?
 puts "#{proj.objects.count} objects, targets: #{proj.targets.map(&:name).sort.join(', ')}"
 RB
-  if out5="$(ruby_bundle "$HEALTH_ROOT" -- exec ruby "$WORK/verify.rb" "$OUT" 2>&1 | tail -1)"; then
+  # ruby_exec, NOT ruby_bundle — the same path the merger itself took two checks above. Routing this
+  # one through bundler asks for a fully-installed Gemfile in the repo, which CI deliberately does
+  # not have (`bundler-cache: false`, so the ~10s job does not drag in the fastlane tree). It died in
+  # `<internal:gem_prelude>` on the runner while PM-2..PM-4 passed on the very same merged file —
+  # a failure about bundler, reported as "the merged graph does not re-open".
+  if out5="$(ruby_exec "$WORK/verify.rb" "$OUT" 2>&1 | tail -1)"; then
     say "✅ PM-5" "graph re-opens — $out5"
   else
     bad PM-5 "merged graph does not re-open: $out5"
