@@ -70,6 +70,13 @@ than silently running the wrong ruby.
 tracked `*.sh` invokes `bundle` directly. Echoed instructions for a human are fine — the match is
 anchored to command position.
 
+**`RT-8`** in the same file asks whether *this repo* can reach the pinned interpreter — it runs the
+resolver and checks the answer. It does **not** ask whether the `ruby` on your PATH happens to be the
+pinned one: that is a property of your shell, not the repo, and every script goes through the
+resolver anyway. So `product-health` passes on a shell that never ran `rbenv init`, and prints a note
+(visible when you run the check directly) reminding you that a **hand-typed** lane is the one path
+that still needs the shell fixed.
+
 ---
 
 ## `white-label/` — the fork lifecycle
@@ -200,8 +207,10 @@ scripts/remove-demo.sh --apply
 
 ## Troubleshooting
 
-**`bundle exec` fails inside `activate_bin_path`** — the interpreter, not the gems. Run
-`eval "$(rbenv init -)"`, or check with `. scripts/ruby-exec.sh && ruby_exec_report`.
+**`bundle exec` fails inside `activate_bin_path`** — the interpreter, not the gems. This only happens
+when you invoke a lane **by hand**; anything going through `ruby-exec.sh` is immune. Run
+`eval "$(rbenv init -)"`, or check with `. scripts/ruby-exec.sh && ruby_exec_report`. `product-health`
+will still pass in this state, by design — see `RT-8` above.
 
 **A script cannot find `gradle/fork.properties` values** — it is derived from `app-profile/`. Run
 `./gradlew syncForkConfig`; never hand-edit the bridge.

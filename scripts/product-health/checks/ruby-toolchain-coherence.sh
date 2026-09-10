@@ -41,10 +41,26 @@
 #         works whether or not shims are on PATH — that is the whole point, and a caller that skips it
 #         re-opens the trap for everyone.
 #
-#   RT-8  (WARN, non-blocking) the live interpreter matches .ruby-version. This is the trap in the
-#         header above, made self-diagnosing: a shell without rbenv's shims on PATH silently gets
-#         /usr/bin/ruby 2.6 and `bundle exec` dies deep inside rubygems' activate_bin_path with
-#         nothing naming the real cause.
+#   RT-8  (WARN, non-blocking) THE REPO can reach its pinned interpreter — asked of the repo, not of
+#         whatever shell happens to be invoking the suite.
+#
+#         It used to ask "is the ruby on PATH the pinned one?", which is a question about the
+#         OPERATOR'S SHELL. Its own message conceded as much ("Nothing is wrong in the repo"), and it
+#         warned on every terminal that had not run `eval "$(rbenv init -)"`, every CI runner, and
+#         every fresh shell — a permanent, unactionable warning, and that is the kind that teaches
+#         people to skim past the warn column.
+#
+#         Two things closed the gap it was standing in for. `scripts/ruby-exec.sh` resolves
+#         $(rbenv root)/versions/<pin>/bin/ruby DIRECTLY, so the repo reaches its interpreter whether
+#         or not shims are on PATH; and RT-9 (below) forbids any tracked *.sh from invoking bundler
+#         directly, so no script in this repo can fall into the trap at all.
+#
+#         What survives is narrower and real: the deployment docs tell a HUMAN to run a bundler lane
+#         by hand, and in a shim-less shell that still dies inside rubygems' activate_bin_path with
+#         an error naming gems rather than the interpreter. So a PATH mismatch is now an
+#         informational hint next to a PASS, and the WARN is reserved for what is genuinely the
+#         repo's problem: the resolver cannot reach the pinned version at all (no rbenv, or the pin
+#         is not installed).
 #
 # exit 0 = PASS · 1 = FAIL (blocks) · 2 = WARN. No .ruby-version → PASS (no Ruby toolchain declared).
 set -uo pipefail
@@ -169,15 +185,45 @@ if [ -d "$HEALTH_ROOT/deployment/fastlane" ] && [ -d "$HEALTH_ROOT/.github/workf
   done
 fi
 
-# RT-8 — WARN only: the interpreter this shell actually reaches.
+# RT-8 — can THIS REPO reach its pinned interpreter? (not: is PATH's ruby the pinned one)
 warn=0
-if command -v ruby >/dev/null 2>&1; then
+# RT8_RESOLVER lets the canary point at an absent/broken resolver while the rest of the tree stays
+# real. A synthetic HEALTH_ROOT cannot isolate this check — RT-6 needs a git repo to decide whether
+# .bundle/config is tracked, so it fails in any scratch dir and masks RT-8's own exit code.
+RESOLVER="${RT8_RESOLVER:-$HEALTH_ROOT/scripts/ruby-exec.sh}"
+if [ -f "$RESOLVER" ]; then
+  # Ask the resolver, in a subshell so sourcing cannot leak into this check.
+  rt8_report="$(bash -c ". '$RESOLVER' >/dev/null 2>&1; ruby_exec_report" 2>/dev/null || true)"
+  rt8_bin="$(printf '%s' "$rt8_report" | sed -n 's/^ruby-exec: \([^ ]*\).*/\1/p')"
+  rt8_ver=""
+  [ -n "$rt8_bin" ] && [ -x "$rt8_bin" ] && rt8_ver="$("$rt8_bin" -e 'print RUBY_VERSION' 2>/dev/null || true)"
+
+  if [ -z "$rt8_ver" ] || [ "$rt8_ver" != "$want" ]; then
+    # The repo's own resolver cannot produce the pinned interpreter. THIS is repo-scoped: every
+    # script that goes through ruby-exec.sh is affected, on every machine in this state.
+    echo "${C_YEL}⚠ RT-8${C_RST}: scripts/ruby-exec.sh cannot reach the pinned ruby $want."
+    echo "       resolver said: ${rt8_report:-<no output>}"
+    echo "       Install it:  rbenv install $want    (or set RUBY_EXEC_BIN to a $want interpreter)"
+    warn=2
+  else
+    # Repo is healthy. A PATH mismatch is only a hint, because the deployment docs instruct a human
+    # to run a bundler lane directly and that path does NOT go through the resolver.
+    live=""
+    command -v ruby >/dev/null 2>&1 && live="$(ruby -e 'print RUBY_VERSION' 2>/dev/null || true)"
+    if [ -n "$live" ] && [ "$live" != "$want" ]; then
+      echo "  note: this shell's ruby is $live ($(command -v ruby)); the repo resolves $want directly,"
+      echo "        so every script is unaffected. Only a hand-typed bundler lane would break — run"
+      echo "        eval \"\$(rbenv init -)\"  first if you intend to invoke one by hand."
+    fi
+  fi
+elif command -v ruby >/dev/null 2>&1; then
+  # No resolver in this tree (a fork that stripped it) — fall back to the old PATH question, the best
+  # available signal when nothing shim-independent exists.
   live="$(ruby -e 'print RUBY_VERSION' 2>/dev/null || true)"
   if [ -n "$live" ] && [ "$live" != "$want" ]; then
-    echo "${C_YEL}⚠ RT-8${C_RST}: live ruby is $live but .ruby-version declares $want ($(command -v ruby))."
-    echo "       Nothing is wrong in the repo — this shell just is not reaching the project interpreter,"
-    echo "       and 'bundle exec' will die inside rubygems' activate_bin_path with a misleading error."
-    echo "       Fix the shell:  eval \"\$(rbenv init -)\"   (or add ~/.rbenv/shims to PATH)"
+    echo "${C_YEL}⚠ RT-8${C_RST}: live ruby is $live but .ruby-version declares $want ($(command -v ruby)),"
+    echo "       and scripts/ruby-exec.sh is absent so nothing resolves the pin independently."
+    echo "       Fix the shell:  eval \"\$(rbenv init -)\"   (or restore scripts/ruby-exec.sh)"
     warn=2
   fi
 fi
