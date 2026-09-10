@@ -33,6 +33,14 @@
 #         deployment`. Left at its default '.', fastlane resolves against the ROOT Fastfile — whose
 #         only lane is `ios build_ios` — and the job dies with "Could not find lane" after a full
 #         build. Checked across ALL callers, because a repo accumulates them.
+#   RT-9  no tracked script invokes bundler DIRECTLY — every caller goes through scripts/ruby-exec.sh.
+#         RT-4 bans the `#!/usr/bin/ruby` shebang for bypassing rbenv; a bare `bundle exec` bypasses it
+#         exactly the same way, just one level up: `bundle` on PATH belongs to whichever ruby owns it,
+#         which on a shell without rbenv's shims is the system 2.6.10. ruby-exec.sh resolves the pinned
+#         interpreter from .ruby-version DIRECTLY (via `$(rbenv root)/versions/<pin>/bin/ruby`), so it
+#         works whether or not shims are on PATH — that is the whole point, and a caller that skips it
+#         re-opens the trap for everyone.
+#
 #   RT-8  (WARN, non-blocking) the live interpreter matches .ruby-version. This is the trap in the
 #         header above, made self-diagnosing: a shell without rbenv's shims on PATH silently gets
 #         /usr/bin/ruby 2.6 and `bundle exec` dies deep inside rubygems' activate_bin_path with
@@ -172,6 +180,41 @@ if command -v ruby >/dev/null 2>&1; then
     echo "       Fix the shell:  eval \"\$(rbenv init -)\"   (or add ~/.rbenv/shims to PATH)"
     warn=2
   fi
+fi
+
+# ── RT-9 — bundler is reached ONLY through scripts/ruby-exec.sh ────────────────────────────────
+# Sibling of RT-4: that bans `#!/usr/bin/ruby` for bypassing rbenv, this bans a bare `bundle` for
+# bypassing it one level up. `bundle` on PATH belongs to whichever ruby owns it, so on a shell
+# without rbenv shims it is the system 2.6.10 and every gem was installed for the pinned version.
+#
+# Scope: tracked *.sh only, excluding the resolver itself (it must name `bundle` to call it), this
+# checker (it must name the pattern to detect it), and the canary fixtures. ECHOED instructions are
+# allowed — a script printing "run: bundle exec fastlane …" for a human is documentation, not an
+# invocation, so the match is anchored to a command position.
+rt9_offenders=""
+while IFS= read -r f; do
+  case "$f" in
+    scripts/ruby-exec.sh|scripts/product-health/checks/ruby-toolchain-coherence.sh) continue ;;
+    scripts/product-health/tests/*) continue ;;
+  esac
+  # command position: start of line, or after `&&`, `||`, `;`, `(`, or a pipe — never inside echo/printf
+  if grep -nE '(^|[;&|(]|&&|\|\|)[[:space:]]*bundle[[:space:]]+(exec|install|update|lock)\b' "$f" 2>/dev/null \
+       | grep -qvE '^[0-9]+:[[:space:]]*#'; then
+    rt9_offenders="$rt9_offenders $f"
+  fi
+done < <(git ls-files '*.sh' 2>/dev/null)
+
+if [ -n "$rt9_offenders" ]; then
+  echo "${C_RED}✗ RT-9${C_RST}: script(s) invoke bundler directly instead of via scripts/ruby-exec.sh:"
+  for f in $rt9_offenders; do
+    echo "       $f"
+    grep -nE '(^|[;&|(]|&&|\|\|)[[:space:]]*bundle[[:space:]]+(exec|install|update|lock)\b' "$f" \
+      | grep -vE '^[0-9]+:[[:space:]]*#' | sed 's/^/         /'
+  done
+  echo "       A bare \`bundle\` runs under whatever ruby owns it on PATH — the system 2.6.10 on a shell"
+  echo "       without rbenv shims — while the gems were installed for \$(cat .ruby-version). Use:"
+  echo "         . \"\$REPO_ROOT/scripts/ruby-exec.sh\"  &&  ruby_bundle <app-root> -- exec <cmd>"
+  fail=1
 fi
 
 if [ "$fail" -ne 0 ]; then exit "$fail"; fi

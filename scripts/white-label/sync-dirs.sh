@@ -69,9 +69,13 @@ SYNC_DIRS=(
     "feature/profile"       # backbone (owner: template) — demo/** excluded below (WS4/T5)
     "feature/settings"      # backbone (owner: template) — demo/** excluded below (WS4/T5)
     "kotlin-js-store"       # JS lockfile tree (owner: template) — full copy (WS4/T5)
+    "tools"                 # KSP processors (store/database/network/data) — the codegen engine
+                            # the @StoreProvider / @DbEntity / @ApiBinding annotations depend on.
+                            # Was unreachable AND unowned: no fork ever got a processor update.
 )
 
 SYNC_FILES=(
+    ".bundle/config"        # BUNDLE_PATH for the vendored Ruby toolchain (owner: template)
     "Gemfile"
     "Gemfile.lock"
     "ci-prepush.bat"

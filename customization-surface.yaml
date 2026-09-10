@@ -37,6 +37,22 @@
 version: 1
 
 rules:
+  # ── core-base is FRAMEWORK-SHARED — declared before the merge-required globs below ──
+  # `core-base/**` resolves `template` further down, but the two merge-required rules that follow
+  # are repo-WIDE (`**/AndroidManifest.xml`, `**/composeResources/**/strings.xml`) and first-match
+  # wins, so without this they capture 22 core-base paths: core-base/ui's own 21-locale i18n and the
+  # core-base/{common,observability} module manifests.
+  #
+  # Those globs exist so a FORK can union its own permissions and strings into files it legitimately
+  # extends — its app module, its features, its core/* packages. core-base is not one of those: it is
+  # framework-shared, a fork does not touch it, and 3-way merging the framework's own translations
+  # invites a fork to accumulate edits in a tree that upgrades wholesale. Declaring it template here
+  # keeps `core-base/**` exactly copy-and-replace, which is what it has always meant.
+  - glob: "core-base/**/composeResources/**/strings.xml"
+    owner: template
+  - glob: "core-base/**/AndroidManifest.xml"
+    owner: template
+
   # ── merge-required (declared FIRST — must win over the template module globs) ──
   # AndroidManifest: template ships the base manifest; forks add permissions
   # (RECORD_AUDIO, FOREGROUND_SERVICE_*, etc). A blind copy DROPS the fork's — the
@@ -831,15 +847,42 @@ rules:
   - { glob: "kotlin-js-store/**",            owner: template }
   - { glob: "legal/**",                      owner: template }
   - { glob: "tests/**",                      owner: template }   # test harness — E0/T1 (closes the classification gap)
+  # tools/*-ksp — the template's OWN codegen engine (store / database / network / data processors
+  # that generate AppStoreRegistry, AppDatabase and the Generated*Bindings from the @StoreProvider /
+  # @DbEntity / @ApiBinding / @RepositoryBinding annotations). A fork does not author these.
+  # They had NO rule at all and fell to the `fork` DEFAULT, so they never synced — leaving every
+  # fork frozen on the processor version it forked with while the annotations kept evolving. A
+  # fork cannot be told "your registrations are generated for you" and then never receive the
+  # generators. Added to SYNC_DIRS at the same time: ownership alone would not deliver them.
+  - { glob: "tools/**",                      owner: template }
+  # .bundle/config — BUNDLE_PATH for the vendored Ruby toolchain, template build infra. Same
+  # story: no rule, so it defaulted to fork and never reached a consumer.
+  - { glob: ".bundle/**",                    owner: template }
   - { glob: "META-INF/**",                   owner: template }
   - { glob: "CODE_OF_CONDUCT.md",            owner: template }
   - { glob: "CONTRIBUTING.md",               owner: template }
   - { glob: "LICENSE",                       owner: template }
 
-  # ── default: any path not matched above ──
-  # Runtime treats an unmatched path as fork-owned (SAFE — never clobber an unknown
-  # fork file). `--verify` flags anything that reaches this rule so a human classifies
-  # it explicitly (a new template file must not rely on the default).
+  # ── default: any path not matched above — TEMPLATE-FIRST ──
+  # This repo IS the template, so the default answer to "who owns this?" is the template. FORK
+  # territory is declared EXPLICITLY above (`core/**`, `feature/**`, `app-profile/**`, the per-platform
+  # branding carve-outs), never inferred from silence.
+  #
+  # This was `fork` — "never clobber an unknown fork file". That is the right default for a CONSUMER
+  # and the wrong one for a template: a directory the template ADDS that nobody writes a rule for
+  # silently becomes fork-owned and never syncs to anyone. `tools/**` (the KSP processors every
+  # @StoreProvider / @DbEntity / @ApiBinding depends on) and `.bundle/**` both sat in exactly that
+  # state — unowned AND unreachable, so no fork ever received a processor update.
+  #
+  # Flipping is safe BECAUSE fork territory is explicitly claimed: a fork's new
+  # `core/store/.../quests/QuestStore.kt` or `feature/quests/**` resolves `fork` through its module
+  # catch-all, not through this rule. Verified at the time of the change — all 2712 tracked files
+  # matched an explicit rule, so ZERO existing paths changed owner.
+  #
+  # `--verify` still flags anything reaching this rule: relying on the default is a missing
+  # classification either way, and the point is that the FAILURE MODE is now "a fork receives
+  # template code it did not ask for" (visible, fixable) rather than "a fork silently never receives
+  # template code at all" (invisible, permanent).
   - glob: "**"
-    owner: fork
+    owner: template
     default: true

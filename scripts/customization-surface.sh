@@ -154,7 +154,21 @@ cs_match_g() {
       return 0
     fi
   done
-  CS_M_OWNER="fork"; CS_M_STRAT=""; CS_M_DEFAULT="1"   # fallback = fork (never clobber unknown)
+  # TEMPLATE-FIRST fallback. This repo IS the template: the default answer to "who owns this?" is
+  # the template, and FORK territory is declared explicitly (`core/**`, `feature/**`, `app-profile/**`,
+  # the branding carve-outs) rather than inferred from silence.
+  #
+  # It used to be `fork` — "never clobber unknown" — which is the safe default for a CONSUMER but the
+  # wrong one for a template: a directory the template ADDS and nobody writes a rule for silently
+  # becomes fork-owned and never syncs to anyone. `tools/**` (the KSP processors driving every
+  # @StoreProvider / @DbEntity / @ApiBinding) and `.bundle/**` both sat in exactly that state.
+  #
+  # Flipping is safe BECAUSE fork territory is explicitly claimed: `core/store/.../quests/X.kt` and
+  # `feature/quests/X.kt` resolve `fork` through their module catch-alls, not through this line.
+  # Verified against the tree at the time of the change — all 2712 tracked files matched an explicit
+  # rule, so ZERO existing paths change owner. Only genuinely-unclaimed NEW paths move, and by the
+  # template-first principle those are the template's.
+  CS_M_OWNER="template"; CS_M_STRAT=""; CS_M_DEFAULT="1"
 }
 
 cs_resolve_owner()    { cs_match_g "$1"; printf '%s' "$CS_M_OWNER"; }
