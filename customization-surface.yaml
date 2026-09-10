@@ -37,6 +37,30 @@
 version: 1
 
 rules:
+  # ── DEMO feature modules — declared before the merge-required globs below ──
+  # Same first-match accident as core-base. The repo-wide `**/composeResources/**/strings.xml → merge`
+  # rule below claims 280 strings.xml across the 14 DEMO feature modules (loans, bills, rates, …),
+  # while everything else in those same modules — their Kotlin, their build.gradle.kts — resolves
+  # `fork`. One module, two answers, and the strings half was never reachable anyway: demo modules are
+  # NOT in SYNC_DIRS (only the home/profile/settings BACKBONE is) and `remove-demo.sh --clean` deletes
+  # them outright. So the contract promised to sync 280 files the engine cannot fetch and the
+  # customizer will delete.
+  #
+  # The BACKBONE keeps `merge`: those three ARE synced, and a fork legitimately adds its own strings to
+  # home/profile/settings. Declared first so it wins over the demo rule that follows.
+  - glob: "feature/home/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  - glob: "feature/profile/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  - glob: "feature/settings/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  # Every other feature module is the fork's / a demo's — its strings follow the module.
+  - glob: "feature/**/composeResources/**/strings.xml"
+    owner: fork
+
   # ── core-base is FRAMEWORK-SHARED — declared before the merge-required globs below ──
   # `core-base/**` resolves `template` further down, but the two merge-required rules that follow
   # are repo-WIDE (`**/AndroidManifest.xml`, `**/composeResources/**/strings.xml`) and first-match
@@ -846,6 +870,12 @@ rules:
   - { glob: "build.gradle.kts",              owner: template }
   - { glob: "kotlin-js-store/**",            owner: template }
   - { glob: "legal/**",                      owner: template }
+  # .swiftpm-locks — per-fork SwiftPM resolution state (Package.resolved + generated module maps,
+  # most of it already gitignored). It is BUILD OUTPUT keyed to the fork's own dependency graph,
+  # not template code, so syncing it would push one fork's resolution onto another. It had no rule
+  # and, once the catch-all flipped template-first, began resolving `template` — the one place that
+  # flip needed an explicit answer rather than the default.
+  - { glob: ".swiftpm-locks/**",             owner: fork }
   - { glob: "tests/**",                      owner: template }   # test harness — E0/T1 (closes the classification gap)
   # tools/*-ksp — the template's OWN codegen engine (store / database / network / data processors
   # that generate AppStoreRegistry, AppDatabase and the Generated*Bindings from the @StoreProvider /

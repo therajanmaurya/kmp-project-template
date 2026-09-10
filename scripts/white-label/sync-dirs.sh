@@ -72,10 +72,26 @@ SYNC_DIRS=(
     "tools"                 # KSP processors (store/database/network/data) — the codegen engine
                             # the @StoreProvider / @DbEntity / @ApiBinding annotations depend on.
                             # Was unreachable AND unowned: no fork ever got a processor update.
+    # app-profile — REQUIRED for the yaml-schema-merge to ever run. app.yaml + platforms/**/*.yaml
+    # are `owner: merge / yaml-schema-merge` precisely so the template can deliver freshly-added
+    # keys and demo access-points while the fork's identity scalars win. Unreachable, that merge
+    # NEVER executed and every fork's schema silently skewed — the exact defect the blanket
+    # `app-profile/** -> fork` glob was removed to fix. sync_directory runs cs_merge per-file for
+    # owner:merge paths, and fork-owned subpaths (icons, media, app-content, store json, README)
+    # carry explicit `fork` rules preserved by is_excluded.
+    "app-profile"
+    "legal"                 # generator + rendered output (owner: template); legal/*/template.md is
+                            # the fork's real legal document and stays fork-owned by contract.
+    "tests"                 # contract test harness (E0/T1)
+    "META-INF"              # MANIFEST.MF
 )
 
 SYNC_FILES=(
     ".bundle/config"        # BUNDLE_PATH for the vendored Ruby toolchain (owner: template)
+    "LICENSE"
+    "CONTRIBUTING.md"
+    "CODE_OF_CONDUCT.md"
+    "lib-integrate.properties"
     "Gemfile"
     "Gemfile.lock"
     "ci-prepush.bat"
@@ -535,7 +551,10 @@ merge_contract_root_files() {
 
     local mbase; mbase="$(git merge-base "$BASE_BRANCH" "$TEMP_BRANCH" 2>/dev/null)"
     local f strat o b t rc
-    for f in "settings.gradle.kts" "gradle/libs.versions.toml"; do
+    # gradle.properties joins these rather than SYNC_FILES: it is `owner: merge` and carries the
+      # fork's own `fork.project.name`, so a full checkout would clobber it. A 3-way takes the
+      # template's added build-tuning keys while the fork's values win.
+      for f in "settings.gradle.kts" "gradle/libs.versions.toml" "gradle.properties"; do
         cs_match_g "$f"
         [ "${CS_M_OWNER:-}" = "merge" ] || continue
         git show "$TEMP_BRANCH:$f" >/dev/null 2>&1 || { print_warning "Template has no $f — skipping."; continue; }
