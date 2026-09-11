@@ -110,12 +110,23 @@ class ScreenDataStreamIntegrationTest {
     @Test
     fun offline_with_empty_store_emits_Empty_offlineFirst() = runTest(timeout = runTestTimeout) {
         // asScreenStream's default policy is CACHE_FIRST_SWR (offline-first): offline with no cached
-        // data and no error surfaces the screen's own Empty state, NOT a blocking full-screen NoNetwork
-        // (DecisionEngine offline-first-empty rule; asserted in DecisionEngineTest "…CACHE_FIRST_SWR =
-        // Empty"). Offline CACHE_FIRST_SWR skips the network leg, so the throwing fetcher is never
-        // invoked and error stays null. Every other policy still shows NoNetwork offline.
+        // data surfaces the screen's own Empty state, NOT a blocking full-screen NoNetwork
+        // (DecisionEngine offline-first-empty rule; asserted deterministically in DecisionEngineTest
+        // "…NETWORK error + CACHE_FIRST_SWR = Empty — doomed fetch ignored").
+        //
+        // The fetcher throws an IOException-NAMED error because that is what an offline fetch really
+        // produces, and `categorize()` keys Network off the class-name chain, not the message. The
+        // old fixture threw a bare RuntimeException("no network"), which categorizes as Generic, so
+        // `isExpectedWhenOffline()` rejected it and DecisionEngine fell through to NoNetwork — the
+        // test then depended on whether the empty emission or the doomed fetch won the race: Empty
+        // on a fast machine, NoNetwork under Kover's instrumentation. The comment here used to claim
+        // "offline CACHE_FIRST_SWR skips the network leg, so the fetcher is never invoked and error
+        // stays null", which is precisely the assumption DecisionEngine documents as FALSE —
+        // Store5's `cached(key, refresh = false)` DOES invoke the fetcher when nothing is cached.
         val store = StoreBuilder
-            .from<String, String>(fetcher = Fetcher.of { _ -> throw RuntimeException("no network") })
+            .from<String, String>(
+                fetcher = Fetcher.of { _ -> throw FakeIOException("connection refused") },
+            )
             .build()
         val network = FakeNetworkMonitor(NetworkStatus.Unavailable)
         val stream = store.asScreenStream(
@@ -183,8 +194,21 @@ class ScreenDataStreamIntegrationTest {
 
     @Test
     fun reconnect_triggers_refresh_after_offline() = runTest(timeout = runTestTimeout) {
+        // The fetcher is connectivity-aware because a real one is: while the device is offline it
+        // MUST fail. The old fixture returned "refreshed" unconditionally, so the doomed offline
+        // fetch that Store5 issues on a cold cache (`cached(refresh = false)` invokes the fetcher
+        // when nothing is cached) SUCCEEDED — and the offline half of this test then asserted Empty
+        // against a stream that had legitimately reached Content. Fast machines emitted Empty first
+        // and passed; under Kover the fetch landed first and the assertion saw Content. Modelling
+        // the fetcher honestly makes both halves deterministic without touching either assertion.
+        var reachable = false
         val store = StoreBuilder
-            .from<String, String>(fetcher = Fetcher.of { _ -> "refreshed" })
+            .from<String, String>(
+                fetcher = Fetcher.of { _ ->
+                    if (!reachable) throw FakeIOException("connection refused")
+                    "refreshed"
+                },
+            )
             .build()
         val network = FakeNetworkMonitor(NetworkStatus.Unavailable)
 
@@ -204,7 +228,9 @@ class ScreenDataStreamIntegrationTest {
             while (state is ScreenState.Loading) { state = awaitItem() }
             assertIs<ScreenState.Empty>(state)
 
-            // Simulate reconnect
+            // Simulate reconnect — the fetcher becomes reachable at the same instant the monitor
+            // reports Available, so the refresh that the reconnect triggers can actually succeed.
+            reachable = true
             network.setStatus(NetworkStatus.Available(onlineInfo))
             advanceUntilIdle()
 
@@ -231,3 +257,11 @@ class ScreenDataStreamIntegrationTest {
         }
     }
 }
+
+/**
+ * An offline transport failure. The NAME is what matters: `categorize()` resolves
+ * [ErrorCategory.Network] from the class-name chain (it looks for "IOException"), never from the
+ * message — so a bare `RuntimeException("no network")` is Generic and does NOT get the offline-first
+ * treatment. Declared file-private, matching DecisionEngineTest and PagingScreenStreamDecisionParityTest.
+ */
+private class FakeIOException(message: String) : Exception(message)

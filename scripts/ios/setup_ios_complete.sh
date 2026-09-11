@@ -469,15 +469,19 @@ export MATCH_PASSWORD
 
 # Install Fastlane
 print_info "Installing Fastlane dependencies..."
-bundle install
+# Bundler through the ONE resolver (scripts/ruby-exec.sh) rather than PATH: without rbenv's shims on
+# PATH a bare `bundle` runs under macOS's system ruby 2.6.10 and dies inside rubygems'
+# activate_bin_path with an error about GEMS, when the interpreter is the actual problem.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/ruby-exec.sh"
+ruby_bundle "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/deployment" -- install
 
 # Run Match for adhoc
 print_info "Syncing adhoc certificates..."
-bundle exec fastlane ios sync_certificates match_type:adhoc || print_warning "Match sync encountered issues (this is normal for first run)"
+ruby_bundle "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/deployment" -- exec fastlane ios sync_certificates match_type:adhoc || print_warning "Match sync encountered issues (this is normal for first run)"
 
 # Run Match for appstore
 print_info "Syncing appstore certificates..."
-bundle exec fastlane ios sync_certificates match_type:appstore || print_warning "Match sync encountered issues (this is normal for first run)"
+ruby_bundle "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/deployment" -- exec fastlane ios sync_certificates match_type:appstore || print_warning "Match sync encountered issues (this is normal for first run)"
 
 echo
 

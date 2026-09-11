@@ -37,6 +37,46 @@
 version: 1
 
 rules:
+  # ── DEMO feature modules — declared before the merge-required globs below ──
+  # Same first-match accident as core-base. The repo-wide `**/composeResources/**/strings.xml → merge`
+  # rule below claims 280 strings.xml across the 14 DEMO feature modules (loans, bills, rates, …),
+  # while everything else in those same modules — their Kotlin, their build.gradle.kts — resolves
+  # `fork`. One module, two answers, and the strings half was never reachable anyway: demo modules are
+  # NOT in SYNC_DIRS (only the home/profile/settings BACKBONE is) and `remove-demo.sh --clean` deletes
+  # them outright. So the contract promised to sync 280 files the engine cannot fetch and the
+  # customizer will delete.
+  #
+  # The BACKBONE keeps `merge`: those three ARE synced, and a fork legitimately adds its own strings to
+  # home/profile/settings. Declared first so it wins over the demo rule that follows.
+  - glob: "feature/home/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  - glob: "feature/profile/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  - glob: "feature/settings/**/composeResources/**/strings.xml"
+    owner: merge
+    strategy: strings-union
+  # Every other feature module is the fork's / a demo's — its strings follow the module.
+  - glob: "feature/**/composeResources/**/strings.xml"
+    owner: fork
+
+  # ── core-base is FRAMEWORK-SHARED — declared before the merge-required globs below ──
+  # `core-base/**` resolves `template` further down, but the two merge-required rules that follow
+  # are repo-WIDE (`**/AndroidManifest.xml`, `**/composeResources/**/strings.xml`) and first-match
+  # wins, so without this they capture 22 core-base paths: core-base/ui's own 21-locale i18n and the
+  # core-base/{common,observability} module manifests.
+  #
+  # Those globs exist so a FORK can union its own permissions and strings into files it legitimately
+  # extends — its app module, its features, its core/* packages. core-base is not one of those: it is
+  # framework-shared, a fork does not touch it, and 3-way merging the framework's own translations
+  # invites a fork to accumulate edits in a tree that upgrades wholesale. Declaring it template here
+  # keeps `core-base/**` exactly copy-and-replace, which is what it has always meant.
+  - glob: "core-base/**/composeResources/**/strings.xml"
+    owner: template
+  - glob: "core-base/**/AndroidManifest.xml"
+    owner: template
+
   # ── merge-required (declared FIRST — must win over the template module globs) ──
   # AndroidManifest: template ships the base manifest; forks add permissions
   # (RECORD_AUDIO, FOREGROUND_SERVICE_*, etc). A blind copy DROPS the fork's — the
@@ -383,6 +423,35 @@ rules:
     owner: fork
   - glob: "cmp-ios/Configuration/Config.xcconfig"  # syncForkConfig-generated identity
     owner: fork
+  # project.pbxproj — a serialized OBJECT GRAPH, not a document. It inherits `merge` from the
+  # cmp-ios blanket below, but must NOT take the default line-based `git merge-file`: adding a
+  # target rewrites UUID arrays far from the object it adds, so adjacent insertions read as
+  # conflicts, and a conflict marker inside a pbxproj makes the project UNOPENABLE — Xcode itself
+  # cannot be used to resolve it. Measured template ⋈ mbs/cappy: 6 markers from git merge-file,
+  # 0 from the structural merge. UUIDs are stable across the fork boundary (33 of 36 shared), so a
+  # keyed 3-way with array union is exact. Engine: scripts/white-label/merge-pbxproj.rb.
+  - glob: "**/*.xcodeproj/project.pbxproj"
+    owner: merge
+    strategy: pbxproj-3way
+  # Info.plist / *.entitlements — a flat <dict> both sides add their OWN keys to, so additions can
+  # collide in the TEXT while not overlapping in MEANING. Union is the only correct resolution: the
+  # template's keychain-access-groups (core-base/datastore needs it, or errSecMissingEntitlement
+  # -34018 at launch) and the fork's app-group + CFBundleURLTypes (widget shared container, OAuth
+  # redirect) are ALL required — neither side may win. Comment-preserving, so the rationale travels
+  # with the key it explains.
+  # Measured on mbs/cappy: `iosApp.entitlements` is add/add (absent at the fork's base b97eb73d),
+  # where a line merge conflicts and the output does not even parse — that file is why this exists.
+  # `Info.plist` has a real ancestor and line-merges cleanly TODAY; it is routed here because it is
+  # the same shape and one template key added near the fork's block turns it into the same case.
+  - glob: "cmp-ios/**/Info.plist"
+    owner: merge
+    strategy: plist-union
+  - glob: "cmp-ios/**/*.entitlements"
+    owner: merge
+    strategy: plist-union
+  - glob: "cmp-desktop/**/*.entitlements"
+    owner: merge
+    strategy: plist-union
   - glob: "cmp-web/src/jsMain/resources/**"
     owner: fork
   - glob: "cmp-web/src/wasmJsMain/resources/**"
@@ -479,16 +548,52 @@ rules:
     owner: fork
 
   # ── template-owned (the broad sync surface — lowest precedence, declared LAST) ──
+  #
+  # THE PLATFORM SHELLS ARE `merge`, NOT `template` (2026-09-10)
+  # `build-logic` + the four platform application shells are MOSTLY template content, and the
+  # temptation is to call them `template` and full-copy. That is wrong, and cmp-ios is the proof:
+  # a fork's platform shell is the one place where fork-specific PLATFORM WIRING has nowhere else
+  # to live. There is no `module-deps.gradle.kts`-style seam for an Xcode target or a plist key.
+  #
+  # Measured on mbs/cappy 2026-09-10, all under the old `template` blanket, all silently destroyed
+  # by a full-copy:
+  #   iosApp/Info.plist          CFBundleURLTypes for the Google Sign-In OAuth redirect — deleting
+  #                              it does not fail the build; OAuth simply never returns to the app
+  #   iosApp/iosApp.entitlements com.apple.security.application-groups for the WidgetKit shared
+  #                              container — and the template half (keychain-access-groups, required
+  #                              by core-base/datastore) is ALSO needed, so neither side may win
+  #   iosApp.xcodeproj/project.pbxproj  a whole `CappyWidgets` app-extension target (40 refs) the
+  #                              template has no concept of
+  #   iosApp/iOSApp.swift        scene-phase AppBackground/AppForeground hooks (+20 lines)
+  #
+  # A 3-way takes the template's evolution (here: the SwiftPM migration — 5
+  # XCLocalSwiftPackageReference entries and the KotlinMultiplatformLinkedPackage tree) while the
+  # fork's additions survive, and genuine overlaps surface as conflict markers a human resolves
+  # instead of losing silently.
+  #
+  # No `strategy:` — these blankets span .kts/.swift/.plist/.xml/.pbxproj/.xcconfig/.js/.html and
+  # cs_merge's default `cs_merge_3way` (git merge-file) is the only strategy that handles all of
+  # them. The structure-aware strategies stay on the specific rows above that name one filetype.
+  # Binary paths under these dirs are carved out `fork` above (res/**, Assets.xcassets/**,
+  # cmp-desktop/icons/**, cmp-web resources/**); the engine also refuses to line-merge a binary.
+  #
+  # REQUIRES a merge base. `git merge-base` is empty for a COPIED (non-forked) tree, so the engine
+  # resolves it via .template-version#template_sha — see resolve_merge_base() in sync-dirs.sh.
+  # Without that fix these rows would have degraded straight back into the full-copy they replace.
   - glob: "build-logic/**"
-    owner: template
+    owner: merge
   - glob: "cmp-android/**"
-    owner: template
+    owner: merge
   - glob: "cmp-desktop/**"
-    owner: template
+    owner: merge
   - glob: "cmp-ios/**"
-    owner: template
+    owner: merge
   - glob: "cmp-web/**"
-    owner: template
+    owner: merge
+  # cmp-shared + cmp-navigation stay `template`: unlike the four application shells above they carry
+  # no platform project files, and their fork surface is already served by NAMED seams declared
+  # earlier — ForkWorkerDeclarations.kt, registry/**, di/*.kt, RootNav*.kt. Revisit only if a fork
+  # is found editing them outside those seams.
   - glob: "cmp-shared/**"
     owner: template
   - glob: "cmp-navigation/**"
@@ -830,16 +935,49 @@ rules:
   - { glob: "build.gradle.kts",              owner: template }
   - { glob: "kotlin-js-store/**",            owner: template }
   - { glob: "legal/**",                      owner: template }
+  # .swiftpm-locks — per-fork SwiftPM resolution state (Package.resolved + generated module maps,
+  # most of it already gitignored). It is BUILD OUTPUT keyed to the fork's own dependency graph,
+  # not template code, so syncing it would push one fork's resolution onto another. It had no rule
+  # and, once the catch-all flipped template-first, began resolving `template` — the one place that
+  # flip needed an explicit answer rather than the default.
+  - { glob: ".swiftpm-locks/**",             owner: fork }
   - { glob: "tests/**",                      owner: template }   # test harness — E0/T1 (closes the classification gap)
+  # tools/*-ksp — the template's OWN codegen engine (store / database / network / data processors
+  # that generate AppStoreRegistry, AppDatabase and the Generated*Bindings from the @StoreProvider /
+  # @DbEntity / @ApiBinding / @RepositoryBinding annotations). A fork does not author these.
+  # They had NO rule at all and fell to the `fork` DEFAULT, so they never synced — leaving every
+  # fork frozen on the processor version it forked with while the annotations kept evolving. A
+  # fork cannot be told "your registrations are generated for you" and then never receive the
+  # generators. Added to SYNC_DIRS at the same time: ownership alone would not deliver them.
+  - { glob: "tools/**",                      owner: template }
+  # .bundle/config — BUNDLE_PATH for the vendored Ruby toolchain, template build infra. Same
+  # story: no rule, so it defaulted to fork and never reached a consumer.
+  - { glob: ".bundle/**",                    owner: template }
   - { glob: "META-INF/**",                   owner: template }
   - { glob: "CODE_OF_CONDUCT.md",            owner: template }
   - { glob: "CONTRIBUTING.md",               owner: template }
   - { glob: "LICENSE",                       owner: template }
 
-  # ── default: any path not matched above ──
-  # Runtime treats an unmatched path as fork-owned (SAFE — never clobber an unknown
-  # fork file). `--verify` flags anything that reaches this rule so a human classifies
-  # it explicitly (a new template file must not rely on the default).
+  # ── default: any path not matched above — TEMPLATE-FIRST ──
+  # This repo IS the template, so the default answer to "who owns this?" is the template. FORK
+  # territory is declared EXPLICITLY above (`core/**`, `feature/**`, `app-profile/**`, the per-platform
+  # branding carve-outs), never inferred from silence.
+  #
+  # This was `fork` — "never clobber an unknown fork file". That is the right default for a CONSUMER
+  # and the wrong one for a template: a directory the template ADDS that nobody writes a rule for
+  # silently becomes fork-owned and never syncs to anyone. `tools/**` (the KSP processors every
+  # @StoreProvider / @DbEntity / @ApiBinding depends on) and `.bundle/**` both sat in exactly that
+  # state — unowned AND unreachable, so no fork ever received a processor update.
+  #
+  # Flipping is safe BECAUSE fork territory is explicitly claimed: a fork's new
+  # `core/store/.../quests/QuestStore.kt` or `feature/quests/**` resolves `fork` through its module
+  # catch-all, not through this rule. Verified at the time of the change — all 2712 tracked files
+  # matched an explicit rule, so ZERO existing paths changed owner.
+  #
+  # `--verify` still flags anything reaching this rule: relying on the default is a missing
+  # classification either way, and the point is that the FAILURE MODE is now "a fork receives
+  # template code it did not ask for" (visible, fixable) rather than "a fork silently never receives
+  # template code at all" (invisible, permanent).
   - glob: "**"
-    owner: fork
+    owner: template
     default: true

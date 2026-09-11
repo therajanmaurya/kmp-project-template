@@ -80,7 +80,37 @@ cs_resolve_strategy "gradle/libs.versions.toml"   # → catalog-3way
    theirs` instead of taking the blind upstream copy:
    - `ours` = fork's current file (`BASE_BRANCH`)
    - `theirs` = upstream file (`temp_branch`)
-   - `base` = `git merge-base BASE_BRANCH temp_branch`
+   - `base` = `resolve_merge_base BASE_BRANCH temp_branch` — **not** `git merge-base` alone
+
+   **The base is the whole promise.** Two fork topologies exist and only one gives git a common
+   ancestor: a **forked** repo (clone / `gh repo fork`) shares history, while a **copied** one — the
+   template tree dropped into a fresh repo, the common case in practice — has different root commits
+   and **zero** shared commits, so `git merge-base` returns empty. With an empty base the engine used
+   `ours`, and `git merge-file` then reads every template difference as a clean addition onto an
+   untouched base and takes **all of theirs** — reproducing exactly the full-copy that `merge` exists
+   to prevent, while printing *"Merged (…) — fork edits preserved"* over the top of the loss.
+
+   `resolve_merge_base()` therefore falls back to **`.template-version#template_sha`**, the commit the
+   tree last synced FROM — precisely the ancestor git cannot compute across unrelated histories, and
+   what that file's own header always claimed it was for. With neither available (a copied fork's
+   first-ever sync) the engine still falls back to `ours` but **warns per file** instead of reporting
+   a merge it did not perform. Pinned by `MB-1`–`MB-3` in
+   `scripts/product-health/checks/sync-merge-base.sh`.
+
+   `pbxproj-3way` (`**/*.xcodeproj/project.pbxproj`) delegates to
+   `scripts/white-label/merge-pbxproj.rb`, because a line merge on an Xcode project is not merely
+   worse — it is unusable. A pbxproj is a serialized object graph keyed by 24-hex UUIDs, so adding a
+   target rewrites UUID arrays three levels from the object it adds, and `git merge-file` reads
+   adjacent array insertions as a conflict. A conflict marker inside a pbxproj makes the project
+   **unopenable**, so a human cannot even use Xcode to resolve it. It is tractable because the UUIDs
+   are stable across the fork boundary (measured: 33 of 36 objects shared), which turns the text
+   merge into a keyed 3-way: UUID arrays union, `buildSettings` merge per key, and the declared
+   `FORK_IDENTITY_KEYS` (`DEVELOPMENT_TEAM`, `PRODUCT_BUNDLE_IDENTIFIER`, `CODE_SIGN_*`, …) go to the
+   fork when both sides moved. Anything it cannot decide FAILS the merge rather than guessing, and
+   the engine's fallback when ruby is unavailable is **keep-ours**, never take-theirs — losing a
+   sync is recoverable, losing the fork's targets is not. Uses the `xcodeproj` gem, already resolved
+   in `Gemfile.lock` as a fastlane transitive. Pinned by `scripts/product-health/checks/pbxproj-merge.sh`
+   against a real captured fixture in `tests/fixtures/pbxproj-3way-canary/`.
 
    `manifest-union` runs a **semantic** union (union `<uses-permission>` /
    `<uses-feature>` by `android:name`, keeping the template's structural update) so a
@@ -89,6 +119,39 @@ cs_resolve_strategy "gradle/libs.versions.toml"   # → catalog-3way
    merge-file`, which cleanly unions non-overlapping edits and emits conflict markers
    **only on a true overlap** — surfaced with a `CONFLICT` warning for review, never
    silently shipped.
+
+### The platform shells are `merge`, not `template`
+
+`build-logic/**` and the four platform **application shells** — `cmp-android/**`, `cmp-ios/**`,
+`cmp-desktop/**`, `cmp-web/**` — are mostly template content, which makes `template` + full-copy the
+tempting classification. It is the wrong one: a platform shell is the one place where fork-specific
+**platform wiring** has nowhere else to live. `core/<mod>/module-deps.gradle.kts` gives a fork a seam
+for dependencies; there is no equivalent seam for an Xcode target, an entitlement, or a plist key.
+
+Measured on a real consumer (2026-09-10), every one of these sat under the old `template` blanket and
+would have been destroyed silently by a full-copy:
+
+| Path | Fork content a full-copy deletes |
+|---|---|
+| `cmp-ios/iosApp/Info.plist` | `CFBundleURLTypes` for the Google Sign-In OAuth redirect — no build failure; OAuth just never returns |
+| `cmp-ios/iosApp/iosApp.entitlements` | the WidgetKit app-group. The template half (`keychain-access-groups`, required by `core-base/datastore`) is **also** needed — neither side may win, so it must be a union |
+| `cmp-ios/iosApp.xcodeproj/project.pbxproj` | an entire app-extension target the template has no concept of |
+| `cmp-ios/iosApp/iOSApp.swift` | scene-phase `AppBackground` / `AppForeground` hooks |
+
+A 3-way takes the template's evolution — the SwiftPM migration landed 5 `XCLocalSwiftPackageReference`
+entries plus the `KotlinMultiplatformLinkedPackage` tree this way — while the fork's additions survive,
+and a genuine overlap surfaces as a conflict marker rather than a silent loss.
+
+These blankets carry **no `strategy:`**: they span `.kts` / `.swift` / `.plist` / `.xml` / `.pbxproj` /
+`.xcconfig` / `.js` / `.html`, and `cs_merge`'s default `git merge-file` is the only strategy that
+handles all of them. Structure-aware strategies stay on the specific rows that name one filetype
+(`AndroidManifest.xml` still resolves `merge (strategy: manifest-union)`). Binaries under these
+directories are carved out `fork` (`res/**`, `Assets.xcassets/**`, `cmp-desktop/icons/**`, the
+`cmp-web` resources), and the engine additionally refuses to line-merge a binary.
+
+`cmp-shared/**` and `cmp-navigation/**` stay `template` — they carry no platform project files, and
+their fork surface is already served by named seams (`ForkWorkerDeclarations.kt`, `registry/**`,
+`di/*.kt`, `RootNav*.kt`).
 
 The `template`/`fork` mechanical behaviour (`SYNC_DIRS` + `EXCLUSIONS`) is unchanged;
 the contract adds the `merge` path handling that previously didn't exist. Guarded so

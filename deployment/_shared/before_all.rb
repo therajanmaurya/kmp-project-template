@@ -44,6 +44,42 @@ def restore_deploy_mutated_sources
 end
 
 before_all do
+  # ── INTERPRETER GUARD — the misleading-failure catcher ──────────────────────────────────────────
+  # rbenv works by PATH interception. A shell without `eval "$(rbenv init -)"` never reaches the
+  # pinned ruby, so `bundle exec fastlane …` runs under macOS's system 2.6.10 while every gem was
+  # installed for .ruby-version. The result is a crash inside rubygems' `activate_bin_path` that
+  # reads as a GEM problem — the gems are fine, the interpreter is wrong.
+  #
+  # Shell scripts avoid this by going through scripts/ruby-exec.sh (RT-9 enforces it). But the READMEs
+  # and each target's config.yaml `local:` command DOCUMENT a bare `bundle exec fastlane …` for a
+  # human to copy — correct guidance for a correctly-configured shell, and nothing a lint can fix.
+  # This is the one place every lane passes through, so it is where that human gets told the truth
+  # instead of a gem error.
+  #
+  # WARN, never fail: a mismatched interpreter that still has working gems can deploy fine, and
+  # blocking a release on a shell-config nit would be its own defect.
+  begin
+    _root = Dir.pwd
+    20.times do
+      break if File.exist?(File.join(_root, ".ruby-version"))
+      _parent = File.dirname(_root)
+      break if _parent == _root
+      _root = _parent
+    end
+    _vf = File.join(_root, ".ruby-version")
+    if File.exist?(_vf)
+      _want = File.read(_vf).strip
+      if !_want.empty? && _want != RUBY_VERSION
+        UI.important("⚠️  ruby #{RUBY_VERSION} is running, but .ruby-version pins #{_want}.")
+        UI.important("    If this run dies inside rubygems' activate_bin_path, THAT is the cause —")
+        UI.important("    the gems are fine, the interpreter is wrong. Fix the shell:")
+        UI.important("      eval \"$(rbenv init -)\"     (or: rbenv install #{_want})")
+      end
+    end
+  rescue StandardError
+    nil # a guard that breaks a deploy is worse than the mismatch it reports
+  end
+
   # START-CLEAN: remove any fastlane_tmp keychain left DEFAULT by a prior run that died before
   # delete_keychain (build error / hard kill), and restore the developer's login keychain as default —
   # otherwise unrelated apps keep prompting for fastlane_tmp. Idempotent, no-op on CI / Android.
