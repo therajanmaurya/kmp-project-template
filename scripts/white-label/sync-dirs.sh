@@ -527,14 +527,14 @@ merge_pbxproj_3way() {
     local merger="$repo_root/scripts/white-label/merge-pbxproj.rb"
     if [ ! -f "$merger" ]; then
         print_warning "merge-pbxproj.rb absent — KEPT the fork's $out (this sync skipped the Xcode project)"
-        cp "$ours" "$out"; return 0
+        cp "$ours" "$out"; return 3
     fi
 
     # shellcheck source=/dev/null
     . "$repo_root/scripts/ruby-exec.sh" 2>/dev/null || true
     if ! declare -F ruby_exec >/dev/null 2>&1; then
         print_warning "ruby-exec.sh unavailable — KEPT the fork's $out (this sync skipped the Xcode project)"
-        cp "$ours" "$out"; return 0
+        cp "$ours" "$out"; return 3
     fi
 
     local tmp_out; tmp_out="$(mktemp -d)/project.pbxproj"
@@ -582,13 +582,13 @@ merge_plist_union() {
     local merger="$repo_root/scripts/white-label/merge-plist.rb"
     if [ ! -f "$merger" ]; then
         print_warning "merge-plist.rb absent — KEPT the fork's $out (this sync skipped it)"
-        cp "$ours" "$out"; return 0
+        cp "$ours" "$out"; return 3
     fi
     # shellcheck source=/dev/null
     . "$repo_root/scripts/ruby-exec.sh" 2>/dev/null || true
     if ! declare -F ruby_exec >/dev/null 2>&1; then
         print_warning "ruby-exec.sh unavailable — KEPT the fork's $out (this sync skipped it)"
-        cp "$ours" "$out"; return 0
+        cp "$ours" "$out"; return 3
     fi
     # `-` tells the merger there is no ancestor for THIS FILE, which is different from the repo
     # having no merge base: a file added on both sides since the last sync has a valid repo base
@@ -709,11 +709,11 @@ merge_contract_root_files() {
             plist-union)   merge_plist_union           "$o" "$b" "$t" "$f"; rc=$? ;;
             *)             cs_merge "$strat" "$o" "$b" "$t" "$f"; rc=$? ;;
         esac
-        if [ "${rc:-0}" -eq 0 ]; then
-            print_step "Merged (${strat}) ${BOLD}$f${NC} — template update + fork edits reconciled"
-        else
-            print_warning "Merged (${strat}) ${BOLD}$f${NC} WITH conflicts — resolve before committing the sync"
-        fi
+        case "${rc:-0}" in
+            0) print_step "Merged (${strat}) ${BOLD}$f${NC} — template update + fork edits reconciled" ;;
+            3) print_warning "SKIPPED (${strat}) ${BOLD}$f${NC} — kept the fork's copy; template changes NOT applied" ;;
+            *) print_warning "Merged (${strat}) ${BOLD}$f${NC} WITH conflicts — resolve before committing the sync" ;;
+        esac
         rm -f "$o" "$b" "$t"
     done
 }
@@ -915,11 +915,16 @@ sync_directory() {
                             plist-union)   merge_plist_union           "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
                             *)             cs_merge "$_ms" "$_o" "$_b" "$_t" "$_mf"; _mrc=$? ;;
                         esac
-                        if [ "${_mrc:-0}" -eq 0 ]; then
-                            print_step "Merged (${_ms}) ${BOLD}$_mf${NC} — fork edits preserved"
-                        else
-                            print_warning "CONFLICT in ${BOLD}$_mf${NC} (${_ms}) — resolve markers before committing the sync"
-                        fi
+                        # THREE outcomes, not two. A strategy that could not run keeps the fork's
+                        # copy and returns 3; reporting that as "Merged — fork edits preserved" is
+                        # true about the file and false about what happened, and it is exactly the
+                        # reassuring-success-over-a-silent-skip pattern this engine keeps being bitten
+                        # by. The helper already warned WHY; this must not contradict it.
+                        case "${_mrc:-0}" in
+                            0) print_step "Merged (${_ms}) ${BOLD}$_mf${NC} — fork edits preserved" ;;
+                            3) print_warning "SKIPPED (${_ms}) ${BOLD}$_mf${NC} — kept the fork's copy; template changes NOT applied" ;;
+                            *) print_warning "CONFLICT in ${BOLD}$_mf${NC} (${_ms}) — resolve markers before committing the sync" ;;
+                        esac
                     fi
                     rm -f "$_o" "$_b" "$_t"
                 done < <(git diff --name-only "$BASE_BRANCH" "$temp_branch" -- "$dir" 2>/dev/null)
@@ -1278,7 +1283,23 @@ if [ "$DRY_RUN" = false ]; then
     # (both files are owner:template / copy-exact, so this is idempotent + safe) so EVERY subsequent
     # dir gets full is_excluded + 3-way-merge protection. Self-bootstrap → auto-resolve; this is what
     # makes the sync run cleanly on a not-yet-white-labelled base instead of clobbering or halting.
-    for _bp in customization-surface.yaml scripts/customization-surface.sh; do
+    # The merge HELPERS bootstrap with the contract, for the same reason the contract does.
+    # `scripts/` is SYNC_DIRS #18; cmp-ios is #3. So on a fork that does not yet carry
+    # merge-pbxproj.rb / merge-plist.rb, cmp-ios (and cmp-android, cmp-desktop) are merged FIFTEEN
+    # directories before `scripts/` delivers them — every one silently degrading to keep-ours with
+    # only a warning, on the very first sync, which is precisely the sync that most needs them.
+    # Measured 2026-09-11 on a real mbs/cappy clone against merged dev: "merge-pbxproj.rb absent —
+    # KEPT the fork's project.pbxproj". Reordering SYNC_DIRS would be the fragile fix (it re-breaks
+    # the moment someone sorts the list); materializing the helpers up front is the same move STEP 0
+    # already makes for customization-surface.{yaml,sh}, and is equally idempotent — all four files
+    # are owner:template / copy-exact.
+    # ruby-exec.sh is in the set because the two mergers SOURCE it — bootstrapping them without it
+    # just moves the failure one step ("ruby-exec.sh unavailable — KEPT the fork's project.pbxproj").
+    # This list is a dependency CLOSURE, not a file list: anything STEP 0's consumers need before
+    # `scripts/` syncs belongs here.
+    for _bp in customization-surface.yaml scripts/customization-surface.sh \
+               scripts/ruby-exec.sh \
+               scripts/white-label/merge-pbxproj.rb scripts/white-label/merge-plist.rb; do
         if git cat-file -e "$TEMP_BRANCH:$_bp" 2>/dev/null; then
             mkdir -p "$(dirname "$_bp")"
             if git show "$TEMP_BRANCH:$_bp" > "$_bp" 2>/dev/null; then
