@@ -228,6 +228,98 @@ cs_merge_manifest() {
   return 0
 }
 
+# ── strings-union (localized composeResources strings.xml) ───────────────────
+# Declared on 4 contract rules since the merge class was introduced, and until now it had NO
+# implementation: `cs_merge` had no branch for it, so it fell through to `cs_merge_3way` — a plain
+# `git merge-file`. The contract promised a union and the engine performed a line merge.
+#
+# That gap is invisible while a fork and the template share an ancestor for the file. It stops being
+# invisible the moment they do not: locale files are typically ADD/ADD (a fork seeds its own via
+# /idea-locale while the template ships its own), and with no base a line merge conflicts on the
+# WHOLE FILE. Measured on a real mbs/cappy full sync against merged dev: 90 of 98 conflicts were
+# strings-union, every one a whole-file marker starting at line 2.
+#
+# A resource file is a KEYED SET, not prose — `<string name="x">` entries are addressed by name and
+# their order carries no meaning, so a union is both possible and obviously right:
+#
+#   key only in theirs        → take it (the template added a string; the fork needs it)
+#   key only in ours          → keep it (the fork's own string, or its translation)
+#   key in both, same         → one copy
+#   key in both, different    → THE FORK WINS
+#
+# The fork winning is the whole point on this surface. The template ships SOURCE text — `app_name`
+# is "Money Toolkit" upstream and "Cappy" downstream — so taking the template's value would rename
+# the fork's app on every sync and silently discard real translations. A fork that wants the
+# template's new wording deletes its own key.
+#
+# Entry-level, not line-level: `<string-array>` and `<plurals>` span lines, so each element is read
+# from its opening tag to its matching close and carried whole.
+cs_merge_strings() {
+  local ours="$1" base="$2" theirs="$3" out="${4:-$1}"
+  [ -f "$ours" ] || { [ -f "$theirs" ] && cp "$theirs" "$out"; return 0; }
+  [ -f "$theirs" ] || return 0
+
+  local tmp; tmp="$(mktemp)"
+  awk -v oursf="$ours" '
+    # Emit "name\x01<entry text>" for every top-level resource element in FILE.
+    function slurp(file, arr,    line, name, buf, depth, tag) {
+      while ((getline line < file) > 0) {
+        if (line ~ /<(string|string-array|plurals|bool|integer|color|dimen)[ >]/) {
+          name = line; sub(/.*name="/, "", name); sub(/".*/, "", name)
+          buf = line
+          # self-closed or closed on the same line → done
+          if (line ~ /\/>/ || line ~ /<\/(string|string-array|plurals|bool|integer|color|dimen)>/) {
+            arr[name] = buf; continue
+          }
+          depth = 1
+          while (depth > 0 && (getline line < file) > 0) {
+            buf = buf "\n" line
+            if (line ~ /<\/(string-array|plurals)>/) depth--
+            else if (line ~ /<(string-array|plurals)[ >]/) depth++
+            else if (line ~ /<\/string>/) depth--
+          }
+          arr[name] = buf
+        }
+      }
+      close(file)
+    }
+    BEGIN { slurp(oursf, ourset) }
+    # Walk THEIRS, replacing any entry the fork also defines with the fork version.
+    {
+      if ($0 ~ /<(string|string-array|plurals|bool|integer|color|dimen)[ >]/) {
+        nm = $0; sub(/.*name="/, "", nm); sub(/".*/, "", nm)
+        # consume the whole element from theirs
+        buf = $0
+        if (!($0 ~ /\/>/ || $0 ~ /<\/(string|string-array|plurals|bool|integer|color|dimen)>/)) {
+          d = 1
+          while (d > 0 && (getline nxt) > 0) {
+            buf = buf "\n" nxt
+            if (nxt ~ /<\/(string-array|plurals)>/) d--
+            else if (nxt ~ /<(string-array|plurals)[ >]/) d++
+            else if (nxt ~ /<\/string>/) d--
+          }
+        }
+        if (nm in ourset) { print ourset[nm]; seen[nm] = 1 }
+        else              { print buf }
+        next
+      }
+      # Before the closing </resources>, append every fork-only entry.
+      if ($0 ~ /<\/resources>/) {
+        for (k in ourset) if (!(k in seen)) print ourset[k]
+      }
+      print
+    }
+  ' "$theirs" > "$tmp"
+
+  # Never ship an empty or truncated resource file: if the union lost the root element, keep ours.
+  if ! grep -q "</resources>" "$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  mv "$tmp" "$out"
+  return 0
+}
+
 # ── yaml-schema-merge (app-profile deep-merge) ───────────────────────────────
 # PLACEHOLDER classifier — a fork scalar is TEMPLATE-owned (loses on merge) when its
 # value still equals a template default OR its source line carries a `# PLACEHOLDER`
@@ -489,6 +581,7 @@ cs_merge() {
     include-union)     cs_merge_include_union "$ours" "$base" "$theirs" "$out" ;;
     yaml-schema-merge) cs_merge_yaml_schema   "$ours" "$base" "$theirs" "$out" ;;
     properties-3way)   cs_merge_properties    "$ours" "$base" "$theirs" "$out" ;;
+    strings-union)     cs_merge_strings       "$ours" "$base" "$theirs" "$out" ;;
     *)                 cs_merge_3way          "$ours" "$base" "$theirs" "$out" ;;
   esac
 }
