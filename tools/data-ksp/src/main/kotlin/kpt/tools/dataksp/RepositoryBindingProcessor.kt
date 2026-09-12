@@ -133,8 +133,31 @@ class RepositoryBindingProcessor(
         // Defaulted parameters are the fork's to leave unset; an unnamed one cannot be emitted.
         val name = param.name?.asString()
         if (param.hasDefault || name == null) return null
-        val storeId = param.annotations.firstOrNull { it.shortName.asString() == "FromStore" }
+        // PRESENT-BUT-UNRESOLVABLE is the dangerous case, not ABSENT.
+        //
+        // `@FromStore("alerts")` with a typo'd literal emits `get(AppStoreRegistry.Alertz)` — generated
+        // code that fails to compile, loudly, pointing at a missing symbol. But once the id is written
+        // as a CONSTANT (`@FromStore(AppStoreIds.Alerts)`, which is what makes the two sides
+        // compiler-linked), an unresolvable reference makes KSP hand us `null` instead — and the old
+        // `when` fell straight through to a bare `get()`. That silently drops the qualifier: Koin then
+        // resolves whichever unqualified Store matches the type, so the repository is wired to the
+        // WRONG STORE with a clean build. Measured 2026-09-13: a one-letter typo produced
+        // `alertsStore = get()` and BUILD SUCCESSFUL.
+        //
+        // So the annotation's PRESENCE is the contract. If it is there, its id must resolve.
+        val fromStoreAnn = param.annotations.firstOrNull { it.shortName.asString() == "FromStore" }
+        val storeId = fromStoreAnn
             ?.arguments?.firstOrNull { it.name?.asString() == "id" }?.value as? String
+        if (fromStoreAnn != null && storeId.isNullOrBlank()) {
+            logger.error(
+                "data-ksp: @FromStore on parameter '$name' has an id that does not resolve to a " +
+                    "compile-time String. If it names a constant, check the spelling and that the " +
+                    "declaring module is on the compile classpath — falling back to an unqualified " +
+                    "get() would bind the wrong store.",
+                param,
+            )
+            return null
+        }
         val named = param.annotations.firstOrNull { it.shortName.asString() == "FromQualifier" }
             ?.arguments?.firstOrNull { it.name?.asString() == "name" }?.value as? String
         // A nullable dependency is OPTIONAL — resolving it with get() would fail the graph for a
@@ -245,10 +268,26 @@ class RepositoryBindingProcessor(
             // `get()` for it would ask Koin for a type nothing binds and fail at construction.
             if (param.hasDefault) return@mapNotNull null
             val name = param.name?.asString() ?: return@mapNotNull null
-            val storeId = param.annotations
+            // PRESENT-BUT-UNRESOLVABLE is the dangerous case — see the note in dependency().
+            // A typo'd CONSTANT (`@FromStore(AppStoreIds.Alertz)`) makes KSP hand us null, and
+            // falling through to a bare `get()` silently drops the qualifier: Koin resolves whichever
+            // unqualified Store matches the type, wiring the repository to the WRONG STORE with a
+            // clean build. Measured 2026-09-13 — `alertsStore = get()` and BUILD SUCCESSFUL.
+            val fromStoreAnn = param.annotations
                 .firstOrNull { it.shortName.asString() == "FromStore" }
+            val storeId = fromStoreAnn
                 ?.arguments?.firstOrNull { it.name?.asString() == "id" }
                 ?.value as? String
+            if (fromStoreAnn != null && storeId.isNullOrBlank()) {
+                logger.error(
+                    "data-ksp: @FromStore on parameter '$name' has an id that does not resolve to a " +
+                        "compile-time String. If it names a constant, check the spelling and that the " +
+                        "declaring module is on the compile classpath — falling back to an " +
+                        "unqualified get() would bind the wrong store.",
+                    param,
+                )
+                return@mapNotNull null
+            }
             val resolve = if (storeId.isNullOrBlank()) {
                 "get()"
             } else {
