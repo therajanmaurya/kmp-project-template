@@ -43,9 +43,41 @@ class RepositoryBindingProcessor(
 ) : SymbolProcessor {
     private var emitted = false
 
+    /** `@StoreProvider` id → the Koin qualifier symbol store-ksp generates for it. */
+    private var storeQualifiers: Map<String, String> = emptyMap()
+
+    /**
+     * The registry symbol for a `@FromStore` id. Falls back to the id-derived name when no
+     * `@StoreProvider` declares it — the store may live in a module this round cannot see, and a
+     * genuinely wrong id still surfaces as an unresolved reference rather than a silent miss.
+     */
+    private fun registrySymbol(storeId: String): String =
+        storeQualifiers[storeId] ?: storeId.replaceFirstChar { it.uppercaseChar() }
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (emitted) return emptyList()
         emitted = true
+
+        // `@FromStore("x")` has to resolve to the SAME Koin qualifier store-ksp generated for the
+        // store whose `@StoreProvider(id = "x")` declared it. store-ksp derives that symbol as
+        // `qualifier.ifEmpty { id.replaceFirstChar(uppercase) }` — so an explicit `qualifier = "Y"`
+        // makes the symbol `AppStoreRegistry.Y`, while this processor used to emit
+        // `AppStoreRegistry.X` unconditionally. The two agreed only while no store set `qualifier`.
+        //
+        // The divergence fails the build (unresolved reference in generated code) rather than
+        // corrupting anything, but it fails pointing at a file nobody wrote, describing a symbol
+        // nobody typed. Reading the same annotation store-ksp reads removes the disagreement at the
+        // source instead of documenting it.
+        storeQualifiers = resolver.getSymbolsWithAnnotation(ANN_STORE_PROVIDER)
+            .filterIsInstance<KSFunctionDeclaration>()
+            .mapNotNull { fn ->
+                val a = fn.annotations.firstOrNull { it.shortName.asString() == "StoreProvider" }
+                    ?: return@mapNotNull null
+                fun arg(n: String) = a.arguments.firstOrNull { it.name?.asString() == n }?.value as? String
+                val id = arg("id")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                id to (arg("qualifier")?.takeIf { it.isNotBlank() } ?: id.replaceFirstChar { it.uppercaseChar() })
+            }
+            .toMap()
 
         val impls = resolver.getSymbolsWithAnnotation(ANN_BINDING)
             .filterIsInstance<KSClassDeclaration>()
@@ -109,7 +141,7 @@ class RepositoryBindingProcessor(
         // fork that never installed it.
         val nullable = param.type.resolve().isMarkedNullable
         val resolve = when {
-            !storeId.isNullOrBlank() -> "get($REGISTRY.${storeId.replaceFirstChar { it.uppercaseChar() }})"
+            !storeId.isNullOrBlank() -> "get($REGISTRY.${registrySymbol(storeId)})"
             !named.isNullOrBlank() -> "get(named(\"$named\"))"
             nullable -> "getOrNull()"
             else -> "get()"
@@ -221,7 +253,7 @@ class RepositoryBindingProcessor(
                 "get()"
             } else {
                 // Same id -> member rule store-ksp uses, so the two generated files agree by construction.
-                "get($REGISTRY.${storeId.replaceFirstChar { it.uppercaseChar() }})"
+                "get($REGISTRY.${registrySymbol(storeId)})"
             }
             name to resolve
         }
@@ -305,6 +337,7 @@ class RepositoryBindingProcessor(
         const val REGISTRY_FQN = "kpt.core.store.config.AppStoreRegistry"
         const val CONFIG_PKG = "kpt.core.data.config"
         const val ANN_PROVIDER = "kpt.core.base.data.annotation.DataProvider"
+        const val ANN_STORE_PROVIDER = "kpt.core.base.store.annotation.StoreProvider"
 
         val LICENSE = """
             |/*
