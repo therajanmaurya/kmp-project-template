@@ -384,6 +384,49 @@ else
   print_warning "$APP_YAML not found — identity will not survive syncForkConfig"
 fi
 
+# ── Vault ALIAS re-point — deployment/**/secrets-needs.yaml + secrets/LAYOUT.yaml ────
+# The template ships alias names that are CORRECT for the template: project-tier rows carry the
+# template slug (`kmp-project-template-upload-keystore`) and org-tier rows carry the template's
+# origin org (`mifos-x-firebase-service-account`). A fork that never re-points them either keeps
+# mifos-x's names, or gets them blanket-substituted downstream — and a blanket substitution is
+# what breaks the convention twice over: it uses the DISPLAY name (PascalCase) instead of the
+# kebab slug, and it rewrites the ORG prefix too, collapsing org-tier secrets into project-tier.
+#
+# Observed on a fork initialised from this template (2026-09-23): 29 rows of `Spacely-*`, five of
+# them org-tier (playstore-service-account, appstore-auth-key-p8, appstore-issuer-id,
+# match-cert-bundle, firebase-service-account) that belong to the WORKSPACE vault, not the app.
+# Because the fork's secrets-manifest is generated FROM these files, every consumer inherited it.
+#
+# The two prefixes are therefore re-pointed SEPARATELY and from the two values already in scope:
+#   project-tier -> $PROJECT_NAME  (the kebab slug — NEVER $APPNAME, which is the display name)
+#   org-tier     -> the fork workspace's vault name from --org company.yaml
+# Only alias NAME tokens are rewritten; no secret VALUE is read or written (SV32-safe).
+ORG_VAULT="$(orgval vault 2>/dev/null || true)"
+ORG_VAULT="${ORG_VAULT//\"/}"
+repoint_aliases() {
+  local f="$1" n_proj n_org
+  [[ -f "$f" ]] || return 0
+  n_proj=$(grep -c "kmp-project-template-" "$f" 2>/dev/null || true)
+  n_org=$(grep -c "mifos-x-" "$f" 2>/dev/null || true)
+  [[ "$n_proj" == "0" && "$n_org" == "0" ]] && return 0
+  FI_SLUG="$PROJECT_NAME" perl -pi -e 's{\bkmp-project-template-}{$ENV{FI_SLUG}-}g' "$f"
+  if [[ -n "$ORG_VAULT" ]]; then
+    FI_ORG="$ORG_VAULT" perl -pi -e 's{\bmifos-x-}{$ENV{FI_ORG}-}g' "$f"
+  fi
+  echo "    $f  (project:$n_proj org:$n_org)"
+}
+if [[ -n "$PROJECT_NAME" && "$PROJECT_NAME" != "kmp-project-template" ]]; then
+  print_info "Re-pointing vault aliases → project '$PROJECT_NAME', org '${ORG_VAULT:-<unset>}'…"
+  if [[ -z "$ORG_VAULT" ]]; then
+    # Never guess an org prefix: mis-prefixing an org-tier secret points a fork at the WRONG
+    # vault, which fails at deploy time with a credential that was never meant for it.
+    print_warning "org vault name unresolved (no --org=) — org-tier aliases left as mifos-x-*; re-run with --org= or repoint them before deploying"
+  fi
+  while IFS= read -r f; do repoint_aliases "$f"; done < <(find deployment -name secrets-needs.yaml 2>/dev/null)
+  repoint_aliases "secrets/LAYOUT.yaml"
+  print_success "vault aliases re-pointed (kebab slug + org tier preserved)"
+fi
+
 # ── projectName — the ONE identity value whose SoT is the catalog, not app-profile ──
 # Everything else here is written to app-profile and derived outward. `projectName` is the documented
 # exception: `fork-props-manifest-parity.sh` lists it under NOT_APP_PROFILE — "SoT is
