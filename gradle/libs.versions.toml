@@ -107,6 +107,9 @@ koinAnnotationsVersion = "4.2.2"
 
 
 # KMP Toolkit Libraries
+# 3.5.39: cmp-in-app-update finally shows Play's update on Android — its init provider was never
+#         registered (context always null) and startUpdate never launched the flow. The update
+#         only appears for a Play-installed build with a newer version on its track.
 # 3.5.28: adds cmp-app-review, cmp-clipboard, cmp-app-intents, cmp-bubble, cmp-pdf-generator and
 #         cmp-toast to this template. Also drops nine transitive artifacts (firebase-perf,
 #         firebase-config, firebase-abt, protobuf-javalite, dagger and friends): cmp-observe no
@@ -118,7 +121,7 @@ koinAnnotationsVersion = "4.2.2"
 #         (the same `web` entry as js) and needs applicationId/apiKey/projectId/authDomain populated.
 #         Also: cmp-share direct-to-app share (ShareOptions.targetPackage) + file:// → FileProvider
 #         content:// resolution; cmp-remote-config min/max app-version gate.
-kmptoolkit = "3.5.34"
+kmptoolkit = "3.5.39"
 
 # CMP Libraries
 compose-plugin = "1.12.0"
