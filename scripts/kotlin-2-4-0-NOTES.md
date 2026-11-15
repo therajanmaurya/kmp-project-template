@@ -27,7 +27,7 @@ All bump targets were confirmed published before pinning:
 |---|---|
 | A (minors) | kotlinx-serialization 1.11.0, coil 3.5.0, koin 4.2.2, okhttp 5.4.0, jackson 2.22.0, ktor 3.5.1, kermit 2.1.0, roborazzi 1.67.0, spotless 8.8.0, junit-jupiter **5.14.4** (stays 5.x — D7, 6.x deliberately skipped), kmptoolkit 3.5.3, kmpflavors 2.8.1, github-api 1.330 |
 | B (alpha→stable) | **REVERTED** — see CI outcome below. Held at room3 3.0.0-alpha05 + sqlite 2.6.2/2.7.0-alpha05. |
-| C (majors) | aboutLibraries 15.0.3, ktlint-gradle 14.2.0, koin-annotations 4.2.2, **constraintlayout-compose-multiplatform 0.8.0** (plain coordinate — the `-shaded-core` is a separate variant) |
+| C (majors) | ktlint-gradle 14.2.0, koin-annotations 4.2.2, **constraintlayout-compose-multiplatform 0.8.0** (plain coordinate — the `-shaded-core` is a separate variant) |
 | Tier-3 | compose-bom 2026.06.01, core-ktx 1.19.0, browser 1.10.0, firebase-bom 34.15.0, android-tools 32.2.1 |
 
 ## Deliberately held (NOT bumped)

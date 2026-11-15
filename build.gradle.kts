@@ -8,30 +8,9 @@
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-buildscript {
-    repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath(libs.google.oss.licenses.plugin) {
-            exclude(group = "com.google.protobuf")
-        }
-        // No manual R8 override: AGP 9.3.x bundles a matched R8 (9.3+/9.4 line) that
-        // reads this repo's Kotlin 2.4 class metadata natively. The former
-        // `com.android.tools:r8:9.1.31` pin dated to the AGP 8.12.3 / Kotlin 2.3.x era
-        // (old bundled R8 topped out at Kotlin metadata 2.1) and is obsolete — pinning an
-        // older R8 under a newer AGP only risks a version-skew failure. Let AGP own R8.
-    }
-}
-
+// No manual R8 override: AGP 9.3.x bundles a matched R8 (9.3+/9.4 line) that
+// reads this repo's Kotlin 2.4 class metadata natively. Pinning an older R8 under a
+// newer AGP only risks a version-skew failure. Let AGP own R8.
 plugins {
     // SKIE — declared on the root classpath (apply false) so cmp-shared can apply it for the
     // Swift-enhanced XCFramework export. This build is SwiftPM end to end: no alternative

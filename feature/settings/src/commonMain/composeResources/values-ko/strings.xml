@@ -14,7 +14,6 @@
     <string name="feature_settings_title">설정</string>
     <string name="feature_settings_loading">불러오는 중…</string>
     <string name="feature_settings_privacy_policy">개인정보 처리방침</string>
-    <string name="feature_settings_licenses">라이선스</string>
     <string name="feature_settings_brand_guidelines">브랜드 가이드라인</string>
     <string name="feature_settings_feedback">피드백</string>
     <string name="feature_settings_theme">테마</string>

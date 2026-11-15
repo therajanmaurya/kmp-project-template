@@ -64,8 +64,6 @@ dependencyGuard = "0.5.0"
 # 17.5.1 pulled androidx material3 1.5.0-alpha17, built against an older compose-foundation `style` API than
 # CMP 1.12's foundation 1.12.0: every OutlinedTextField crashed with AbstractMethodError CustomStyle.applyStyle
 # (mbs/reels-downloader, Settings → Request Feature). 17.5.3 depends on material3 1.4.0 (stable).
-googleOss = "17.5.3"
-googleOssPlugin = "0.12.0"
 appUpdate = "2.1.0"
 integrity = "1.6.0"
 
@@ -149,7 +147,6 @@ composeNavigation = "2.9.2"
 jbCoreBundle = "1.0.1"
 jbSavedState = "1.4.0"
 material3adaptive = "1.2.0"
-aboutLibraries = "15.0.3"
 
 # Desktop Version
 desktopPackageVersion = "1.0.0"
@@ -251,8 +248,6 @@ kover-gradlePlugin = { group = "org.jetbrains.kotlinx", name = "kover-gradle-plu
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 twitter-detekt-compose = { group = "com.twitter.compose.rules", name = "detekt", version.ref = "twitter-detekt-compose" }
 
-google-oss-licenses = { group = "com.google.android.gms", name = "play-services-oss-licenses", version.ref = "googleOss" }
-google-oss-licenses-plugin = { group = "com.google.android.gms", name = "oss-licenses-plugin", version.ref = "googleOssPlugin" }
 
 junit = { group = "junit", name = "junit", version.ref = "junitVersion" }
 
@@ -462,9 +457,6 @@ roborazzi-gradlePlugin = { group = "io.github.takahirom.roborazzi", name = "robo
 store5 = { group = "org.mobilenativefoundation.store", name = "store5", version.ref = "store" }
 store5-cache = { group = "org.mobilenativefoundation.store", name = "cache5", version.ref = "store" }
 
-aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
-aboutlibraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose", version.ref = "aboutLibraries" }
-aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 
 # worker-kmp
 worker-kmp         = { module = "io.github.mobilebytelabs:worker-kmp",         version.ref = "worker-version" }
@@ -521,7 +513,6 @@ firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "fireb
 gms = { id = "com.google.gms.google-services", version.ref = "gmsPlugin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "androidxMacroBenchmark" }
-aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 
 cmp-feature-convention = { id = "org.convention.cmp.feature" }
 kmp-koin-convention = { id = "org.convention.kmp.koin" }

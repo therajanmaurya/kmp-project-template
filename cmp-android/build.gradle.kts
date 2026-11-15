@@ -20,7 +20,6 @@ plugins {
     alias(libs.plugins.android.application.compose.convention)
     alias(libs.plugins.baselineprofile)
     alias(libs.plugins.roborazzi)
-    alias(libs.plugins.aboutLibraries)
     alias(libs.plugins.ksp)
 }
 

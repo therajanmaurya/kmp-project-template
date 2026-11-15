@@ -14,7 +14,6 @@
     <string name="feature_settings_title">การตั้งค่า</string>
     <string name="feature_settings_loading">กำลังโหลด…</string>
     <string name="feature_settings_privacy_policy">นโยบายความเป็นส่วนตัว</string>
-    <string name="feature_settings_licenses">สัญญาอนุญาต</string>
     <string name="feature_settings_brand_guidelines">แนวทางแบรนด์</string>
     <string name="feature_settings_feedback">ความคิดเห็น</string>
     <string name="feature_settings_theme">ธีม</string>
