@@ -339,7 +339,7 @@ migrate_base() {
 #      identity, icons) regenerated from the fork's app-profile/
 # Either failing stops the sync before it commits: the tree would not be the fork's.
 # Under --only the strip is SKIPPED: it sweeps the whole fork, not the synced items, and it runs the fork's
-# own scripts/remove-demo.sh — stale unless `scripts` was synced. mbs/reels-downloader `--only deployment`
+# own scripts/remove-demo.sh — stale unless `scripts` was synced. On one fork, `--only deployment`
 # (2026-11-14) ran a pre-lineage-guard copy and deleted 153 files, incl. the entities and migration spec of
 # tables its live v15 database still held. A full sync (or --post-sync) re-applies the strip.
 post_sync_fork_steps() {
@@ -977,7 +977,7 @@ sync_directory() {
                         # spotless/license-header.txt once stripped the license header from ~2,500 files.
                         # The same holds when the fork's history never held the file at all: a fork older
                         # than the seam never received it, whatever the template had at the last sync
-                        # (mifos-pay synced after ForkWorkerDeclarations.kt shipped, was told it "removed"
+                        # (a fork synced after ForkWorkerDeclarations.kt shipped, was told it "removed"
                         # it, and never had one). Only a file the fork once had and then deleted is a removal.
                         # Not seeded: a file in a package the fork deleted (fork_deleted_dir), a Room
                         # schema (the fork's own lineage), demo code, or an image: a fork-owned image is the
@@ -1009,7 +1009,7 @@ sync_directory() {
                     cs_match_g "$_mf"; [ "${CS_M_OWNER:-}" = "merge" ] || continue
                     # A HELD path keeps the fork's copy on the merge path too, not only on the overlay and
                     # the mirror: a held project.pbxproj was 3-way merged against a stale base and lost the
-                    # fork's SwiftPM packages (mbs/reels-downloader, 2026-11-03).
+                    # fork's SwiftPM packages.
                     if is_held "$_mf"; then
                         print_step "Held ${BOLD}$_mf${NC} — kept the fork's copy (.template-sync-holds)"
                         continue

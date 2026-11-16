@@ -62,7 +62,7 @@ if [ -f "$REG" ]; then
   outside=$(awk '/demo:begin/{s=1} /demo:end/{s=0; next} !s' "$REG")
   inside=$(awk  '/demo:begin/{s=1; next} /demo:end/{s=0} s' "$REG")
   # `grep -q … <<<"$x"`, never `printf "$x" | grep -q`: under pipefail, grep -q exiting on its first match
-  # SIGPIPEs the writer, and a large registry turned a FOUND module into "not registered" (mifos-pay CI).
+  # SIGPIPEs the writer, and a large registry turned a FOUND module into "not registered" in CI.
   # The writer is killed by the signal, so `{ printf … || :; }` does not help — only dropping the pipe does.
   for f in $(find "$CORE" -path '*/di/Fork*Module.kt' -not -path '*/demo/*' -not -path '*/build/*' 2>/dev/null | sort); do
     n="$(basename "$f" .kt)"

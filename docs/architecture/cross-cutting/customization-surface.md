@@ -282,7 +282,7 @@ and exits before committing.
 
 A targeted sync (`--only deployment`) is partial by definition, so it never stamps `.template-version`
 and never runs the demo strip — the strip sweeps the whole fork and runs the fork's own
-`scripts/remove-demo.sh`, which is stale unless `scripts` was among the items. On mbs/reels-downloader
+`scripts/remove-demo.sh`, which is stale unless `scripts` was among the items. On one fork
 a `--only deployment` run did both: a pre-lineage-guard strip deleted 153 files, including the entities
 and migration spec of tables its live database still held. A full sync (or `--post-sync`) re-applies the
 strip with the current script. Proof: `scripts/product-health/tests/sync-dirs-only-scope-canary/`.

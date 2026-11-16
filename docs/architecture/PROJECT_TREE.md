@@ -56,7 +56,7 @@
 
 | Area | Files | Page |
 |---|---:|---|
-| `scripts/` | 566 | [`scripts/`](tree/scripts.md) |
+| `scripts/` | 568 | [`scripts/`](tree/scripts.md) |
 | `sync/` | 16 | [`sync/`](tree/sync.md) |
 | `tests/` | 30 | [`tests/`](tree/tests.md) |
 

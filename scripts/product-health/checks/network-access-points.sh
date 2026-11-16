@@ -334,7 +334,7 @@ end
 # the probe disproved them.) What it DOES do is put a Content-Type on bodyless requests,
 # describing a body that is not there, which some proxies and WAFs reject or flag. It is therefore
 # strictly worse than not declaring: nothing gained, one malformed header added.
-# Other codebases carry these as constants (mifos-pay's BaseURL.HEADER_CONTENT_TYPE / HEADER_ACCEPT)
+# Other codebases carry these as constants (e.g. a BaseURL.HEADER_CONTENT_TYPE / HEADER_ACCEPT pair)
 # because they hand-build requests. Here the client negotiates, so the right number of declarations
 # is zero — and this check exists so that pattern is not ported in by habit.
 #

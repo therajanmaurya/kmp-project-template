@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sync-dirs-only-scope-canary — a `sync-dirs.sh --only <items>` run touches only <items>.
 #
-# mbs/reels-downloader, 2026-11-14: `--only deployment` ran post_sync_fork_steps over the WHOLE fork. The demo
+# On one fork, `--only deployment` ran post_sync_fork_steps over the WHOLE fork. The demo
 # strip used the fork's own (pre-lineage-guard) scripts/remove-demo.sh and deleted 153 files — including the
 # entities and migration spec of tables the live v15 database still held — and the run stamped
 # .template-version to the new ref although only deployment/ had moved.
