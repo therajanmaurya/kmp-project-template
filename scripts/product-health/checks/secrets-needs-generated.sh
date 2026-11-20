@@ -14,6 +14,7 @@
 #        every needed secret is declared in LAYOUT, and secrets-manifest.yaml is current
 #   SN-2 every LAYOUT `gha_secret` is a secret the workflows actually read (secrets.<NAME>), so the
 #        CI name shown to a human cannot drift from the one CI uses
+#   SN-3 secrets/fork-layout.yaml is not gitignored, so the fork's generated rows reach CI
 #
 # Exit 0 = PASS · 1 = FAIL (blocks) · 2 = WARN (a legacy v1 target, not yet migrated to needs:).
 set -uo pipefail
@@ -51,6 +52,14 @@ if [ -n "$missing" ]; then
   printf '%s\n' "$missing" | sed 's/^/      /'; fail=1
 else
   echo "  ✓ SN-2 every LAYOUT gha_secret is a secret the workflows read"
+fi
+# SN-3 — the fork's generated rows must be committable. `secrets/*` is ignored wholesale, so without its
+# own re-include secrets/fork-layout.yaml stays local: CI never sees the rows and a declared secret_alias
+# has no delivery there.
+if git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 && git -C "$ROOT" check-ignore -q secrets/fork-layout.yaml; then
+  echo "  ✗ SN-3 secrets/fork-layout.yaml is gitignored — add \`!secrets/fork-layout.yaml\` after \`secrets/*\` in .gitignore"; fail=1
+else
+  echo "  ✓ SN-3 secrets/fork-layout.yaml is not gitignored"
 fi
 [ "$fail" = 1 ] && exit 1
 [ "$warn" = 1 ] && exit 2

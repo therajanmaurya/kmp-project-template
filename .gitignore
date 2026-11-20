@@ -103,6 +103,9 @@ secrets/*
 env:*
 # The secrets LAYOUT contract is the SoT for PATHS — holds NO secret values.
 !secrets/LAYOUT.yaml
+# The fork's own layout rows (syncForkConfig writes its build-config secret rows here). Paths only, no values —
+# and it must be committed: CI reads the same rows, and without them a declared secret_alias has no delivery.
+!secrets/fork-layout.yaml
 # Committed fake/sample secrets (structurally valid, obviously not real).
 !secrets/sample
 .env.local
