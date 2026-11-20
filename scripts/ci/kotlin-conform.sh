@@ -129,9 +129,16 @@ fi
 [ "${#kt_files[@]}" -gt 0 ] || exit "$rc"
 
 TOOLS="${KPT_TOOLS_DIR:-$HOME/.cache/kpt-tools}"; mkdir -p "$TOOLS"
-kv="$(sed -n 's/^const val KTLINT_VERSION = "\(.*\)"/\1/p' build-logic/convention/src/main/kotlin/org/convention/Spotless.kt)"
+# Forks that predate the KTLINT_VERSION rename still declare `const val ktlintVersion` — accept both.
+kv="$(sed -nE 's/^const val (KTLINT_VERSION|ktlintVersion) = "(.*)"/\2/p' build-logic/convention/src/main/kotlin/org/convention/Spotless.kt)"
 dv="$(sed -n 's/^detekt = "\(.*\)"/\1/p' gradle/libs.versions.toml)"
 cv="$(sed -n 's/^twitter-detekt-compose = "\(.*\)"/\1/p' gradle/libs.versions.toml)"
+# An empty version would build a .../download//ktlint URL and fail as a misleading 404.
+for pair in "ktlint:$kv:build-logic/convention/src/main/kotlin/org/convention/Spotless.kt" \
+            "detekt:$dv:gradle/libs.versions.toml" "twitter-detekt-compose:$cv:gradle/libs.versions.toml"; do
+  IFS=: read -r tool ver src <<<"$pair"
+  [ -n "$ver" ] || { echo "kotlin-conform: no $tool version found in $src" >&2; exit 1; }
+done
 KTLINT="$TOOLS/ktlint-$kv"; DETEKT="$TOOLS/detekt-cli-$dv-all.jar"; COMPOSE="$TOOLS/compose-rules-$cv"
 # fetch <url> <dest> — download once into the tool cache (a partial download never counts as cached).
 fetch() { [ -s "$2" ] || { curl -fsSL -o "$2.part" "$1" && mv "$2.part" "$2"; } || { rm -f "$2.part"; echo "kotlin-conform: could not download $1" >&2; return 1; }; }

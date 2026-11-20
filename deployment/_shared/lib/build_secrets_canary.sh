@@ -129,6 +129,28 @@ secrets:
 YAML
 eq "vault-plan on vault_alias-free LAYOUT = 0 rows" "$(ruby "$BS" vault-plan | grep -c .)" "0"
 
+echo "── 5. app-profile secret_alias without a layout row is refused ─────"
+# A fork whose build-logic predates the fork-secrets projection (a `--only deployment` sync) declares
+# `secret_alias:` and gets no row: the pull delivers nothing and the build compiles "". Must be loud.
+mkdir -p "$ROOT/app-profile"
+cat > "$ROOT/app-profile/app.yaml" <<'YAML'
+network:
+  build_config_fields:
+    - name: MY_CLIENT_KEY
+      secret_alias: canary-my-client-key
+YAML
+eq "vault-plan exits 1 when the alias has no row" "$(ruby "$BS" vault-plan >/dev/null 2>&1; echo $?)" "1"
+eq "the refusal names the field and the fix" \
+   "$(ruby "$BS" vault-plan 2>&1 >/dev/null | grep -c 'MY_CLIENT_KEY.*syncForkConfig')" "1"
+eq "needs-generate refuses it too" "$(ruby "$BS" needs-generate --check --root "$ROOT" >/dev/null 2>&1; echo $?)" "1"
+cat > "$ROOT/secrets/fork-layout.yaml" <<'YAML'
+secrets:
+  my_client_key: { kind: value, source_env: MY_CLIENT_KEY, rel: build-config/my_client_key, vault_alias: canary-my-client-key, fork_build_config: true }
+YAML
+eq "vault-plan carries the alias once the row exists" "$(ruby "$BS" vault-plan | grep -c '^canary-my-client-key	MY_CLIENT_KEY	0$')" "1"
+sed -i.bak 's/vault_alias: canary-my-client-key/vault_alias: canary-other/' "$ROOT/secrets/fork-layout.yaml"
+eq "a generated row naming a different alias is refused" "$(ruby "$BS" vault-plan >/dev/null 2>&1; echo $?)" "1"
+
 echo "───────────────────────────────────────────────────────────────────"
 printf 'build-secrets canary: %d passed · %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

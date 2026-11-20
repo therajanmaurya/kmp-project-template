@@ -44,6 +44,30 @@ module BuildSecrets
     doc
   end
 
+  # Every app-profile `network.build_config_fields[].secret_alias` must have its layout row (LAYOUT.yaml, or
+  # the fork's fork-layout.yaml where syncForkConfig generates it). A fork whose build-logic predates that
+  # projection — a sync of `deployment` without `build-logic` — gets no row: the pull delivers nothing and
+  # the build compiles the field as "". Raised here, beside the code that consumes the row, so the check
+  # arrives in the same sync unit as the expectation.
+  def self.assert_build_config_secrets!(doc, root = REPO_ROOT)
+    profile = File.join(root, "app-profile", "app.yaml")
+    return unless File.exist?(profile)
+    fields = ((YAML.load_file(profile) || {})["network"] || {})["build_config_fields"]
+    Array(fields).each do |f|
+      next unless f.is_a?(Hash)
+      al = f["secret_alias"].to_s.strip
+      next if al.empty?
+      name = f["name"].to_s.strip
+      env = f["from_env"].to_s.strip
+      env = name if env.empty?
+      row = (doc["secrets"] || {}).values.find { |s| s.is_a?(Hash) && s["source_env"].to_s == env }
+      next if row && !row["vault_alias"].to_s.empty? && (row["fork_build_config"] != true || row["vault_alias"].to_s == al)
+      raise "app-profile network.build_config_fields #{name} names secret_alias #{al}, but no secrets/LAYOUT.yaml or " \
+            "secrets/fork-layout.yaml row delivers it for #{env} — run ./gradlew syncForkConfig; if that writes no " \
+            "row, build-logic is older than deployment: sync build-logic from the template"
+    end
+  end
+
   # Product-flavor → applicationId suffix. Mirrors org.convention.AppFlavor.
   FLAVOR_SUFFIX = { "prod" => "", "demo" => ".demo" }.freeze
 
@@ -511,6 +535,7 @@ module BuildSecrets
     # the repo-relative paths that are out of date; legacy (v1) targets are collected into +legacy+.
     def run(check: false, root: REPO_ROOT, legacy: [])
       doc = BuildSecrets.load_layout(root)
+      BuildSecrets.assert_build_config_secrets!(doc, root)
       want = manifest(doc, root, legacy)
       path = File.join(root, MANIFEST)
       return [] if want.nil? || (File.exist?(path) && File.read(path) == want)
@@ -556,6 +581,11 @@ if __FILE__ == $PROGRAM_NAME
     acc.materialize_all!.each { |d| warn "✓ #{d}" }
     warn "✓ #{acc.write_paths_map!} (gradle path map)"
   when "vault-plan"
+    begin
+      BuildSecrets.assert_build_config_secrets!(BuildSecrets.load_layout)
+    rescue RuntimeError => e
+      abort "✗ build-secrets: #{e.message}"
+    end
     acc.vault_plan.each { |a, e, b| puts "#{a}\t#{e}\t#{b}" }
   when "export-env"
     puts acc.export_env

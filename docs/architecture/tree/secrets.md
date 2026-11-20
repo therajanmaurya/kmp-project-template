@@ -56,5 +56,12 @@ the env var / `local.properties` only, and a CI release compiles it as `""`. Add
 `required_in_release: true` (and optionally `required_prefix:`) to make a release build fail instead;
 `product-health` NAP-15 checks all of this stays generated.
 
+The projection spans three sync units (`build-logic` writes the row, `deployment` consumes it, `scripts`
+checks it), so a fork that syncs only some of them can hold half of it. Two guards make that loud instead
+of an empty key: `syncForkConfig` fails on a `build_config_fields` key it does not know
+(`unknownBuildConfigFieldKeys`, so a build-logic older than the app-profile cannot skip one), and
+`build_secrets.rb` (`assert_build_config_secrets!`, run by `vault-plan` and `needs-generate`) refuses a
+`secret_alias:` that has no layout row — the check ships in `deployment/`, beside the code that needs the row.
+
 **A value must never reach a transcript or a log.** Metadata always suffices to prove materialisation:
 `test -f`, `wc -c`, `shasum`. If a check appears to need the value itself, the check is wrong.

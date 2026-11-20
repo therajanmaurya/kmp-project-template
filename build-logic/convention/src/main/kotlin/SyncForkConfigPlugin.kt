@@ -47,6 +47,14 @@ internal fun firstRunOnboarding(security: Map<*, *>?): Boolean =
     security?.get("first_run_onboarding")?.toString()?.trim()?.lowercase() == "true"
 
 /**
+ * The keys of an `app.yaml#network.build_config_fields` row that `syncForkConfig` does not act on. A key
+ * the plugin skipped used to be dropped silently: a fork on a build-logic older than `secret_alias:`
+ * declared it, got no secrets row, and compiled the field as "". An unknown key now fails the sync.
+ */
+internal fun unknownBuildConfigFieldKeys(row: Map<*, *>): List<String> =
+    row.keys.map { it.toString() } - setOf("name", "from_env", "secret_alias", "required_in_release", "required_prefix")
+
+/**
  * Makes [target]'s parent dir exist when its platform's `metadata/` root does, and reports whether it
  * may be written. Every `deployment/.../metadata` tree is gitignored and the template tracks only some of its
  * sub-dirs, so a fresh clone has no `review_information/` or `changelogs/` — skipping on a missing
@@ -1504,6 +1512,12 @@ abstract class SyncForkConfigTask : DefaultTask() {
         val rows = buildString {
             for (row in (network["build_config_fields"] as? List<*>) ?: emptyList<Any?>()) {
                 val m = row as? Map<*, *> ?: continue
+                unknownBuildConfigFieldKeys(m).takeIf { it.isNotEmpty() }?.let { unknown ->
+                    throw org.gradle.api.GradleException(
+                        "syncForkConfig: network.build_config_fields '${m["name"]}' has unknown key(s) $unknown — " +
+                            "a misspelling, or this build-logic is older than the app-profile (sync build-logic from the template).",
+                    )
+                }
                 val name = m["name"]?.toString()?.trim()?.takeIf { valid.matches(it) } ?: continue
                 val env = m["from_env"]?.toString()?.trim()?.takeIf { valid.matches(it) } ?: name
                 val a = m["secret_alias"]?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: continue

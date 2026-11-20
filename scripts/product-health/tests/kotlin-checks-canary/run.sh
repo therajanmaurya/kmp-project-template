@@ -12,6 +12,7 @@
 #   K-6 a file already carrying the TEMPLATE's copyright is left alone (Spotless NOT_TEMPLATE_CODE)
 #   K-7 a correct header keeps the year already in the file (Spotless keeps it) — no churn
 #   K-8 `kotlin-checks.sh module <dir>` / `changed <base>` select those files and fail on the finding
+#   K-9 the ktlint version resolves from KTLINT_VERSION or the pre-rename ktlintVersion; none → named error
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../../.." && pwd)"
@@ -78,4 +79,18 @@ printf "$seeded" | sed 's|</resources>|    <string name="c">d</string>\n</resour
 ( cd "$R" && git -c user.email=c@c -c user.name=c commit -qam "branch edit" )
 out="$( cd "$R" && bash scripts/ci/kotlin-checks.sh changed base 2>&1 )"; r=$?
 [ "$r" = 1 ] && grep -q "values/strings.xml" <<<"$out" && ok "K-8 changed <base> selects the branch's files and fails" || bad "K-8 changed rc=$r out='$out'"
+
+# K-9 the ktlint version resolves from BOTH Spotless.kt spellings (forks predating the rename still say
+# `ktlintVersion`), and a missing version is a named error — never a `.../download//ktlint` 404.
+SP="build-logic/convention/src/main/kotlin/org/convention/Spotless.kt"
+kv_line="$(grep -m1 '^kv=' "$ROOT/scripts/ci/kotlin-conform.sh")"
+for decl in 'const val KTLINT_VERSION = "1.0.1"' 'const val ktlintVersion = "1.0.1"'; do
+  printf 'package org.convention\n\n%s\n' "$decl" > "$R/$SP"
+  got="$( cd "$R" && eval "$kv_line" && echo "$kv" )"
+  [ "$got" = "1.0.1" ] && ok "K-9 ktlint version read from: $decl" || bad "K-9 '$decl' resolved to '$got'"
+done
+rm -f "$R/$SP"; printf 'class K\n' > "$R/feature/a/src/commonMain/K.kt"
+out="$(conform --check feature/a/src/commonMain/K.kt 2>&1)"; r=$?
+[ "$r" = 1 ] && grep -q "no ktlint version found" <<<"$out" && ! grep -q "download//" <<<"$out" \
+  && ok "K-9 a missing ktlint version is a named error, not a 404" || bad "K-9 missing version rc=$r out='$out'"
 exit "$rc"
